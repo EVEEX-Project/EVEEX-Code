@@ -2,7 +2,7 @@ import cv2
 
 cam = cv2.VideoCapture(0)
 
-cv2.namedWindow("test")
+cv2.namedWindow("Webcam image capture")
 
 img_counter = 0
 
@@ -11,7 +11,7 @@ while True:
     if not ret:
         print("failed to grab frame")
         break
-    cv2.imshow("test", frame)
+    cv2.imshow("Webcam image capture", frame)
 
     k = cv2.waitKey(1)
     if k%256 == 27:
