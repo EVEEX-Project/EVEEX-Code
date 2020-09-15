@@ -1,5 +1,6 @@
 from PIL import Image
 import matplotlib.pyplot as plt
+import numpy as np
 from color_utils import *
 
 im = Image.open("source.jpg")
