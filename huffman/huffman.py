@@ -42,7 +42,7 @@ class Noeud:
 
         left, n, p, x = self.gauche.display_aux()
         right, m, q, y = self.droite.display_aux()
-        s =  f"[  ]"
+        s =  f"[0 1]"
         u = len(s)
         first_line = (x + 1) * " " + (n - x - 1) * "_" + s + y * "_" + (m - y) * " "
         second_line = x * " " + "/" + (n - x - 1 + u + y) * " " + "\\" + (m - y - 1) * " "

@@ -1,6 +1,6 @@
 import huffman
 
-phrase = "J’ai un python qui marche ( j’ai installé un environnement python virtuel )"
+phrase = "un programme de compression video"
 
 liste_noeuds = huffman.split_phrase_in_nodes(phrase)
 
