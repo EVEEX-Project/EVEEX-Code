@@ -26,9 +26,26 @@ les points à surveiller sont les suivants :
 #### découpage en macrobloc : 
 
 pour une résolution en 720p, avec blocs de 16x16, il y a 45x80 blocs
-ça suppose une transformation flux-video ==> bytestream 
+ça suppose une transformation flux-video ==> bitestream 
 bibliothèque pour capture video : open-cv 
 *pip install opencv-python*  
+0915 : on a un début de code qui permet de prendre des screenshots (dossier webcam capture)
+
+**1ere étape du sprint 1 : transformer un screenshot en bitstream, connexion socket entre 2 clients. décodage du bitstream pour afficher une image** 
+
+norme MPEG-1: bloc de 16x16, encodage PAL 25i/s, 352x288px => 22x18blocs. 
+#### blocs  
+
+ **blocs I : intracodé (indépendant)**  
+ blocs P : prédictif (décrite par différence avec images précédentes)  
+ blocs B : prédicitif + images suivantes  
+ blocs DC : moyennes par bloc. 
+
+MPEG1 : sépration partie video et partie audio. 
+on utilisera une bibliotèque pour conversion flux audio en MP3. 
+
+
+
 
 
 ### 2. installation des softwares 
@@ -37,3 +54,15 @@ client git : gitkraken
 repository sur git-hub : https://github.com/EVEEX-Project/
 IDE python : pycharm avec python 3.8  
 *il y aura un fichier requirements pour l'installation des bibliothèques*  
+webcam : modèle 720p intégré a nos ordis portables. 
+
+
+
+### 3. mise en place de l'environement de dev 
+
+structure du programme (prototype python pour commencer)
+
+
+
+### 4. topo mode agile 
+
