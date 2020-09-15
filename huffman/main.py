@@ -1,6 +1,6 @@
 from huffman import *
 
-phrase = "CITRONTRESCONTENT"
+phrase = "azertyuiopdfgkm"
 
 liste_noeuds = split_phrase_in_nodes(phrase)
 
@@ -13,3 +13,11 @@ print(liste_noeuds)
 
 res = generate_dict(liste_noeuds[0], "")
 print(res)
+
+enc = encode_phrase(phrase, res)
+print(f"Encoded : {enc}, length : {len(enc)}")
+
+enc_ascii = encode_ascii(phrase)
+print(f"Pour info : {enc_ascii}, length : {len(enc_ascii)}")
+
+print(f"Soit une compression : {round(len(enc)/ len(enc_ascii) * 100, 2)}%")

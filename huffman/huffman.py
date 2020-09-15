@@ -56,3 +56,25 @@ def generate_dict(racine, prefixe=""):
     if racine.droite is not None:
         res.update(generate_dict(racine.droite, prefixe + "1"))
     return res
+
+
+def reverse_dict(entry_dict):
+    res = {}
+    for key in entry_dict:
+        res[entry_dict[key]] = key
+    return res
+
+
+def encode_phrase(phrase, dictionnary):
+    res = ""
+    for l in phrase:
+        res += dictionnary[l]
+    return res
+
+
+def encode_ascii(phrase):
+    res = ""
+    for l in phrase:
+        res += str(bin(ord(l))[2:])
+
+    return res
