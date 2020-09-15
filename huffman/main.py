@@ -1,23 +1,28 @@
-from huffman import *
+import huffman
 
-phrase = "azertyuiopdfgkm"
+phrase = "J’ai un python qui marche ( j’ai installé un environnement python virtuel )"
 
-liste_noeuds = split_phrase_in_nodes(phrase)
+liste_noeuds = huffman.split_phrase_in_nodes(phrase)
 
 while len(liste_noeuds) > 1:
-    m1, m2, reste = get_two_lowest_symbols(liste_noeuds)
-    m = merge_two_nodes(m1, m2)
-    liste_noeuds = sort_nodes(reste + [m])
+    m1, m2, reste = huffman.get_two_lowest_symbols(liste_noeuds)
+    m = huffman.merge_two_nodes(m1, m2)
+    liste_noeuds = huffman.sort_nodes(reste + [m])
 
-print(liste_noeuds)
+# On affiche l'arbre construit
+liste_noeuds[0].display()
 
-res = generate_dict(liste_noeuds[0], "")
-print(res)
+# On génère le dictionnaire en parcourant l'arbre
+enc_dico = huffman.generate_dict(liste_noeuds[0], "")
+print(f"Dictionnaire d'encodage : {enc_dico}")
 
-enc = encode_phrase(phrase, res)
+# On encode le message avec le dictionnaire
+enc = huffman.encode_phrase(phrase, enc_dico)
 print(f"Encoded : {enc}, length : {len(enc)}")
 
-enc_ascii = encode_ascii(phrase)
+enc_ascii = huffman.encode_ascii(phrase)
 print(f"Pour info : {enc_ascii}, length : {len(enc_ascii)}")
 
 print(f"Soit une compression : {round(len(enc)/ len(enc_ascii) * 100, 2)}%")
+
+print(f"Message décodé : {huffman.decode_phrase(enc, enc_dico)}")
