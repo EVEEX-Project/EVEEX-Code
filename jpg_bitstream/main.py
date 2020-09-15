@@ -19,3 +19,13 @@ plt.imshow(pixels_ycbcr)
 plt.show()
 
 plt.imsave("dest.jpg", pixels_ycbcr)
+
+
+"""
+Les étapes : 
+1 - prendre l'image JPEG et convertir en YCbCr
+2 - appliquer la DCT sur des macroblocs de 8x8
+3 - Quantization matrix pour échelonner les valeurs de la DCT
+4 - Les blocs sont transformés en chaine de caractère en utilisant un pattern en zig zag
+5 - On encode avec Huffman pour l'envoyer sous forme de bitstream
+"""

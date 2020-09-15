@@ -131,25 +131,25 @@
       <screen x="0" y="40" width="2560" height="1040" />
     </state>
     <state x="101" y="217" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.40.2560.1040@0.40.2560.1040" timestamp="1600172049619" />
-    <state width="1232" height="251" key="GridCell.Tab.0.bottom" timestamp="1600174192908">
+    <state width="1232" height="325" key="GridCell.Tab.0.bottom" timestamp="1600174233702">
       <screen x="0" y="40" width="2560" height="1040" />
     </state>
-    <state width="1232" height="251" key="GridCell.Tab.0.bottom/0.40.2560.1040@0.40.2560.1040" timestamp="1600174192908" />
-    <state width="1232" height="251" key="GridCell.Tab.0.center" timestamp="1600174192908">
+    <state width="1232" height="325" key="GridCell.Tab.0.bottom/0.40.2560.1040@0.40.2560.1040" timestamp="1600174233702" />
+    <state width="1232" height="325" key="GridCell.Tab.0.center" timestamp="1600174233701">
       <screen x="0" y="40" width="2560" height="1040" />
     </state>
-    <state width="1232" height="251" key="GridCell.Tab.0.center/0.40.2560.1040@0.40.2560.1040" timestamp="1600174192908" />
-    <state width="1232" height="251" key="GridCell.Tab.0.left" timestamp="1600174192907">
+    <state width="1232" height="325" key="GridCell.Tab.0.center/0.40.2560.1040@0.40.2560.1040" timestamp="1600174233701" />
+    <state width="1232" height="325" key="GridCell.Tab.0.left" timestamp="1600174233701">
       <screen x="0" y="40" width="2560" height="1040" />
     </state>
-    <state width="1232" height="251" key="GridCell.Tab.0.left/0.40.2560.1040@0.40.2560.1040" timestamp="1600174192907" />
-    <state width="1232" height="251" key="GridCell.Tab.0.right" timestamp="1600174192908">
+    <state width="1232" height="325" key="GridCell.Tab.0.left/0.40.2560.1040@0.40.2560.1040" timestamp="1600174233701" />
+    <state width="1232" height="325" key="GridCell.Tab.0.right" timestamp="1600174233702">
       <screen x="0" y="40" width="2560" height="1040" />
     </state>
-    <state width="1232" height="251" key="GridCell.Tab.0.right/0.40.2560.1040@0.40.2560.1040" timestamp="1600174192908" />
+    <state width="1232" height="325" key="GridCell.Tab.0.right/0.40.2560.1040@0.40.2560.1040" timestamp="1600174233702" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/jpg_bitstream$color_utils.coverage" NAME="color_utils Coverage Results" MODIFIED="1600173045684" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/jpg_bitstream$main.coverage" NAME="main Coverage Results" MODIFIED="1600174192895" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/jpg_bitstream$main.coverage" NAME="main Coverage Results" MODIFIED="1600174233497" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
