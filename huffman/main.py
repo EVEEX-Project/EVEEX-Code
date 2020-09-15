@@ -10,3 +10,6 @@ while len(liste_noeuds) > 1:
     liste_noeuds = sort_nodes(reste + [m])
 
 print(liste_noeuds)
+
+res = generate_dict(liste_noeuds[0], "")
+print(res)

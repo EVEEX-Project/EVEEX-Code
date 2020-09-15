@@ -46,5 +46,13 @@ def sort_nodes(liste_noeuds):
     return sorted(liste_noeuds, key=lambda x:x.frequence, reverse=True)
 
 
-def generate_dict():
-    pass
+def generate_dict(racine, prefixe=""):
+    if racine.gauche is None and racine.droite is None:
+        return {racine.valeur: prefixe}
+
+    res = {}
+    if racine.gauche is not None:
+        res.update(generate_dict(racine.gauche, prefixe + "0"))
+    if racine.droite is not None:
+        res.update(generate_dict(racine.droite, prefixe + "1"))
+    return res
