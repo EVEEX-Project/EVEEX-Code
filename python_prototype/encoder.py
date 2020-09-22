@@ -1,5 +1,5 @@
 DEFAULT_QUANTIZATION_THRESHOLD = 0.5
-
+import numpy as np 
 
 class Encoder:
 
@@ -70,7 +70,13 @@ class Encoder:
         Returns:
 
         """
-        raise NotImplementedError
+        for i in range(0,data.shape[0]):
+            for j in range(0,data.shape[1]):
+                
+                if data[i,j]<=threshold:
+                    data[i,j]=0
+                
+        return data
 
     def run_level(self, data):
         """
