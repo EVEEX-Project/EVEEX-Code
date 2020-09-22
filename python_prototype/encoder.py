@@ -19,7 +19,21 @@ class Encoder:
         Returns:
             image_yuv: tableau de pixels représentant l'image au format YUV
         """
-        raise NotImplementedError
+        image_yuv = np.zeros(image.shape)
+
+        # Pour chaque pixel de l'image
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                r, g, b = image[i, j]
+                # On recalcule les coefficients YUV
+                # Source : https://fr.wikipedia.org/wiki/YUV
+                y = 0.299 * r + 0.587 * g + 0.114 * b
+                u = -0.14713 * r - 0.28886 * g + 0.436 * b
+                v = 0.615 * r - 0.51498 * g - 0.10001 * b
+                image_yuv[i, j] = [y, u, v]
+
+        # On retourne l'image ainsi constituée
+        return image_yuv
 
     def RGB_to_YCbCr(self, image):
         """
@@ -32,7 +46,21 @@ class Encoder:
         Returns:
             image_ycbcr: tableau de pixels représentant l'image au format YUV
         """
-        raise NotImplementedError
+        image_ycbcr = np.zeros(image.shape)
+
+        # Pour chaque pixel de l'image
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                r, g, b = image[i, j]
+                # On recalcule les coefficients YCbCr
+                # Source : https://fr.wikipedia.org/wiki/YCbCr
+                y = 0.299 * r + 0.587 * g + 0.114 * b
+                cb = -0.1687 * r - 0.3313 * g + 0.5 * b + 128
+                cr = 0.5 * r - 0.4187 * g - 0.0813 * b + 128
+                image_ycbcr[i, j] = [y, cb, cr]
+
+        # On retourne l'image ainsi constituée
+        return image_ycbcr
 
     def apply_DCT(self, image):
         """
