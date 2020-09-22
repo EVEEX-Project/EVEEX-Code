@@ -58,39 +58,42 @@ class Encoder:
         Returns:
             data: tableau à une dimension des coefficients de l'image
         """
-      
+        # Directon
         up = False
-        i,j=0,0
-        res=[dct_data[0,0]]
+        # Position du curseur
+        i, j = 0, 0
+        # Tableau de sortie
+        res = [dct_data[0,0]]
+        # Pour chacun des points qui constituent l'image
         for t in range(dct_data.size[0]*dct_data.size[1]):
-            res.append(dct_data[i,j])
+            # On ajoute le point courant
+            res.append(dct_data[i, j])
+            # Si on parcoure l'image vers le haut
             if up:
-                if i==0:
-                    j+=1
-                    up=False
-                
-                elif j==(dct_data.size[1]-1):
-                    i+=1
-                    up=False
-                    
+                if j == (dct_data.size[1] - 1):
+                    i += 1
+                    up = False  # On change de direction
+                elif i == 0:
+                    j += 1
+                    up = False  # On change de direction
                 else:
-                    i-=1
-                    j+=1
-                    
+                    # Sinon on parcoure la diagonale
+                    i -= 1
+                    j += 1
+            # Si on parcoure l'image vers le bas
             else:
-                if j==0:
-                    i+=1
-                    up=True
-                
-                elif i==(dct_data.size[0]-1):
-                    j+=1
-                    up=True
-                    
+                if i == (dct_data.size[0] - 1):
+                    j += 1
+                    up = True  # On change de direction
+                elif j == 0:
+                    i += 1
+                    up = True  # On change de direction
                 else:
-                    j-=1
-                    i+=1
+                    # Sinon on parcoure la diagonale
+                    j -= 1
+                    i += 1
             
-        return (np.array(res))
+        return np.array(res)
 
     def quantization(self, data, threshold=DEFAULT_QUANTIZATION_THRESHOLD):
         """
@@ -104,9 +107,12 @@ class Encoder:
         Returns:
 
         """
+        # Pour chaque élément de la liste
         for i in range(data.shape[0]):
-            if data[i]<= threshold:
-                data[i]=0
+            # Si la valeur est en dessous du seuil
+            if data[i] <= threshold:
+                # On la met à 0
+                data[i] = 0
                 
         return data
 
