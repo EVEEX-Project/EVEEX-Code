@@ -91,14 +91,14 @@ class Encoder:
         # Position du curseur
         i, j = 0, 0
         # Tableau de sortie
-        res = [dct_data[0,0]]
+        res = []
         # Pour chacun des points qui constituent l'image
-        for t in range(dct_data.size[0]*dct_data.size[1]):
+        for t in range(dct_data.size):
             # On ajoute le point courant
             res.append(dct_data[i, j])
             # Si on parcoure l'image vers le haut
             if up:
-                if j == (dct_data.size[1] - 1):
+                if j == (dct_data.shape[1] - 1):
                     i += 1
                     up = False  # On change de direction
                 elif i == 0:
@@ -110,7 +110,7 @@ class Encoder:
                     j += 1
             # Si on parcoure l'image vers le bas
             else:
-                if i == (dct_data.size[0] - 1):
+                if i == (dct_data.shape[0] - 1):
                     j += 1
                     up = True  # On change de direction
                 elif j == 0:
@@ -158,7 +158,24 @@ class Encoder:
         Returns:
             pairs: ensemble de paires décrivants les données de l'image
         """
-        raise NotImplementedError
+        
+        n=0
+        res=[]
+        # Pour chaque élément de la liste
+        for x in data:
+            # Si on a un non-nul
+            if x!=0:
+                # On enregistre le couple
+                res.append((n,x))
+                n=0
+            else:
+                # Sinon, on compte les zéros
+                n+=1
+                
+        ### Si la chaîne se termine par 00000 (cinq zéros) on enregistre (4,0) 
+        if n!=0:
+            res.append((n-1,0))   
+        return res
 
     def huffman_encode(self, pairs):
         """
@@ -174,4 +191,22 @@ class Encoder:
         huff_enc = Huffman(pairs)
         # TODO : Construire le bitstream (structure, données)
 
-        return huff_enc.encode_phrase(), huff_enc.symbols
+        return (huff_enc.encode_phrase(), huff_enc.symbols)
+    
+    
+    
+if __name__=='__main__':
+    enc=Encoder()
+    tab=np.zeros((5,5))
+    tab[2,1]=6
+    tab[0,1]=3
+    tab[4,2]=9
+    tab[3,3]=0.2
+    print(tab)
+    a=enc.zigzag_linearisation(tab)
+    print(enc.zigzag_linearisation(tab))
+    a=enc.quantization(a)
+    print(a)
+    a=enc.run_level(a)
+    print(a)
+    
