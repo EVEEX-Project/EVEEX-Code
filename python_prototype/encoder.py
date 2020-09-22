@@ -1,3 +1,5 @@
+from huffman import Huffman
+
 DEFAULT_QUANTIZATION_THRESHOLD = 0.5
 
 
@@ -99,4 +101,7 @@ class Encoder:
         Returns:
             bitstream: le bitstream compressé correspondant à l'image
         """
-        raise NotImplementedError
+        huff_enc = Huffman(pairs)
+        # TODO : Construire le bitstream (structure, données)
+
+        return huff_enc.encode_phrase(), huff_enc.symbols
