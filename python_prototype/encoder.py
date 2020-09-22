@@ -48,7 +48,7 @@ class Encoder:
 
     def zigzag_linearisation(self, dct_data):
         """
-        Parcoure un tableau de coefficients en zig zag de manière à passer d'un
+        Parcourt un tableau de coefficients en zig zag de manière à passer d'un
         tableau en deux dimensions à un tableau à une dimension avec par conséquent
         beaucoup de zéros entre les valeurs significatives.
 
@@ -58,7 +58,39 @@ class Encoder:
         Returns:
             data: tableau à une dimension des coefficients de l'image
         """
-        raise NotImplementedError
+      
+        up = False
+        i,j=0,0
+        res=[dct_data[0,0]]
+        for t in range(dct_data.size[0]*dct_data.size[1]):
+            res.append(dct_data[i,j])
+            if up:
+                if i==0:
+                    j+=1
+                    up=False
+                
+                elif j==(dct_data.size[1]-1):
+                    i+=1
+                    up=False
+                    
+                else:
+                    i-=1
+                    j+=1
+                    
+            else:
+                if j==0:
+                    i+=1
+                    up=True
+                
+                elif i==(dct_data.size[0]-1):
+                    j+=1
+                    up=True
+                    
+                else:
+                    j-=1
+                    i+=1
+            
+        return (np.array(res))
 
     def quantization(self, data, threshold=DEFAULT_QUANTIZATION_THRESHOLD):
         """
