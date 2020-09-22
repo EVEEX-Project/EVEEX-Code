@@ -65,6 +65,7 @@ class Encoder:
     def apply_DCT(self, image):
         """
         Applique la transformée en cosinus discrete à une image au format luminance chrominance.
+        On veillera bien à implémenter la DCT-II : https://fr.wikipedia.org/wiki/Transform%C3%A9e_en_cosinus_discr%C3%A8te#DCT-II
 
         Args:
             image: tableau de pixels représentant l'image au format Luminance/Chrominance
@@ -72,7 +73,27 @@ class Encoder:
         Returns:
             dct_data: tableau de coefficients issu de la transformée en cosinus discrete
         """
-        raise NotImplementedError
+        dct_data = np.zeros(image.shape)
+
+        def compute_energy(image, k1, k2, k3):
+            """
+            Permet de calculer l'énerge au point k1, k2 sur le canal k3
+            """
+            res = 0
+            for n1 in range(image.shape[0]):
+                for n2 in range(image.shape[1]):
+                    res += image[n1, n2, k3] * \
+                           np.cos(np.pi / image.shape[0] * (n1 + 1/2) * k1) * \
+                           np.cos(np.pi / image.shape[1] * (n2 + 1/2) * k2)
+            return res
+
+        # On itere sur les 3 canaux
+        # puis sur les pixels de l'image
+        for k in range(3):
+            for i in range(image.shape[0]):
+                for j in range(image.shape[1]):
+                    dct_data[i, j, k] = compute_energy(image, i, j, k)
+        return dct_data
 
     def zigzag_linearisation(self, dct_data):
         """
