@@ -60,9 +60,17 @@ class Huffman:
     def __init__(self, phrase):
         self.noeuds = []
         self.symbols = {}
+        self.dict = {}
         self.phrase = phrase
 
         self.split_phrase_in_nodes(self.phrase)
+
+        while len(self.noeuds) > 1:
+            m1, m2, reste = self.get_two_lowest_symbols()
+            m = self.merge_two_nodes(m1, m2)
+            self.noeuds = self.sort_nodes(reste + [m])
+
+        self.dict = self.generate_dict(self.noeuds[0])
 
     def split_phrase_in_nodes(self, phrase):
         self.symbols = {}
@@ -129,7 +137,7 @@ class Huffman:
             if dictionnary is not None:
                 res += dictionnary[l]
             else:
-                res += self.symbols[l]
+                res += self.dict[l]
         return res
 
     @staticmethod
@@ -145,10 +153,19 @@ class Huffman:
         if dico is not None:
             dico = self.reverse_dict(dico)
         else:
-            dico = self.reverse_dict(self.symbols)
+            dico = self.reverse_dict(self.dict)
         for l in enc:
             buffer += l
             if buffer in dico:
                 res += dico[buffer]
                 buffer = ""
         return res
+
+
+if __name__ == "__main__":
+    phrase = "JAIME LES CITRONS VRAIMENT BEAUCOUP"
+    huff = Huffman(phrase)
+    huff.noeuds[0].display()
+    print("Symbols : \n", huff.symbols)
+    print("Dictionnary : \n", huff.dict)
+    print("Encoded : \n", huff.encode_phrase())

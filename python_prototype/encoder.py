@@ -216,16 +216,38 @@ class Encoder:
 
 
 if __name__ == '__main__':
+    from PIL import Image
+    from image_visualizer import ImageVisualizer
+
+    image = Image.open("test_img.png")
+    img_data = np.asarray(image)
     enc = Encoder()
-    tab = np.zeros((5,5))
-    tab[2, 1] = 6
-    tab[0, 1] = 3
-    tab[4, 2] = 9
-    tab[3, 3] = 0.2
-    print("Tableau original : \n", tab)
-    zigzag = enc.zigzag_linearisation(tab)
-    print("Zig zag : \n", zigzag)
-    quanti = enc.quantization(zigzag)
-    print("Quantifié : \n", quanti)
+    visu = ImageVisualizer()
+
+    # On converti de RGB vers YUV
+    yuv_data = enc.RGB_to_YUV(img_data)
+    # On affiche la luminance
+    visu.show_image_with_matplotlib(yuv_data[:, :, 0])
+    # On applique la DCT
+    dct_data = enc.apply_DCT(yuv_data)
+    # On affiche la carte d'énergie
+    visu.show_image_with_matplotlib(dct_data[:, :, 0])
+    # zigzag linearisation de la luminance
+    zigzag_data = enc.zigzag_linearisation(dct_data[:, :, 0])
+    # On quantiife les données
+    quanti = enc.quantization(zigzag_data, threshold=1e2)
+    # On affiche le résultat de la quantification
+    visu.show_image_with_matplotlib(np.reshape(quanti, (img_data.shape[0], img_data.shape[1])))
+    # RLE
     rle = enc.run_level(quanti)
-    print("Run-length encoding : \n", rle)
+    print("RLE\n", rle)
+    # Encodage avec huffman
+    huff_enc = enc.huffman_encode(rle)
+    print("Huffman\n", huff_enc)
+
+    originale = 3*8*img_data.shape[0]*img_data.shape[1]
+    compressee = len(huff_enc[0]) * 3
+    print("Taille originale en bits : ", originale)
+    print("Taille compressée : ", compressee)
+    print(f"Taux de compression : {round(compressee/originale * 100, 2)}%")
+

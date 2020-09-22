@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 class ImageVisualizer:
     """
     Classe permettant d'afficher une image à partir d'un tableau de pixels ou bien
@@ -14,7 +16,8 @@ class ImageVisualizer:
         Args:
             data: tableau de pixels représentant l'image
         """
-        raise NotImplementedError
+        plt.imshow(data)
+        plt.show()
 
     def show_image_with_opencv(self, data):
         """
