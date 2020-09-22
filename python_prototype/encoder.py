@@ -72,11 +72,9 @@ class Encoder:
         Returns:
 
         """
-        for i in range(0,data.shape[0]):
-            for j in range(0,data.shape[1]):
-                
-                if data[i,j]<=threshold:
-                    data[i,j]=0
+        for i in range(data.shape[0]):
+            if data[i]<= threshold:
+                data[i]=0
                 
         return data
 
