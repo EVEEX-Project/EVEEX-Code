@@ -180,23 +180,23 @@ class Encoder:
             pairs: ensemble de paires décrivants les données de l'image
         """
         
-        n=0
-        res=[]
+        n = 0
+        pairs = []
         # Pour chaque élément de la liste
         for x in data:
             # Si on a un non-nul
-            if x!=0:
+            if x != 0:
                 # On enregistre le couple
-                res.append((n,x))
-                n=0
+                pairs.append((n, x))
+                n = 0
             else:
                 # Sinon, on compte les zéros
-                n+=1
+                n += 1
                 
-        ### Si la chaîne se termine par 00000 (cinq zéros) on enregistre (4,0) 
-        if n!=0:
-            res.append((n-1,0))   
-        return res
+        # Si la chaîne se termine par 00000 (cinq zéros) on enregistre (4,0)
+        if n != 0:
+            pairs.append((n - 1, 0))
+        return pairs
 
     def huffman_encode(self, pairs):
         """
@@ -212,22 +212,20 @@ class Encoder:
         huff_enc = Huffman(pairs)
         # TODO : Construire le bitstream (structure, données)
 
-        return (huff_enc.encode_phrase(), huff_enc.symbols)
-    
-    
-    
-if __name__=='__main__':
-    enc=Encoder()
-    tab=np.zeros((5,5))
-    tab[2,1]=6
-    tab[0,1]=3
-    tab[4,2]=9
-    tab[3,3]=0.2
-    print(tab)
-    a=enc.zigzag_linearisation(tab)
-    print(enc.zigzag_linearisation(tab))
-    a=enc.quantization(a)
-    print(a)
-    a=enc.run_level(a)
-    print(a)
-    
+        return huff_enc.encode_phrase(), huff_enc.symbols
+
+
+if __name__ == '__main__':
+    enc = Encoder()
+    tab = np.zeros((5,5))
+    tab[2, 1] = 6
+    tab[0, 1] = 3
+    tab[4, 2] = 9
+    tab[3, 3] = 0.2
+    print("Tableau original : \n", tab)
+    zigzag = enc.zigzag_linearisation(tab)
+    print("Zig zag : \n", zigzag)
+    quanti = enc.quantization(zigzag)
+    print("Quantifié : \n", quanti)
+    rle = enc.run_level(quanti)
+    print("Run-length encoding : \n", rle)
