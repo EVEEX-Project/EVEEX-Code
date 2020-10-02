@@ -1,3 +1,4 @@
+import numpy as np
 class Noeud:
 
     def __init__(self, valeur, frequence, gauche=None, droite=None):
@@ -160,6 +161,47 @@ class Huffman:
                 res += dico[buffer]
                 buffer = ""
         return res
+    
+    
+    def dictToBin(self, dico):
+        bina=''
+        for cle,valeur in dico.items():
+            bina+='1'
+            a,b=eval(cle)
+            bina+=(np.binary_repr(a,8))
+            bina+=(np.binary_repr(b,16))
+            
+            c=valeur
+            size=len(c)
+            bina+=(np.binary_repr(size,8))
+            bina+=c
+        bina+='0'
+        return bina
+    
+    def binToDict(self, bina):
+        k=0
+        state=True
+        dico={}
+        while state==True:
+            if bina[k]=='0':
+                state=False
+            else:
+                k+=1
+                a=bina[k:k+8]
+                k+=8
+                b=bina[k:k+16]
+                k+=16
+                size=bina[k:k+8]
+                k+=8
+                size=int(size,2)
+                c=bina[k:k+size]
+                k+=size
+                
+                a=int(a,2)
+                b=int(b,2)
+                dico['({},{})'.format(a,b)]=c
+        return dico
+        
 
 
 if __name__ == "__main__":
