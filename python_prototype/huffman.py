@@ -164,11 +164,12 @@ class Huffman:
         return res
     
     
-    def dictToBin(self, dico):
+    def dictToBin(self):
         bina=''
-        for cle,valeur in dico.items():
+        for cle,valeur in self.dict.items():
             bina+='1'
-            a,b=eval(cle)
+            a,b=cle
+            
             bina+=(np.binary_repr(a,8))
             bina+=(np.binary_repr(b,16))
             
@@ -200,15 +201,16 @@ class Huffman:
                 
                 a=int(a,2)
                 b=int(b,2)
-                dico['({},{})'.format(a,b)]=c
+                dico[(a,b)]=c
         return dico
         
 
 
 if __name__ == "__main__":
-    phrase = "JAIME LES CITRONS VRAIMENT BEAUCOUP"
+    phrase = [(2, 3), (4, 6), (13, 9), (2, 0)]
     huff = Huffman(phrase)
     huff.noeuds[0].display()
     print("Symbols : \n", huff.symbols)
     print("Dictionnary : \n", huff.dict)
     print("Encoded : \n", huff.encode_phrase())
+    print('Encoded Dictionnary : \n', huff.dictToBin())
