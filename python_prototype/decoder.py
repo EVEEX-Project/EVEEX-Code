@@ -1,4 +1,5 @@
 import numpy as np 
+from huffman import Huffman
 
 class Decoder:
 
@@ -17,7 +18,8 @@ class Decoder:
         Returns:
             rle_data : paires de données issues de la RLE
         """
-        raise NotImplementedError
+        huff= Huffman()
+        return huff.decode_phrase(enc_data,dictionary)
 
     def decode_run_length(self, rle_data):
         """
