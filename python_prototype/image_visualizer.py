@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import os
+import numpy as np
 
 class ImageVisualizer:
     """
@@ -36,7 +38,8 @@ class ImageVisualizer:
             data: tableau de pixels représentant l'image
             file_name: nom du fichier sous lequel sauvegrder l'image
         """
-        raise NotImplementedError
+        plt.imsave(file_name, np.array(data, dtype="uint8"), format="png")
+        print(f"Saving image to {os.getcwd()}/{file_name}")
 
     def open_image_with_native_viewer(self, data):
         """
@@ -46,3 +49,12 @@ class ImageVisualizer:
             data: tableau de pixels représentant l'image
         """
         raise NotImplementedError
+
+if __name__ == "__main__":
+    from PIL import Image
+    import numpy as np
+    visu = ImageVisualizer()
+
+    img = Image.open("test_img.png")
+    visu.show_image_with_matplotlib(img)
+    print(np.asarray(img)[0, 0])

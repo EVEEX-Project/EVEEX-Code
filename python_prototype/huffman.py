@@ -58,20 +58,21 @@ class Noeud:
 
 class Huffman:
 
-    def __init__(self, phrase):
+    def __init__(self, phrase=None):
         self.noeuds = []
         self.symbols = {}
         self.dict = {}
         self.phrase = phrase
 
-        self.split_phrase_in_nodes(self.phrase)
+        if phrase is not None:
+            self.split_phrase_in_nodes(self.phrase)
 
-        while len(self.noeuds) > 1:
-            m1, m2, reste = self.get_two_lowest_symbols()
-            m = self.merge_two_nodes(m1, m2)
-            self.noeuds = self.sort_nodes(reste + [m])
+            while len(self.noeuds) > 1:
+                m1, m2, reste = self.get_two_lowest_symbols()
+                m = self.merge_two_nodes(m1, m2)
+                self.noeuds = self.sort_nodes(reste + [m])
 
-        self.dict = self.generate_dict(self.noeuds[0])
+            self.dict = self.generate_dict(self.noeuds[0])
 
     def split_phrase_in_nodes(self, phrase):
         self.symbols = {}

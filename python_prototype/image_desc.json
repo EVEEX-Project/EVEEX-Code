@@ -1,0 +1,32 @@
+{
+  "header" : {
+    "size" : [100, 100],
+    "background_color": "black"
+  },
+  "content" : [
+    {
+      "type" : "circle",
+      "position" : [50, 50],
+      "size" : 20,
+      "color" : "red"
+    },
+    {
+      "type" : "rectangle",
+      "position" : [10, 20],
+      "size" : [20, 20],
+      "color" : "blue"
+    },
+    {
+      "type" : "circle",
+      "position" : [80, 10],
+      "size" : 4,
+      "color" : "green"
+    },
+    {
+      "type" : "rectangle",
+      "position" : [75, 75],
+      "size" : [20, 10],
+      "color" : "white"
+    }
+  ]
+}
