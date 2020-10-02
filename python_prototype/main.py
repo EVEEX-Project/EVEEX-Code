@@ -49,11 +49,13 @@ cli.wait_for_response() # dans le thread actuel pour attendre d'avoir toutes les
 # # # -------------------------DATA DECODING TO IMAGE-------------------------- # # #
 
 dec = Decoder()
-decoded_image = dec.decode(received_data)
-
+dec_rle_data = dec.decode_huffman(*received_data)
+dec_quantized_data = dec.decode_run_length(dec_rle_data)
+dec_zigzag_data = dec.decode_zigzag(dec_quantized_data)
+dec_dct_data = dec.decode_dct(dec_zigzag_data)
 
 # # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
 
 img_visu = ImageVisualizer()
-img_visu.save_image_to_disk(decoded_image, "decoded_image.png")
-img_visu.show_image_with_matplotlib(decoded_image)
+img_visu.save_image_to_disk(dec_dct_data, "decoded_image.png")
+img_visu.show_image_with_matplotlib(dec_dct_data)
