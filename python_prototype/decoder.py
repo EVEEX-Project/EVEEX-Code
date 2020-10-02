@@ -1,3 +1,4 @@
+import numpy as np 
 
 class Decoder:
 
@@ -29,8 +30,14 @@ class Decoder:
         Returns:
             quantized_data: liste de valeurs quantifiées
         """
+    
+        tab = np.int_([])
+        for x in rle_data:
+            tab=np.concatenate((tab,np.int_(np.zeros(x[0]))))
+            tab=np.concatenate((tab,np.array([x[1]])))
+        
+        return tab
 
-        return NotImplementedError
 
     def decode_zigzag(self, quantized_data):
         """
@@ -44,7 +51,43 @@ class Decoder:
             dct_tab: tableau de valeurs issues de la transformation en cosinus
         """
 
-        return NotImplementedError
+        up = False
+        # Position du curseur
+        i, j = 0, 0
+        # Tableau de sortie
+        n=int(quantized_data.size**(1/2))
+        res = np.int_(np.zeros((n,n)))
+        # Pour chacun des points qui constituent l'image
+        for t in range(quantized_data.size):
+            # On ajoute le point courant
+            if quantized_data[t]!=0:
+                res[i,j]=quantized_data[t]
+                # Si on parcoure l'image vers le haut
+                if up:
+                    if j == (n - 1):
+                        i += 1
+                        up = False  # On change de direction
+                    elif i == 0:
+                        j += 1
+                        up = False  # On change de direction
+                    else:
+                        # Sinon on parcoure la diagonale
+                        i -= 1
+                        j += 1
+                # Si on parcoure l'image vers le bas
+                else:
+                    if i == (n - 1):
+                        j += 1
+                        up = True  # On change de direction
+                    elif j == 0:
+                        i += 1
+                        up = True  # On change de direction
+                    else:
+                # Sinon on parcoure la diagonale
+                        j -= 1
+                        i += 1
+            
+        return res
 
     def decode_dct(self, dct_data):
         """
