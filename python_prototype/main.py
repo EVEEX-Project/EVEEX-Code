@@ -38,7 +38,7 @@ def on_received_data(data):
     Fonction appelée lorsque des données sont reçues par le serveur.
     """
     global received_data
-    pass
+    received_data = data
 
 
 serv.listen_for_packets(callback=on_received_data) # probablement à mettre dans un thread séparé
