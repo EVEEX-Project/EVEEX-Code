@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
+
 class Noeud:
 
     def __init__(self, valeur, frequence, gauche=None, droite=None):
@@ -56,6 +59,9 @@ class Noeud:
         return lines, n + m + u, max(p, q) + 2, n + u//2
 
 
+##############################################################################
+
+
 class Huffman:
 
     def __init__(self, phrase=None):
@@ -73,6 +79,11 @@ class Huffman:
                 self.noeuds = self.sort_nodes(reste + [m])
 
             self.dict = self.generate_dict(self.noeuds[0])
+            
+            # sans ces 2 lignes, si la phrase est de taille 1, l'unique valeur
+            # de ce dico sera un str vide, ce que l'on ne veut pas !
+            if len(self.phrase) == 1:
+                self.dict[self.phrase[0]] = '0'
 
     def split_phrase_in_nodes(self, phrase):
         self.symbols = {}
@@ -129,6 +140,7 @@ class Huffman:
             res[entry_dict[key]] = key
         return res
 
+
     def encode_phrase(self, phrase = None, dictionnary = None):
         res = ""
 
@@ -142,6 +154,7 @@ class Huffman:
                 res += self.dict[l]
         return res
 
+
     @staticmethod
     def encode_ascii(phrase):
         res = ""
@@ -149,9 +162,11 @@ class Huffman:
             res += str(bin(ord(l))[2:])
         return res
 
+
     def decode_phrase(self, enc, dico = None):
         buffer = ""
         res = ""
+        
         if dico is not None:
             dico = self.reverse_dict(dico)
         else:
@@ -160,6 +175,22 @@ class Huffman:
             buffer += l
             if buffer in dico:
                 res += dico[buffer]
+                buffer = ""
+        return res
+    
+    
+    @staticmethod
+    def decode_frame_RLE(enc, dico):
+        """
+        Idem decode_phrase, mais renvoie une liste au lieu d'une chaîne de caractères.
+        """
+        buffer = ""
+        res = []
+        dico = Huffman.reverse_dict(dico)
+        for l in enc:
+            buffer += l
+            if buffer in dico:
+                res.append(dico[buffer])
                 buffer = ""
         return res
     
@@ -180,7 +211,9 @@ class Huffman:
         bina+='0'
         return bina
     
-    def binToDict(self, bina):
+    
+    @staticmethod
+    def binToDict(bina):
         k=0
         state=True
         dico={}
@@ -203,14 +236,18 @@ class Huffman:
                 b=int(b,2)
                 dico[(a,b)]=c
         return dico
-        
+
+
+##############################################################################
 
 
 if __name__ == "__main__":
     phrase = [(2, 3), (4, 6), (13, 9), (2, 0)]
     huff = Huffman(phrase)
     huff.noeuds[0].display()
-    print("Symbols : \n", huff.symbols)
-    print("Dictionnary : \n", huff.dict)
-    print("Encoded : \n", huff.encode_phrase())
-    print('Encoded Dictionnary : \n', huff.dictToBin())
+    print("\nSymbols :\n", huff.symbols)
+    print("\nDictionnary :\n", huff.dict)
+    print("\nEncoded :\n", huff.encode_phrase())
+    print('\nDecoded :\n', Huffman.decode_frame_RLE(huff.encode_phrase(), huff.dict))
+    print('\nEncoded Dictionnary :\n', huff.dictToBin())
+    print('\nDecoded Dictionnary :\n', Huffman.binToDict(huff.dictToBin()))
