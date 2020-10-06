@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import json
 import numpy as np
+from random import randrange
 
 from logger import Logger
 
@@ -91,11 +92,21 @@ class MosaicImageGenerator(ImageGenerator):
     aléatoires.
     """
 
-    def __init__(self):
+    def __init__(self, size, bloc_size):
         super().__init__()
+        self.img_data = np.ones((size[0], size[1], 3))
+        Logger.get_instance().debug(f"Img size : {self.img_data.shape}")
+        for i in range(0, size[0]//bloc_size[0]):
+            for j in range(0, size[1]//bloc_size[1]):
+                color = (randrange(0, 255),
+                        randrange(0, 255),
+                        randrange(0, 255))
+                Logger.get_instance().debug(f"{i}, {j} : {color}")
+                self.img_data[i*bloc_size[0]:(i+1) * bloc_size[0],
+                                j*bloc_size[1]:(j+1) * bloc_size[1]] *= color
 
     def generate(self):
-        raise NotImplementedError
+        return self.img_data
 
 
 class FromJSONImageGenerator(ImageGenerator):
@@ -156,8 +167,9 @@ if __name__ == "__main__":
     from image_visualizer import ImageVisualizer
 
     visu = ImageVisualizer()
-    gen = FromJSONImageGenerator("image_desc.json")
+    #gen = FromJSONImageGenerator("image_desc.json")
     #gen = BlankImageGenerator((100, 100), (0, 0, 255))
+    gen = MosaicImageGenerator((100, 100), (10, 10))
 
     visu.show_image_with_matplotlib(gen.generate())
     visu.save_image_to_disk(gen.generate(), "image_desc_res.png")
