@@ -1,31 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import socket, sys, threading
-from random import randint
 from time import sleep
-from huffman import Huffman
 
-##########################################################################################
-from logger import Logger
-
-verrou = threading.RLock()
-
-def safe_print(*a, **b):
-    """
-    Permet de print sans se soucier des autres prints 'quasiment simultanés' dans
-    d'autres threads. 
-    Ici, sans cette fonction, les blocs de str s'entremêleront lors de leur
-    affichage dans la console.
-    Il s'agit en fait d'une sorte de 'print bloquant'.
-    """
-    try:
-        verrou.acquire()
-        print(*a, **b)
-    finally:
-        verrou.release()
-
-
-##########################################################################################
+#############################################################################
 
 
 class ThreadListen(threading.Thread):
@@ -34,16 +12,50 @@ class ThreadListen(threading.Thread):
     """
     def __init__(self, socket_server, callback, bufsize):
         threading.Thread.__init__(self)
-        self.socket_server = socket_server
+        
         self.callback = callback
+        
+        self.socket_server = socket_server
         self.bufsize = bufsize
     
+    
+    @staticmethod
+    def generer_description_paquet(msgClient):
+        """
+        Permet de générer la description d'un paquet reçu par le serveur.
+        Args:
+            msgClient: paquet (str) reçu par le serveur
+        Returns:
+            desc_paquet: str décrivant le paquet reçu
+        """
+        type_msg = int(msgClient[16 : 18], 2)
+        
+        # 'dict_types_msg' est une variable globale créée au moment de l'instanciation
+        # de la classe Server
+        desc_type_msg = dict_types_msg[type_msg]
+        
+        if type_msg in [1, 2]:
+            index_ref = int(msgClient[18 : 34], 2)
+            msg_index = "index_" + desc_type_msg + " = " + str(index_ref)
+            desc_paquet = desc_type_msg + ", " + msg_index
+        
+        else:
+            desc_paquet = desc_type_msg
+        
+        return(desc_paquet)
+    
+    
     def run(self):
+        """
+        Cette méthode définit le code qui va s'exécuter automatiquement dès
+        que l'instance de ThreadListen en question aura été démarrée avec 
+        la méthode 'start' de threading.Thread.
+        """
         self.socket_server.listen(5)
         while True:
             # établissement de la connexion
             connexion, adresse = self.socket_server.accept()
-            safe_print("\nServeur> Client connecté, adresse IP %s, port %s." % (adresse[0], adresse[1]))
+            Server.safe_print("\nServeur> Client connecté, adresse IP %s, port %s.\n\n" % (adresse[0], adresse[1]))
             
             # dialogue avec le client            
             msgClient = connexion.recv(self.bufsize)
@@ -60,8 +72,10 @@ class ThreadListen(threading.Thread):
                     if msgClient[0] in ['0', '1']:
                         self.callback(msgClient)
                         
-                        msgServeur = "Données bien reçues."
-                        safe_print("\nServeur>", msgServeur)
+                        desc_paquet = self.generer_description_paquet(msgClient)
+                        msgServeur = "Données bien reçues : " + desc_paquet
+                        
+                        Server.safe_print("\nServeur>", msgServeur)
                         msgServeur = msgServeur.encode("utf8")
                         connexion.send(msgServeur)
                         
@@ -70,8 +84,11 @@ class ThreadListen(threading.Thread):
                         # Ici, sans cette commande, les messages sont affichés dans le
                         # mauvais ordre dans la console (bien qu'ils ne soient plus
                         # entremêlés grâce à la fonction safe_print)
-                        # --> Même remarque pour tous les autres 'sleep(0.01)' du code
-                        sleep(0.01)
+                        # 'temps_pause_apres_envoi' est une variable globale créée
+                        # au moment de l'instanciation de la classe Server
+                        # --> Même remarque pour tous les autres 'sleep(temps_pause_envoi)' 
+                        # du code
+                        sleep(temps_pause_apres_envoi)
                 
                 except:
                     # si msgClient[0] n'existe pas (ou si c'est mal défini), 
@@ -79,7 +96,10 @@ class ThreadListen(threading.Thread):
                     pass
             
             connexion.close()    # on ferme la connexion côté serveur
-            safe_print("\nServeur> Client déconnecté.")
+            Server.safe_print("\nServeur> Client déconnecté.")
+
+
+#############################################################################
 
 
 class Server:
@@ -92,13 +112,41 @@ class Server:
         self.PORT = PORT
         self.bufsize = bufsize
         
+        global verrou
+        verrou = threading.RLock()
+        
         self.mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.mySocket.bind((self.HOST, self.PORT))
         except socket.error:
-            safe_print("\nServeur> La liaison du socket à l'adresse choisie a échoué.")
+            self.safe_print("\nServeur> La liaison du socket à l'adresse choisie a échoué.")
             sys.exit()
-        safe_print("\nServeur> Serveur prêt, en attente de requêtes ...")
+        self.safe_print("\nServeur> Serveur prêt, en attente de requêtes ...")
+        
+        global temps_pause_apres_envoi
+        temps_pause_apres_envoi = 0.01 # en secondes
+        
+        global dict_types_msg
+        dict_types_msg = {0 : "header", 1 : "dict", 2 : "body", 3 : "tail"}
+    
+    
+    @staticmethod
+    def safe_print(*a, **b):
+        """
+        Permet de print sans se soucier des autres prints 'quasiment simultanés' dans
+        d'autres threads. 
+        Ici, sans cette fonction, les blocs de str s'entremêleront lors de leur
+        affichage dans la console.
+        Il s'agit en fait d'une sorte de 'print bloquant'.
+        """
+        # 'verrou' est une variable globale qui sera créée au moment de
+        # l'instanciation de la classe Server
+        try:
+            verrou.acquire()
+            print(*a, **b)
+        finally:
+            verrou.release()
+    
     
     def listen_for_packets(self, client, callback):
         """
@@ -116,7 +164,7 @@ class Server:
         client.connect_to_server()
 
 
-##########################################################################################
+#############################################################################
 
 
 class Client:
@@ -125,7 +173,7 @@ class Client:
     Args:
         server: serveur auquel le client veut se connecter
     """
-    def __init__(self, server):
+    def __init__(self, server):        
         self.HOST = server.HOST        
         self.PORT = server.PORT
         self.bufsize = server.bufsize
@@ -134,6 +182,7 @@ class Client:
         
         self.premier_message_envoye = True
     
+    
     def connect_to_server(self):
         """
         Connecte le client au serveur.
@@ -141,9 +190,10 @@ class Client:
         try:
             self.connexion.connect((self.HOST, self.PORT))
         except socket.error:
-            safe_print("\nClient> La connexion a échoué.")
+            Server.safe_print("\nClient> La connexion a échoué.")
             sys.exit()
-        safe_print("\nClient> Connexion établie avec le serveur.")
+        Server.safe_print("\nClient> Connexion établie avec le serveur.")
+    
     
     def send_data_to_server(self, data):
         """
@@ -157,13 +207,14 @@ class Client:
             msg_filler = "filler"
             msg_filler = msg_filler.encode("utf8")
             self.connexion.send(msg_filler)
-            sleep(0.01)
+            sleep(temps_pause_apres_envoi)
             self.premier_message_envoye = False
         
-        safe_print("\nClient>", data)
+        Server.safe_print("\nClient>", data)
         data = data.encode("utf8")
         self.connexion.send(data)
-        sleep(0.01)
+        sleep(temps_pause_apres_envoi)
+    
     
     def wait_for_response(self):
         """
@@ -178,60 +229,14 @@ class Client:
                 self.connexion.close()
                 break
             
-            elif msgServeur == "Données bien reçues.":
-                safe_print("\nClient> Réponse du serveur reçue.")
-                break
+            else:
+                try:
+                    if msgServeur[ : 19] == "Données bien reçues":
+                        desc_paquet = msgServeur[22 : ]
+                        Server.safe_print("\nClient> Réponse du serveur reçue : " + desc_paquet + "\n\n")
+                        break
+                except:
+                    pass
             
             msgServeur = self.connexion.recv(self.bufsize)
             msgServeur = msgServeur.decode("utf8")
-
-
-##########################################################################################
-
-
-# simulation des commandes du main relatives à cette partie
-
-if __name__ == "__main__":
-    message_initial = "J'aime manger des citrons."
-    Logger.get_instance().debug("Message initial :" + str(message_initial))
-    
-    # encodage du message de référence via l'algo de Huffman
-    huff = Huffman(message_initial)
-    compressed_data = huff.encode_phrase()
-    
-    HOST = 'localhost'    # localhost ou bien adresse IP
-    PORT = randint(5000, 15000)
-    bufsize = 1024
-    
-    serv = Server(HOST, PORT, bufsize)
-    cli = Client(serv)
-    received_data = None
-    
-    
-    def on_received_data(data):
-        """
-        Fonction appelée lorsque des données sont reçues par le serveur.
-        On suppose que les données en entrée ont déjà été décodées via la 
-        méthode decode().
-        """
-        global received_data
-        received_data = data
-    
-    
-    serv.listen_for_packets(cli, callback=on_received_data)    # dans un thread séparé
-    cli.send_data_to_server(compressed_data)
-    cli.wait_for_response()    # dans le thread actuel pour attendre d'avoir toutes les données
-    
-    # pour éviter d'avoir les messages de déconnexion des clients qui n'ont pas
-    # été déconnectés des serveurs précédemment associés au même hôte
-    cli.connexion.close()
-    
-    # décodage des données reçues par le serveur via l'algo de Huffman
-    if received_data is not None:
-        message_final = huff.decode_phrase(received_data)
-    else:
-        message_final = None
-    
-    safe_print("\nMessage final :", message_final)
-    # Objectif : avoir message_initial == message_final --> OK
-
