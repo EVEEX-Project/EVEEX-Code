@@ -77,11 +77,12 @@ class BlankImageGenerator(ImageGenerator):
     d'une seule couleur ou bien une image vide.
     """
 
-    def __init__(self):
+    def __init__(self, size, color=(255, 255, 255)):
         super().__init__()
+        self.img_data = np.ones((size[0], size[1], 3)) * color
 
     def generate(self):
-        raise NotImplementedError
+        return self.img_data
 
 
 class MosaicImageGenerator(ImageGenerator):
@@ -156,6 +157,7 @@ if __name__ == "__main__":
 
     visu = ImageVisualizer()
     gen = FromJSONImageGenerator("image_desc.json")
+    #gen = BlankImageGenerator((100, 100), (0, 0, 255))
 
     visu.show_image_with_matplotlib(gen.generate())
     visu.save_image_to_disk(gen.generate(), "image_desc_res.png")
