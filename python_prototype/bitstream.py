@@ -472,11 +472,12 @@ if __name__ == "__main__":
     
     # test de cohérence
     bool_test = (frame == frame_decodee)
-    Logger.get_instance().debug("\nFrame décodée == frame de référence :", bool_test)
+    Logger.get_instance().debug("\nFrame décodée == frame de référence : " + str(bool_test))
     
     # à titre informatif
-    Logger.get_instance().debug("\nBufsize :", bufsize)
+    Logger.get_instance().debug("\nBufsize : " + str(bufsize))
     
     # pour éviter d'avoir les messages de déconnexion des clients qui n'ont pas
     # été déconnectés des serveurs précédemment associés au même hôte
     cli.connexion.close()
+
