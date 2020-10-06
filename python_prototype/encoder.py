@@ -1,4 +1,5 @@
 from huffman import Huffman
+from logger import Logger
 
 DEFAULT_QUANTIZATION_THRESHOLD = 0.5
 import numpy as np 
@@ -240,14 +241,14 @@ if __name__ == '__main__':
     visu.show_image_with_matplotlib(np.reshape(quanti, (img_data.shape[0], img_data.shape[1])))
     # RLE
     rle = enc.run_level(quanti)
-    print("RLE\n", rle)
+    Logger.get_instance().debug("RLE\n", rle)
     # Encodage avec huffman
     huff_enc = enc.huffman_encode(rle)
-    print("Huffman\n", huff_enc)
+    Logger.get_instance().debug("Huffman\n", huff_enc)
 
     originale = 3*8*img_data.shape[0]*img_data.shape[1]
     compressee = len(huff_enc[0]) * 3
-    print("Taille originale en bits : ", originale)
-    print("Taille compressée : ", compressee)
-    print(f"Taux de compression : {round(compressee/originale * 100, 2)}%")
+    Logger.get_instance().debug("Taille originale en bits : ", originale)
+    Logger.get_instance().debug("Taille compressée : ", compressee)
+    Logger.get_instance().debug(f"Taux de compression : {round(compressee/originale * 100, 2)}%")
 

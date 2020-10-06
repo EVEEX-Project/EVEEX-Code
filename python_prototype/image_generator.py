@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 import json
 import numpy as np
 
+from logger import Logger
+
 
 class ColorDecoder:
 
@@ -47,7 +49,7 @@ class ImageGenerator(metaclass=ABCMeta):
                 if (i - position[0]) ** 2 + (j - position[1]) ** 2 <= size ** 2:
                     c += 1
                     self.img_data[i, j] = color
-        print(f"addCircle : {c} pixels changés")
+        Logger.get_instance().info(f"addCircle : {c} pixels changés")
 
     def addRectangle(self, position, size, color):
         # si la forme dépasse du canevas on lance une erreur
@@ -62,7 +64,7 @@ class ImageGenerator(metaclass=ABCMeta):
             for j in range(position[1], position[1] + size[1]):
                 c += 1
                 self.img_data[i, j] = color
-        print(f"addRectangle : {c} pixels changés")
+        Logger.get_instance().info(f"addRectangle : {c} pixels changés")
 
     @abstractmethod
     def generate(self):
@@ -113,7 +115,7 @@ class FromJSONImageGenerator(ImageGenerator):
         # Parsing header
         header = self.json_data["header"]
         self.img_size = (int(header["size"][0]), int(header["size"][1]), 3)
-        print(f"Img size : {self.img_size}")
+        Logger.get_instance().info(f"Img size : {self.img_size}")
         # on recrée l'image à la bonne taille
         self.img_data = np.zeros(self.img_size)
 
@@ -127,12 +129,12 @@ class FromJSONImageGenerator(ImageGenerator):
         # pour chaque forme que l'on ajoute à l'image
         for i in range(len(content)):
             element = content[i]
-            print(f"Detected shape : {element['type']}")
+            Logger.get_instance().info(f"Detected shape : {element['type']}")
             if element['type'] == "circle":
                 s_position = element["position"]
                 position = (int(s_position[0]), int(s_position[1]))
                 size = int(element["size"])
-                print(f"with position : {position} and size {size}")
+                Logger.get_instance().info(f"with position : {position} and size {size}")
                 self.addCircle(position,
                                size,
                                ColorDecoder.fromString(element["color"]))
@@ -140,7 +142,7 @@ class FromJSONImageGenerator(ImageGenerator):
                 s_position = element["position"]
                 position = (int(s_position[0]), int(s_position[1]))
                 size = int(element["size"][0]), int(element["size"][1])
-                print(f"with position : {position} and size {size}")
+                Logger.get_instance().info(f"with position : {position} and size {size}")
                 self.addRectangle(position,
                                   size,
                                   ColorDecoder.fromString(element["color"]))

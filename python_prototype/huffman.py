@@ -2,6 +2,9 @@
 
 import numpy as np
 
+from logger import Logger
+
+
 class Noeud:
 
     def __init__(self, valeur, frequence, gauche=None, droite=None):
@@ -209,7 +212,7 @@ class Huffman:
             bina+=c
         bina+='0'
         return bina
-    
+
     @staticmethod
     def binToDict(bina):
         k=0
@@ -243,9 +246,9 @@ if __name__ == "__main__":
     phrase = [(2, 3), (4, 6), (13, 9), (2, 0)]
     huff = Huffman(phrase)
     huff.noeuds[0].display()
-    print("\nSymbols :\n", huff.symbols)
-    print("\nDictionnary :\n", huff.dict)
-    print("\nEncoded :\n", huff.encode_phrase())
-    print('\nDecoded :\n', Huffman.decode_frame_RLE(huff.encode_phrase(), huff.dict))
-    print('\nEncoded Dictionnary :\n', huff.dictToBin())
-    print('\nDecoded Dictionnary :\n', Huffman.binToDict(huff.dictToBin()))
+    Logger.get_instance().debug("Symbols : " + str(huff.symbols))
+    Logger.get_instance().debug("Dictionnary : " + str(huff.dict))
+    Logger.get_instance().debug("Encoded : " + str(huff.encode_phrase()))
+    Logger.get_instance().debug('Decoded : ' + str(Huffman.decode_frame_RLE(huff.encode_phrase(), huff.dict)))
+    Logger.get_instance().debug('Encoded Dictionnary : ' + str(huff.dictToBin()))
+    Logger.get_instance().debug('Decoded Dictionnary : ' + str(Huffman.binToDict(huff.dictToBin())))

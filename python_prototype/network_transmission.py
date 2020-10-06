@@ -6,7 +6,7 @@ from time import sleep
 from huffman import Huffman
 
 ##########################################################################################
-
+from logger import Logger
 
 verrou = threading.RLock()
 
@@ -193,7 +193,7 @@ class Client:
 
 if __name__ == "__main__":
     message_initial = "J'aime manger des citrons."
-    print("Message initial :", message_initial)
+    Logger.get_instance().debug("Message initial :" + str(message_initial))
     
     # encodage du message de référence via l'algo de Huffman
     huff = Huffman(message_initial)

@@ -7,7 +7,12 @@ from decoder import Decoder
 from network_transmission import Server, Client
 from image_generator import BlankImageGenerator, MosaicImageGenerator
 from image_visualizer import ImageVisualizer
+from logger import LogLevel, Logger
 
+# # # ----------------------SETTING UP THE LOGGER------------------------ # # #
+
+log = Logger.get_instance()
+log.set_log_level(LogLevel.DEBUG)
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
 

@@ -50,7 +50,7 @@ class Logger:
     _instance = None
 
     @staticmethod
-    def get_instance(self):
+    def get_instance():
         """
         Permet de retourner une instance du logger pour avoir une seule référence
         commune au travers du projet.
@@ -61,7 +61,7 @@ class Logger:
         return Logger._instance
 
     def __init__(self, log_level=None, log_file=None):
-        self.log_level = LogLevel.INFO
+        self.log_level = LogLevel.DEBUG
         self.log_file = None
         self.is_logging_to_file = False
 
@@ -207,7 +207,8 @@ class Logger:
 
 
 if __name__ == "__main__":
-    log = Logger(log_level=LogLevel.DEBUG)
+    log = Logger.get_instance()
+    log.set_log_level(LogLevel.DEBUG)
     log.debug("Hello world")
     log.error("Ceci est une erreur")
     log.info("Et ceci est une information")

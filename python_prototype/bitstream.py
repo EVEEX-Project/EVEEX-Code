@@ -4,6 +4,7 @@ from random import randint
 from huffman import Huffman
 
 # définition des variables globales (= différents types de messages à encoder)
+from logger import Logger
 
 global HEADER_MSG
 HEADER_MSG = 0
@@ -417,13 +418,13 @@ if __name__ == "__main__":
     
     # prints de synthèse
     
-    print("\nFrame :\n" + str(frame))
-    print("\nBitstream associé à la frame :\n" + bitstream)
-    print("\nDécodage du bitstream de la frame :\n" + str(frame_decodee))
+    Logger.get_instance().debug("\nFrame :\n" + str(frame))
+    Logger.get_instance().debug("\nBitstream associé à la frame :\n" + bitstream)
+    Logger.get_instance().debug("\nDécodage du bitstream de la frame :\n" + str(frame_decodee))
     
     # test de cohérence
     bool_test = (frame == frame_decodee)
-    print("\nFrame décodée == frame de référence :", bool_test)
+    Logger.get_instance().debug("\nFrame décodée == frame de référence :", bool_test)
     
     # à titre informatif
-    print("\nBufsize :", bufsize)
+    Logger.get_instance().debug("\nBufsize :", bufsize)

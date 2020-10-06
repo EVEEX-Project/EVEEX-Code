@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
+from logger import Logger
+
+
 class ImageVisualizer:
     """
     Classe permettant d'afficher une image à partir d'un tableau de pixels ou bien
@@ -39,7 +42,7 @@ class ImageVisualizer:
             file_name: nom du fichier sous lequel sauvegrder l'image
         """
         plt.imsave(file_name, np.array(data, dtype="uint8"), format="png")
-        print(f"Saving image to {os.getcwd()}/{file_name}")
+        Logger.get_instance().info(f"Saving image to {os.getcwd()}/{file_name}")
 
     def open_image_with_native_viewer(self, data):
         """
@@ -57,4 +60,4 @@ if __name__ == "__main__":
 
     img = Image.open("test_img.png")
     visu.show_image_with_matplotlib(img)
-    print(np.asarray(img)[0, 0])
+    Logger.get_instance().debug(np.asarray(img)[0, 0])
