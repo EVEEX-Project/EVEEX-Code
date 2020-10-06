@@ -2,42 +2,8 @@
 
 from random import randint
 from huffman import Huffman
-
-# définition des variables globales (= différents types de messages à encoder)
+from network_transmission import Server, Client
 from logger import Logger
-
-global HEADER_MSG
-HEADER_MSG = 0
-
-global DICT_MSG
-DICT_MSG = 1
-
-global BODY_MSG
-BODY_MSG = 2
-
-global TAIL_MSG
-TAIL_MSG = 3
-
-
-###############################################################################
-
-
-# fonction auxiliaire
-
-# retourne une chaîne de caractères correspondant à la représentation binaire
-# d'un entier positif ou nul, codé sur un nombre de bits prédéfini
-# on suppose ici que entier <= 2**nb_bits - 1
-def int2bin(entier, nb_bits):
-    if entier == 0:
-        return("0".zfill(nb_bits))
-    
-    chaine_binaire = ""
-    while entier != 0:
-        entier, reste = divmod(entier, 2)
-        chaine_binaire = "01"[reste] + chaine_binaire
-    
-    return(chaine_binaire.zfill(nb_bits))
-
 
 ###############################################################################
 
@@ -46,7 +12,7 @@ class BitstreamGenerator:
     """
     Classe permettant de générer un bitstream à partir des infos d'une frame 
     en entrée (après RLE).
-    Concrètement, le bistream d'une frame est constituée de 4 éléments :
+    Concrètement, le bitstream d'une frame est constitué de 4 éléments :
         - header: en-tête
         - dict: relatif au dictionnaire de Huffman de la frame encodée (construit itérativement)
         - body: relatif à la frame encodée (construit itérativement)
@@ -54,6 +20,22 @@ class BitstreamGenerator:
     """
     
     def __init__(self, frame_id, img_size, macroblock_size):
+        # définition des variables globales (= différents types de messages à encoder)
+        
+        global HEADER_MSG
+        HEADER_MSG = 0
+        
+        global DICT_MSG
+        DICT_MSG = 1
+        
+        global BODY_MSG
+        BODY_MSG = 2
+        
+        global TAIL_MSG
+        TAIL_MSG = 3
+        
+        # variables d'instance
+        
         self.frame_id = frame_id
         self.img_size = img_size # multiple de macroblock_size**2
         self.macroblock_size = macroblock_size
@@ -69,6 +51,27 @@ class BitstreamGenerator:
         self.bitstream = ""
     
     
+    @staticmethod
+    def int2bin(entier, nb_bits):
+        """
+        Fonction auxiliaire.
+        Retourne une chaîne de caractères correspondant à la représentation 
+        binaire d'un entier positif ou nul (entier), codé sur un nombre de bits
+        prédéfini (nb_bits). 
+        On suppose ici que entier <= 2**nb_bits - 1 (ie on suppose que cet entier
+        est codable sur le nombre de bits défini).
+        """
+        if entier == 0:
+            return("0".zfill(nb_bits))
+        
+        chaine_binaire = ""
+        while entier != 0:
+            entier, reste = divmod(entier, 2)
+            chaine_binaire = "01"[reste] + chaine_binaire
+        
+        return(chaine_binaire.zfill(nb_bits))
+    
+    
     def construct_header(self):
         """
         Construit le bitstream d'en-tête de l'image à partir des informations 
@@ -77,8 +80,8 @@ class BitstreamGenerator:
             bitstream (string): le bitstream représentant le header de la frame
         """
         # header = frame_id + type_msg + taille image + taille macroblocs
-        self.header = int2bin(self.frame_id, 16) + int2bin(HEADER_MSG, 2) + \
-                      int2bin(self.img_size, 16) + int2bin(self.macroblock_size, 5)
+        self.header = self.int2bin(self.frame_id, 16) + self.int2bin(HEADER_MSG, 2) + \
+                      self.int2bin(self.img_size, 16) + self.int2bin(self.macroblock_size, 5)
         
         self.bitstream += self.header
         
@@ -89,15 +92,29 @@ class BitstreamGenerator:
         """
         Construit le bitstream représentant le dictionnaire de huffman associé
         à la frame (après RLE), converti en binaire.
+        
+        Remarque importante : à part pour le tout dernier paquet provenant des données
+        utiles du dictionnaire de huffman encodé, on aura toujours la relation 
+        suivante : len(dict_huffman_packet) = bufsize - 50 = taille_paquet_elementaire,
+        et donc len(nouv_contenu_dict) = taille_paquet_elementaire + 50 = bufsize.
+        Pour le tout dernier paquet, on aura juste len(dict_huffman_packet) <= bufsize - 50
+        et len(nouv_contenu_dict) <= bufsize.
+        La raison pour laquelle on inclut quand même la taille des paquets est précisément
+        ce dernier paquet, qui n'est pas nécessairement de la même taille que tous 
+        les autres.
+        
+        --> Cette remarque est aussi valable pour la méthode construct_body.
+        
         Args:
             dict_huffman_packet: paquet d'un dictionnaire de huffman encodé en binaire
         Returns:
-            bitstream (string): le bitstream représentant le dictionnaire de huffman
+            bitstream (string): le bitstream représentant une partie du dictionnaire 
+                                de huffman
         """
-        # nouv_contenu_dict = frame_id + type_msg + index + taille dico encodé + dico encodé
-        nouv_contenu_dict = int2bin(self.frame_id, 16) + int2bin(DICT_MSG, 2) + \
-                            int2bin(self.index_dict, 16) + \
-                            int2bin(len(dict_huffman_packet), 16) + dict_huffman_packet
+        # nouv_contenu_dict = frame_id + type_msg + index + taille paquet + paquet 
+        nouv_contenu_dict = self.int2bin(self.frame_id, 16) + self.int2bin(DICT_MSG, 2) + \
+                            self.int2bin(self.index_dict, 16) + \
+                            self.int2bin(len(dict_huffman_packet), 16) + dict_huffman_packet
         
         self.dict += nouv_contenu_dict
         self.bitstream += nouv_contenu_dict
@@ -115,10 +132,10 @@ class BitstreamGenerator:
         Returns:
             bitstream (string): le bitstream représentant le paquet
         """
-        # nouveau contenu = frame_id + type_msg + index + taille contenu + contenu
-        nouv_contenu_body = int2bin(self.frame_id, 16) + int2bin(BODY_MSG, 2) + \
-                            int2bin(self.index_body, 16) + \
-                            int2bin(len(huffman_packet), 16) + huffman_packet
+        # nouveau contenu = frame_id + type_msg + index + taille paquet + paquet
+        nouv_contenu_body = self.int2bin(self.frame_id, 16) + self.int2bin(BODY_MSG, 2) + \
+                            self.int2bin(self.index_body, 16) + \
+                            self.int2bin(len(huffman_packet), 16) + huffman_packet
         
         self.body += nouv_contenu_body
         self.bitstream += nouv_contenu_body
@@ -134,7 +151,7 @@ class BitstreamGenerator:
             bitstream (string): le bitstream représentant le message de fin
         """
         # tail = frame_id + type_msg
-        self.tail = int2bin(self.frame_id, 16) + int2bin(TAIL_MSG, 2)
+        self.tail = self.int2bin(self.frame_id, 16) + self.int2bin(TAIL_MSG, 2)
         self.bitstream += self.tail
         
         return(self.tail)
@@ -250,7 +267,7 @@ def generer_frame_RLE(macroblock_size, nb_macroblocks):
     # premières valeurs des tuples seront relativement élevées, donc on divise 
     # img_size par 20 (par exemple ; on suppose ici que img_size est >= 20)
     # cette fonction marchera quand même si nb_tuples_RLE_max = img_size // 2
-    nb_tuples_RLE_max = img_size // 20
+    nb_tuples_RLE_max = img_size // 2
     
     nb_tuples_RLE = randint(1, nb_tuples_RLE_max)
     nb_zeros = img_size - nb_tuples_RLE
@@ -263,7 +280,7 @@ def generer_frame_RLE(macroblock_size, nb_macroblocks):
     nb_zeros_partiel = 0
     for num_tuple_RLE in range(nb_tuples_RLE):
         if num_tuple_RLE != nb_tuples_RLE - 1:
-            a = randint(1, moyenne)
+            a = randint(0, moyenne)
             nb_zeros_partiel += a
             
             # on met à jour la moyenne du nombre de zeros par tuple RLE restant
@@ -273,19 +290,8 @@ def generer_frame_RLE(macroblock_size, nb_macroblocks):
         else:
             a = nb_zeros - nb_zeros_partiel # = nombre de zéros restants
         
-        if a != 0:
-            b = randint(1, 30)
-            frame.append((a, b))
-        
-        else:
-            # il est possible que 'a' soit nul à la toute dernière étape (et
-            # uniquement à cette étape)
-            # dans ce cas, on rajoute 1 au nombre de zéros du dernier tuple
-            # de la frame
-            dernier_tuple = frame[-1]
-            (dernier_a, dernier_b) = (dernier_tuple[0], dernier_tuple[1])
-            frame = frame[ : -1]
-            frame.append((dernier_a + 1, dernier_b))
+        b = randint(1, 30)
+        frame.append((a, b))
     
     return(frame)
 
@@ -306,6 +312,7 @@ if __name__ == "__main__":
     
     # génération aléatoire d'une frame RLE
     frame = generer_frame_RLE(macroblock_size, nb_macroblocks)
+    Logger.get_instance().debug("\nFrame générée aléatoirement :\n" + str(frame))
     
     #------------------------------------------------------------------------#
     
@@ -316,35 +323,72 @@ if __name__ == "__main__":
     # chacun des paquets constituant dict et body
     # en effet, les "métadonnées" associées à chacun des paquets élémentaires
     # de dict et de body font exactement 50 bits
+    # le bufsize est souvent une puissance de 2, et désigne le nombre maximal
+    # d'octets qui pourront être reçus (resp. être envoyés) par le serveur (resp. 
+    # le client)
     puiss_2_random = randint(6, 12)
     bufsize = 2 ** puiss_2_random
     
     # taille d'un paquet élémentaire du dict ou du body avant de l'adjoindre
     # au paquet du bitstream (de taille 50 + taille_paquet_elementaire, qui
     # vaut bufsize par définition)
-    # concrètement, les métadonnées des paquets envoyés pour former le bistream
+    # concrètement, les métadonnées des paquets envoyés pour former le bitstream
     # du dict et du body font exactement 50 bits (50 = 16 + 2 + 16 + 16)
     taille_paquet_elementaire = bufsize - 50
     
+    #------------------------------------------------------------------------#
+    
     # encodage de la frame et du dictionnaire de huffman associé
+    
     huff = Huffman(frame)
     frame_encodee = huff.encode_phrase()
     dict_huffman_encode = huff.dictToBin()
     
     #------------------------------------------------------------------------#
     
-    # génération du header
+    # initialisation de la partie réseau
     
+    HOST = 'localhost'    # localhost ou bien adresse IP
+    PORT = randint(5000, 15000)
+    
+    serv = Server(HOST, PORT, bufsize)
+    cli = Client(serv)
+    
+    global received_data
+    received_data = "" # bitstream reçu par le serveur, construit itérativement
+    
+    def on_received_data(data):
+        """
+        Fonction appelée lorsque des données sont reçues par le serveur.
+        On suppose que les données en entrée ont déjà été décodées via la 
+        méthode decode().
+        """
+        global received_data 
+        received_data += data
+    
+    # on met le serveur en mode écoute
+    serv.listen_for_packets(cli, callback=on_received_data)
+        
+    #------------------------------------------------------------------------#
+    
+    # génération du constructeur
     gen = BitstreamGenerator(frame_id, img_size, macroblock_size)
-    
-    header_bitstream = gen.construct_header()
-    # --> puis : send header_bitstream (en 1 seule fois, car len(header_bitstream) = 39)
     
     #------------------------------------------------------------------------#
     
-    # génération du dict du bitstream
+    # génération et envoi du header
     
-    # définition du nombre de paquets vont être générés à partir du dictionnaire
+    header_bitstream = gen.construct_header()
+    # --> puis : send header_bitstream (en 1 seule fois, car len(header_bitstream) = 39,
+    # et 39 <= 51 <= bufsize)
+    cli.send_data_to_server(header_bitstream)
+    cli.wait_for_response()
+    
+    #------------------------------------------------------------------------#
+    
+    # génération et envoi du dict du bitstream
+    
+    # définition du nombre de paquets qui vont être générés à partir du dictionnaire
     # de huffman encodé
     len_dict_bitstream = len(dict_huffman_encode)
     if len_dict_bitstream % taille_paquet_elementaire == 0:
@@ -362,18 +406,21 @@ if __name__ == "__main__":
             donnees_paquet = dict_huffman_encode[indice_initial : indice_final]
         
         else:
+            # dernier paquet
             donnees_paquet = dict_huffman_encode[indice_initial : ]
         
         nouv_paquet_dict = gen.construct_dict(donnees_paquet)
         # --> puis : send nouv_paquet_dict (en 1 seule fois, car, par construction,
-        # len(nouv_paquet_dict) = bufsize, ou bien len(nouv_paquet_dict) <= bufsize
+        # len(nouv_paquet_dict) = bufsize, ou bien len(nouv_paquet_dict) <= bufsize 
         # pour le tout dernier paquet)
+        cli.send_data_to_server(nouv_paquet_dict)
+        cli.wait_for_response()
     
     #------------------------------------------------------------------------#
     
-    # génération du body
+    # génération et envoi du body
     
-    # définition du nombre de paquets vont être générés à partir de la frame
+    # définition du nombre de paquets qui vont être générés à partir de la frame
     # encodée
     len_frame_encodee = len(frame_encodee)
     if len_frame_encodee % taille_paquet_elementaire == 0:
@@ -391,35 +438,36 @@ if __name__ == "__main__":
             donnees_paquet = frame_encodee[indice_initial : indice_final]
         
         else:
+            # dernier paquet
             donnees_paquet = frame_encodee[indice_initial : ]
         
         nouv_paquet_body = gen.construct_body(donnees_paquet)
         # --> puis : send nouv_paquet_body (en 1 seule fois, car, par construction,
-        # len(nouv_paquet_body) = bufsize, ou bien len(nouv_paquet_body) <= bufsize
+        # len(nouv_paquet_body) = bufsize, ou bien len(nouv_paquet_body) <= bufsize 
         # pour le tout dernier paquet)
+        cli.send_data_to_server(nouv_paquet_body)
+        cli.wait_for_response()
     
     #------------------------------------------------------------------------#
     
-    # génération de la queue du message
+    # génération et envoi de la queue du message
     
     tail_bitstream = gen.construct_end_message()
-    # --> puis : send tail_bitstream (en 1 seule fois, car len(tail_bitstream) = 18)
+    # --> puis : send tail_bitstream (en 1 seule fois, car len(tail_bitstream) = 18,
+    # et 18 <= 51 <= bufsize)
+    cli.send_data_to_server(tail_bitstream)
+    cli.wait_for_response()
     
     #------------------------------------------------------------------------#
     
-    # décodage du bitstream 
-    # normalement, 'bitstream' correspondra aux données reçues par le serveur, 
-    # et interceptées par la méthode on_received_data (cf. network_transmission.py)
-    
-    bitstream = gen.bitstream
-    frame_decodee = BitstreamGenerator.decode_bitstream_RLE(bitstream)
+    # décodage du bitstream total reçu par le serveur via l'algo de Huffman
+    frame_decodee = BitstreamGenerator.decode_bitstream_RLE(received_data)
     
     #------------------------------------------------------------------------#
     
     # prints de synthèse
     
-    Logger.get_instance().debug("\nFrame :\n" + str(frame))
-    Logger.get_instance().debug("\nBitstream associé à la frame :\n" + bitstream)
+    Logger.get_instance().debug("\nBitstream total reçu par le serveur (associé à la frame) :\n" + received_data)
     Logger.get_instance().debug("\nDécodage du bitstream de la frame :\n" + str(frame_decodee))
     
     # test de cohérence
@@ -428,3 +476,7 @@ if __name__ == "__main__":
     
     # à titre informatif
     Logger.get_instance().debug("\nBufsize :", bufsize)
+    
+    # pour éviter d'avoir les messages de déconnexion des clients qui n'ont pas
+    # été déconnectés des serveurs précédemment associés au même hôte
+    cli.connexion.close()
