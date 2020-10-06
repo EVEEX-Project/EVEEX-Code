@@ -32,6 +32,21 @@ class LogLevel:
     @staticmethod
     def to_string(log_level):
         if log_level == LogLevel.CRITICAL:
+            return "[" + "CRI" + "]"
+        elif log_level == LogLevel.ERROR:
+            return "[" + "ERR" + "]"
+        elif log_level == LogLevel.WARNING:
+            return "[" + "WAR" + "]"
+        elif log_level == LogLevel.INFO:
+            return "[" + "INF" + "]"
+        elif log_level == LogLevel.DEBUG:
+            return "[" + "DEB" + "]"
+
+        return ""
+
+    @staticmethod
+    def to_color_string(log_level):
+        if log_level == LogLevel.CRITICAL:
             return Fore.RESET + "[" + Fore.BLACK + Back.RED + "CRI" + Fore.RESET + Back.RESET + "]"
         elif log_level == LogLevel.ERROR:
             return Fore.RESET + "[" + Fore.RED + "ERR" + Fore.RESET + "]"
@@ -168,7 +183,7 @@ class Logger:
             line (str): la ligne ainsi construite avec une date et le niveau de log
         """
         date = Fore.RESET + "[" + Fore.GREEN + "{}:{}:{}".format(*get_time()) + Fore.RESET + "]"
-        line = f"{date}{LogLevel.to_string(msg_level)} {message}"
+        line = f"{date}{LogLevel.to_color_string(msg_level)} {message}"
         return line
 
     def _print_message(self, msg_level, message):
@@ -201,7 +216,8 @@ class Logger:
         if self.log_file is None:
             raise Exception("No logging file specified!")
 
-        line = self._construct_line(msg_level, message)
+        date = "[" + "{}:{}:{}".format(*get_time()) + "]"
+        line = f"{date}{LogLevel.to_string(msg_level)} {message}\n"
         with open(self.log_file, "a") as f:
             f.write(line)
 
@@ -209,6 +225,7 @@ class Logger:
 if __name__ == "__main__":
     log = Logger.get_instance()
     log.set_log_level(LogLevel.DEBUG)
+    log.start_file_logging("log.log")
     log.debug("Hello world")
     log.error("Ceci est une erreur")
     log.info("Et ceci est une information")

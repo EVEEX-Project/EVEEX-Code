@@ -246,6 +246,7 @@ if __name__ == "__main__":
     phrase = [(2, 3), (4, 6), (13, 9), (2, 0)]
     huff = Huffman(phrase)
     huff.noeuds[0].display()
+    Logger.get_instance().start_file_logging("log.log")
     Logger.get_instance().debug("Symbols : " + str(huff.symbols))
     Logger.get_instance().debug("Dictionnary : " + str(huff.dict))
     Logger.get_instance().debug("Encoded : " + str(huff.encode_phrase()))
