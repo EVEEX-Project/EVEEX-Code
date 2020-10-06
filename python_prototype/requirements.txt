@@ -1,0 +1,4 @@
+colorama
+numpy
+matplotlib
+socket

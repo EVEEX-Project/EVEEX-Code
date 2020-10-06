@@ -193,8 +193,7 @@ class Huffman:
                 res.append(dico[buffer])
                 buffer = ""
         return res
-    
-    
+
     def dictToBin(self):
         bina=''
         for cle,valeur in self.dict.items():
@@ -210,7 +209,6 @@ class Huffman:
             bina+=c
         bina+='0'
         return bina
-    
     
     @staticmethod
     def binToDict(bina):
