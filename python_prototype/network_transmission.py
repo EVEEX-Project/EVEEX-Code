@@ -2,6 +2,7 @@
 
 import socket, sys, threading
 from time import sleep
+from logger import Logger
 
 #############################################################################
 
@@ -75,7 +76,7 @@ class ThreadListen(threading.Thread):
                         desc_paquet = self.generer_description_paquet(msgClient)
                         msgServeur = "Données bien reçues : " + desc_paquet
                         
-                        Server.safe_print("\nServeur>", msgServeur)
+                        Server.safe_print("\nServeur> " + msgServeur)
                         msgServeur = msgServeur.encode("utf8")
                         connexion.send(msgServeur)
                         
@@ -131,7 +132,7 @@ class Server:
     
     
     @staticmethod
-    def safe_print(*a, **b):
+    def safe_print(texte):
         """
         Permet de print sans se soucier des autres prints 'quasiment simultanés' dans
         d'autres threads. 
@@ -143,7 +144,7 @@ class Server:
         # l'instanciation de la classe Server
         try:
             verrou.acquire()
-            print(*a, **b)
+            Logger.get_instance().debug(texte)
         finally:
             verrou.release()
     
@@ -210,7 +211,7 @@ class Client:
             sleep(temps_pause_apres_envoi)
             self.premier_message_envoye = False
         
-        Server.safe_print("\nClient>", data)
+        Server.safe_print("\nClient> " + data)
         data = data.encode("utf8")
         self.connexion.send(data)
         sleep(temps_pause_apres_envoi)
