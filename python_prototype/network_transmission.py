@@ -241,3 +241,4 @@ class Client:
             
             msgServeur = self.connexion.recv(self.bufsize)
             msgServeur = msgServeur.decode("utf8")
+
