@@ -158,6 +158,97 @@ class BitstreamGenerator:
     
     
     @staticmethod
+    def encode_frame_RLE(frame_id, img_size, macroblock_size, frame, bufsize):
+        """
+        Permet de convertir une frame RLE en un bitstream.
+        Args:
+            frame_id: identifiant de la frame (int)
+            img_size: nombre de pixels de l'image (int > 0)
+            macroblock_size: longueur des côtés des macroblocs (on suppose que
+                             ce sont des carrés), int > 1
+            frame: frame_RLE de référence (liste de tuples d'entiers)
+            bufsize: taille maximale que peut prendre un paquet (int >= 51)
+        Returns:
+            bitstream_total: bitstream associé à la frame RLE de référence 
+        """
+        
+        taille_paquet_elementaire = bufsize - 50
+        
+        # encodage de la frame et du dictionnaire de huffman associé à la frame
+        huff = Huffman(frame)
+        frame_encodee = huff.encode_phrase()
+        dict_huffman_encode = huff.dictToBin()
+        
+        #--------------------------------------------------------------------#
+        
+        # initialisation du constructeur
+        bit_generator = BitstreamGenerator(frame_id, img_size, macroblock_size)
+        
+        #--------------------------------------------------------------------#
+        
+        # construction du header
+        bit_generator.construct_header()
+        
+        #--------------------------------------------------------------------#
+                
+        # définition du nombre de paquets qui vont être générés à partir du 
+        # dictionnaire de huffman encodé
+        len_dict_bitstream = len(dict_huffman_encode)
+        if len_dict_bitstream % taille_paquet_elementaire == 0:
+            nb_paquets_dict = len_dict_bitstream // taille_paquet_elementaire
+        else:
+            nb_paquets_dict = len_dict_bitstream // taille_paquet_elementaire + 1
+        
+        # construction du dict, paquet par paquet
+        for num_paquet_dict in range(nb_paquets_dict):
+            indice_initial = num_paquet_dict * taille_paquet_elementaire
+            
+            if num_paquet_dict != nb_paquets_dict - 1:
+                indice_final = indice_initial + taille_paquet_elementaire
+                donnees_paquet = dict_huffman_encode[indice_initial : indice_final]
+            
+            else:
+                # dernier paquet
+                donnees_paquet = dict_huffman_encode[indice_initial : ]
+            
+            bit_generator.construct_dict(donnees_paquet)
+        
+        #--------------------------------------------------------------------#
+                
+        # définition du nombre de paquets qui vont être générés à partir de la
+        # frame encodée
+        len_frame_encodee = len(frame_encodee)
+        if len_frame_encodee % taille_paquet_elementaire == 0:
+            nb_paquets_body = len_frame_encodee // taille_paquet_elementaire
+        else:
+            nb_paquets_body = len_frame_encodee // taille_paquet_elementaire + 1
+        
+        # construction du body, paquet par paquet
+        for num_paquet_body in range(nb_paquets_body):
+            indice_initial = num_paquet_body * taille_paquet_elementaire
+            
+            if num_paquet_body != nb_paquets_body - 1:
+                indice_final = indice_initial + taille_paquet_elementaire
+                donnees_paquet = frame_encodee[indice_initial : indice_final]
+            
+            else:
+                # dernier paquet
+                donnees_paquet = frame_encodee[indice_initial : ]
+            
+            bit_generator.construct_body(donnees_paquet)
+        
+        #--------------------------------------------------------------------#
+        
+        # construction de la queue du bitstream
+        bit_generator.construct_end_message()
+        
+        #--------------------------------------------------------------------#
+        
+        bitstream_total = bit_generator.bitstream
+        return(bitstream_total)
+    
+    
+    @staticmethod
     def decode_bitstream_RLE(bitstream):
         """
         Permet de décoder un bitstream associé une frame RLE avec seulement 
