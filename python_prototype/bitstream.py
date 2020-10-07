@@ -256,44 +256,180 @@ class BitstreamGenerator:
 ###############################################################################
 
 
-# génération aléatoire de frame RLE
-# on suppose que macroblock_size >= 8 et nb_macroblocs >= 4
-def generer_frame_RLE(macroblock_size, nb_macroblocks):
-    frame = []
+class BitstreamSender:
+    """
+    Classe permettant de gérer l'envoi d'un bitstream via un réseau, d'un client
+    à un serveur.
+    """
     
-    img_size = nb_macroblocks * macroblock_size**2
+    def __init__(self, frame_id, img_size, macroblock_size, frame, client, bufsize):
+        self.bit_generator = BitstreamGenerator(frame_id, img_size, macroblock_size)
+        
+        self.frame = frame
+        
+        # comme le client est défini par rapport à un serveur prédéfini, on n'a
+        # pas besoin de créer une variable d'instance 'server'
+        self.client = client
+        
+        self.bufsize = bufsize
+        
+        # taille d'un paquet élémentaire du dict ou du body avant de l'adjoindre
+        # au paquet du bitstream (de taille 50 + taille_paquet_elementaire, qui
+        # vaut bufsize par définition)
+        # concrètement, les métadonnées des paquets envoyés pour former le bitstream
+        # du dict et du body font exactement 50 bits (50 = 16 + 2 + 16 + 16)
+        self.taille_paquet_elementaire = self.bufsize - 50
+        
+        # encodage de la frame et du dictionnaire de huffman associé
+        huff = Huffman(self.frame)
+        self.frame_encodee = huff.encode_phrase()
+        self.dict_huffman_encode = huff.dictToBin()
     
-    # techniquement, ce nombre maximal vaut img_size // 2, mais en pratique les
-    # premières valeurs des tuples seront relativement élevées, donc on divise 
-    # img_size par 20 (par exemple ; on suppose ici que img_size est >= 20)
-    # cette fonction marchera quand même si nb_tuples_RLE_max = img_size // 2
-    nb_tuples_RLE_max = img_size // 2
     
-    nb_tuples_RLE = randint(1, nb_tuples_RLE_max)
-    nb_zeros = img_size - nb_tuples_RLE
-    
-    # on cherche donc à trouver nb_tuples_RLE entiers aléatoires dont la somme 
-    # est nb_zeros
-    
-    moyenne = nb_zeros // nb_tuples_RLE + 1
-    
-    nb_zeros_partiel = 0
-    for num_tuple_RLE in range(nb_tuples_RLE):
-        if num_tuple_RLE != nb_tuples_RLE - 1:
-            a = randint(0, moyenne)
-            nb_zeros_partiel += a
+    @staticmethod
+    def generer_frame_RLE(img_size):
+        """
+        Permet de générer une frame RLE aléatoirement.
+        Args:
+            img_size (int >= 3): taille de l'image (= nombre de pixels)
+        Returns:
+            frame: frame RLE (liste de tuples d'entiers) générée aléatoirement
+        """
+        frame = []
+        valeur_non_nulle_maximale = 30 # par exemple
+        
+        nb_tuples_RLE_max = img_size // 2
+        
+        nb_tuples_RLE = randint(1, nb_tuples_RLE_max)
+        nb_zeros = img_size - nb_tuples_RLE # approximation raisonnable
+        
+        # on cherche donc à trouver nb_tuples_RLE entiers aléatoires dont la somme 
+        # est nb_zeros
+        
+        moyenne = nb_zeros // nb_tuples_RLE + 1
+        
+        nb_zeros_partiel = 0
+        for num_tuple_RLE in range(nb_tuples_RLE):
+            if num_tuple_RLE != nb_tuples_RLE - 1:
+                a = randint(0, moyenne)
+                nb_zeros_partiel += a
+                
+                # on met à jour la moyenne du nombre de zeros par tuple RLE restant
+                # afin d'avoir les coefficients les plus homogènes possibles
+                moyenne = (nb_zeros - nb_zeros_partiel) // (nb_tuples_RLE - num_tuple_RLE - 1) + 1
             
-            # on met à jour la moyenne du nombre de zeros par tuple RLE restant
-            # afin d'avoir les coefficients les plus homogènes possibles
-            moyenne = (nb_zeros - nb_zeros_partiel) // (nb_tuples_RLE - num_tuple_RLE - 1) + 1
+            else:
+                a = nb_zeros - nb_zeros_partiel # = nombre de zéros restants
+            
+            b = randint(1, valeur_non_nulle_maximale)
+            frame.append((a, b))
         
-        else:
-            a = nb_zeros - nb_zeros_partiel # = nombre de zéros restants
-        
-        b = randint(1, 30)
-        frame.append((a, b))
+        return(frame)
     
-    return(frame)
+    
+    def send_header_bitstream(self):
+        """
+        Permet d'envoyer le bitstream associé au header du client au serveur. 
+        """
+        header_bitstream = self.bit_generator.construct_header()
+        
+        # --> puis : send header_bitstream (en 1 seule fois, car len(header_bitstream) = 39,
+        # et 39 <= 51 <= bufsize)
+        self.client.send_data_to_server(header_bitstream)
+        self.client.wait_for_response()
+    
+    
+    def send_dict_bitstream(self):
+        """
+        Permet d'envoyer le bitstream associé au dict du client au serveur.
+        """
+        
+        # définition du nombre de paquets qui vont être générés à partir du dictionnaire
+        # de huffman encodé
+        len_dict_bitstream = len(self.dict_huffman_encode)
+        if len_dict_bitstream % self.taille_paquet_elementaire == 0:
+            nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire
+        else:
+            nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire + 1
+        
+        # construction du dict, paquet par paquet
+        # (normalement, ces paquets seront envoyés un par un, d'un client à un serveur)
+        for num_paquet_dict in range(nb_paquets_dict):
+            indice_initial = num_paquet_dict * self.taille_paquet_elementaire
+            
+            if num_paquet_dict != nb_paquets_dict - 1:
+                indice_final = indice_initial + self.taille_paquet_elementaire
+                donnees_paquet = self.dict_huffman_encode[indice_initial : indice_final]
+            
+            else:
+                # dernier paquet
+                donnees_paquet = self.dict_huffman_encode[indice_initial : ]
+            
+            nouv_paquet_dict = self.bit_generator.construct_dict(donnees_paquet)
+            
+            # --> puis : send nouv_paquet_dict (en 1 seule fois, car, par construction,
+            # len(nouv_paquet_dict) = bufsize, ou bien len(nouv_paquet_dict) <= bufsize 
+            # pour le tout dernier paquet)
+            self.client.send_data_to_server(nouv_paquet_dict)
+            self.client.wait_for_response()
+    
+    
+    def send_body_bitstream(self):
+        """
+        Permet d'envoyer le bitstream associé au body du client au serveur.
+        """
+        
+        # définition du nombre de paquets qui vont être générés à partir de la frame
+        # encodée
+        len_frame_encodee = len(self.frame_encodee)
+        if len_frame_encodee % self.taille_paquet_elementaire == 0:
+            nb_paquets_body = len_frame_encodee // self.taille_paquet_elementaire
+        else:
+            nb_paquets_body = len_frame_encodee // self.taille_paquet_elementaire + 1
+        
+        # construction du body, paquet par paquet
+        # (normalement, ces paquets seront envoyés un par un, d'un client à un serveur)
+        for num_paquet_body in range(nb_paquets_body):
+            indice_initial = num_paquet_body * self.taille_paquet_elementaire
+            
+            if num_paquet_body != nb_paquets_body - 1:
+                indice_final = indice_initial + self.taille_paquet_elementaire
+                donnees_paquet = self.frame_encodee[indice_initial : indice_final]
+            
+            else:
+                # dernier paquet
+                donnees_paquet = self.frame_encodee[indice_initial : ]
+            
+            nouv_paquet_body = self.bit_generator.construct_body(donnees_paquet)
+            # --> puis : send nouv_paquet_body (en 1 seule fois, car, par construction,
+            # len(nouv_paquet_body) = bufsize, ou bien len(nouv_paquet_body) <= bufsize 
+            # pour le tout dernier paquet)
+            self.client.send_data_to_server(nouv_paquet_body)
+            self.client.wait_for_response()
+    
+    
+    def send_tail_bitstream(self):
+        """
+        Permet d'envoyer le bitstream associé au tail du client au serveur.
+        """
+        tail_bitstream = self.bit_generator.construct_end_message()
+        
+        # --> puis : send tail_bitstream (en 1 seule fois, car len(tail_bitstream) = 18,
+        # et 18 <= 51 <= bufsize)
+        self.client.send_data_to_server(tail_bitstream)
+        self.client.wait_for_response()
+    
+    
+    def send_frame_RLE(self):
+        """
+        Méthode de synthèse.
+        Permet d'envoyer le bitstream total du client au serveur.
+        """
+        
+        self.send_header_bitstream()
+        self.send_dict_bitstream()
+        self.send_body_bitstream()
+        self.send_tail_bitstream()
 
 
 ###############################################################################
@@ -311,38 +447,29 @@ if __name__ == "__main__":
     img_size = nb_macroblocks * macroblock_size**2
     
     # génération aléatoire d'une frame RLE
-    frame = generer_frame_RLE(macroblock_size, nb_macroblocks)
-    Logger.get_instance().debug("\nFrame générée aléatoirement :\n" + str(frame))
+    frame = BitstreamSender.generer_frame_RLE(img_size)
+    Logger.get_instance().debug("\nFrame (générée aléatoirement) :\n" + str(frame) + "\n")
     
     #------------------------------------------------------------------------#
     
-    # autres données utiles
+    # définition du bufsize (très important)
     
-    # on DOIT avoir bufsize >= 51 (pour que l'on puisse envoyer en 1 seule fois
+    # On DOIT avoir bufsize >= 51 (pour que l'on puisse envoyer en 1 seule fois
     # le header et la queue du bitstream, et pour que l'on puisse envoyer correctement 
     # chacun des paquets constituant dict et body
-    # en effet, les "métadonnées" associées à chacun des paquets élémentaires
+    
+    # En effet, les "métadonnées" associées à chacun des paquets élémentaires
     # de dict et de body font exactement 50 bits
-    # le bufsize est souvent une puissance de 2, et désigne le nombre maximal
+    
+    # Le bufsize est souvent une puissance de 2, et désigne le nombre maximal
     # d'octets qui pourront être reçus (resp. être envoyés) par le serveur (resp. 
     # le client)
+    
+    # Afin de minimiser le temps d'envoi des données via le réseau, on a tout
+    # intérêt à maximiser le bufsize
+    
     puiss_2_random = randint(6, 12)
-    bufsize = 2 ** puiss_2_random
-    
-    # taille d'un paquet élémentaire du dict ou du body avant de l'adjoindre
-    # au paquet du bitstream (de taille 50 + taille_paquet_elementaire, qui
-    # vaut bufsize par définition)
-    # concrètement, les métadonnées des paquets envoyés pour former le bitstream
-    # du dict et du body font exactement 50 bits (50 = 16 + 2 + 16 + 16)
-    taille_paquet_elementaire = bufsize - 50
-    
-    #------------------------------------------------------------------------#
-    
-    # encodage de la frame et du dictionnaire de huffman associé
-    
-    huff = Huffman(frame)
-    frame_encodee = huff.encode_phrase()
-    dict_huffman_encode = huff.dictToBin()
+    bufsize = 2 ** puiss_2_random # /!\ bufsize >= 51 /!\
     
     #------------------------------------------------------------------------#
     
@@ -368,95 +495,13 @@ if __name__ == "__main__":
     
     # on met le serveur en mode écoute
     serv.listen_for_packets(cli, callback=on_received_data)
-        
-    #------------------------------------------------------------------------#
-    
-    # génération du constructeur
-    gen = BitstreamGenerator(frame_id, img_size, macroblock_size)
     
     #------------------------------------------------------------------------#
     
-    # génération et envoi du header
+    # envoi du bitstream de la frame RLE du client au serveur
     
-    header_bitstream = gen.construct_header()
-    # --> puis : send header_bitstream (en 1 seule fois, car len(header_bitstream) = 39,
-    # et 39 <= 51 <= bufsize)
-    cli.send_data_to_server(header_bitstream)
-    cli.wait_for_response()
-    
-    #------------------------------------------------------------------------#
-    
-    # génération et envoi du dict du bitstream
-    
-    # définition du nombre de paquets qui vont être générés à partir du dictionnaire
-    # de huffman encodé
-    len_dict_bitstream = len(dict_huffman_encode)
-    if len_dict_bitstream % taille_paquet_elementaire == 0:
-        nb_paquets_dict = len_dict_bitstream // taille_paquet_elementaire
-    else:
-        nb_paquets_dict = len_dict_bitstream // taille_paquet_elementaire + 1
-    
-    # construction du dict, paquet par paquet
-    # (normalement, ces paquets seront envoyés un par un, d'un client à un serveur)
-    for num_paquet_dict in range(nb_paquets_dict):
-        indice_initial = num_paquet_dict * taille_paquet_elementaire
-        
-        if num_paquet_dict != nb_paquets_dict - 1:
-            indice_final = indice_initial + taille_paquet_elementaire
-            donnees_paquet = dict_huffman_encode[indice_initial : indice_final]
-        
-        else:
-            # dernier paquet
-            donnees_paquet = dict_huffman_encode[indice_initial : ]
-        
-        nouv_paquet_dict = gen.construct_dict(donnees_paquet)
-        # --> puis : send nouv_paquet_dict (en 1 seule fois, car, par construction,
-        # len(nouv_paquet_dict) = bufsize, ou bien len(nouv_paquet_dict) <= bufsize 
-        # pour le tout dernier paquet)
-        cli.send_data_to_server(nouv_paquet_dict)
-        cli.wait_for_response()
-    
-    #------------------------------------------------------------------------#
-    
-    # génération et envoi du body
-    
-    # définition du nombre de paquets qui vont être générés à partir de la frame
-    # encodée
-    len_frame_encodee = len(frame_encodee)
-    if len_frame_encodee % taille_paquet_elementaire == 0:
-        nb_paquets_body = len_frame_encodee // taille_paquet_elementaire
-    else:
-        nb_paquets_body = len_frame_encodee // taille_paquet_elementaire + 1
-    
-    # construction du body, paquet par paquet
-    # (normalement, ces paquets seront envoyés un par un, d'un client à un serveur)
-    for num_paquet_body in range(nb_paquets_body):
-        indice_initial = num_paquet_body * taille_paquet_elementaire
-        
-        if num_paquet_body != nb_paquets_body - 1:
-            indice_final = indice_initial + taille_paquet_elementaire
-            donnees_paquet = frame_encodee[indice_initial : indice_final]
-        
-        else:
-            # dernier paquet
-            donnees_paquet = frame_encodee[indice_initial : ]
-        
-        nouv_paquet_body = gen.construct_body(donnees_paquet)
-        # --> puis : send nouv_paquet_body (en 1 seule fois, car, par construction,
-        # len(nouv_paquet_body) = bufsize, ou bien len(nouv_paquet_body) <= bufsize 
-        # pour le tout dernier paquet)
-        cli.send_data_to_server(nouv_paquet_body)
-        cli.wait_for_response()
-    
-    #------------------------------------------------------------------------#
-    
-    # génération et envoi de la queue du message
-    
-    tail_bitstream = gen.construct_end_message()
-    # --> puis : send tail_bitstream (en 1 seule fois, car len(tail_bitstream) = 18,
-    # et 18 <= 51 <= bufsize)
-    cli.send_data_to_server(tail_bitstream)
-    cli.wait_for_response()
+    bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, frame, cli, bufsize)
+    bit_sender.send_frame_RLE()
     
     #------------------------------------------------------------------------#
     
@@ -467,17 +512,31 @@ if __name__ == "__main__":
     
     # prints de synthèse
     
-    Logger.get_instance().debug("\nBitstream total reçu par le serveur (associé à la frame) :\n" + received_data)
-    Logger.get_instance().debug("\nDécodage du bitstream de la frame :\n" + str(frame_decodee))
+    Logger.get_instance().debug("\nBitstream total reçu par le serveur (associé à la frame) :\n" + received_data + "\n")
+    Logger.get_instance().debug("\nDécodage du bitstream de la frame :\n" + str(frame_decodee) + "\n")
     
     # test de cohérence
     bool_test = (frame == frame_decodee)
-    Logger.get_instance().debug("\nFrame décodée == frame de référence : " + str(bool_test))
+    Logger.get_instance().debug("\nFrame décodée == frame de référence : " + str(bool_test) + "\n")
     
     # à titre informatif
-    Logger.get_instance().debug("\nBufsize : " + str(bufsize))
+    Logger.get_instance().debug("\nINFOS UTILES / SYNTHÈSE :\n")
+    Logger.get_instance().debug("\nImage size : " + str(img_size))
+    Logger.get_instance().debug("\nNombre de tuples RLE : " + str(len(frame)))
+    Logger.get_instance().debug("\nBufsize (ici : puissance de 2 aléatoire) : " + str(bufsize) + "\n")
+    
+    # taille des différentes composantes du bitstream
+    Logger.get_instance().debug("\nTaille du bitstream total : " + str(len(received_data)))
+    Logger.get_instance().debug("\nTaille de header_bitstream : " + str(len(bit_sender.bit_generator.header)) + " (taille constante)")
+    Logger.get_instance().debug("\nTaille de dict_bitstream : " + str(len(bit_sender.bit_generator.dict)))
+    Logger.get_instance().debug("\nTaille de body_bitstream : " + str(len(bit_sender.bit_generator.body)))
+    Logger.get_instance().debug("\nTaille de tail_bitstream : " + str(len(bit_sender.bit_generator.tail)) + " (taille constante)" + "\n")
+    
+    #------------------------------------------------------------------------#
     
     # pour éviter d'avoir les messages de déconnexion des clients qui n'ont pas
     # été déconnectés des serveurs précédemment associés au même hôte
+    # et puis, de toute façon, à ce stade, on n'a plus besoin du client (ni du
+    # serveur)
     cli.connexion.close()
 
