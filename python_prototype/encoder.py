@@ -186,9 +186,9 @@ class Encoder:
         # Pour chaque élément de la liste
         for x in data:
             # Si on a un non-nul
-            if x != 0:
+            if int(x) != 0:
                 # On enregistre le couple
-                pairs.append((n, x))
+                pairs.append((n, int(x)))
                 n = 0
             else:
                 # Sinon, on compte les zéros

@@ -4,7 +4,7 @@ from huffman import Huffman
 class Decoder:
 
     def __init__(self):
-        raise NotImplementedError
+        pass
 
     def decode_huffman(self, dictionary, enc_data):
         """
