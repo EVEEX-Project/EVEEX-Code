@@ -241,14 +241,14 @@ if __name__ == '__main__':
     visu.show_image_with_matplotlib(np.reshape(quanti, (img_data.shape[0], img_data.shape[1])))
     # RLE
     rle = enc.run_level(quanti)
-    Logger.get_instance().debug("RLE\n", rle)
+    Logger.get_instance().debug("RLE\n" + str(rle))
     # Encodage avec huffman
     huff_enc = enc.huffman_encode(rle)
-    Logger.get_instance().debug("Huffman\n", huff_enc)
+    Logger.get_instance().debug("Huffman\n" + str(huff_enc))
 
     originale = 3*8*img_data.shape[0]*img_data.shape[1]
     compressee = len(huff_enc[0]) * 3
-    Logger.get_instance().debug("Taille originale en bits : ", originale)
-    Logger.get_instance().debug("Taille compressée : ", compressee)
+    Logger.get_instance().debug("Taille originale en bits : " + str(originale))
+    Logger.get_instance().debug("Taille compressée : " + str(compressee))
     Logger.get_instance().debug(f"Taux de compression : {round(compressee/originale * 100, 2)}%")
 
