@@ -333,8 +333,8 @@ class BitstreamSender:
         """
         header_bitstream = self.bit_generator.construct_header()
         
-        # --> puis : send header_bitstream (en 1 seule fois, car len(header_bitstream) = 39,
-        # et 39 <= 51 <= bufsize)
+        # envoi du paquet en 1 seule fois, car len(header_bitstream) = 39,
+        # et 39 <= 51 <= bufsize
         self.client.send_data_to_server(header_bitstream)
         self.client.wait_for_response()
     
@@ -353,7 +353,6 @@ class BitstreamSender:
             nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire + 1
         
         # construction du dict, paquet par paquet
-        # (normalement, ces paquets seront envoyés un par un, d'un client à un serveur)
         for num_paquet_dict in range(nb_paquets_dict):
             indice_initial = num_paquet_dict * self.taille_paquet_elementaire
             
@@ -367,9 +366,9 @@ class BitstreamSender:
             
             nouv_paquet_dict = self.bit_generator.construct_dict(donnees_paquet)
             
-            # --> puis : send nouv_paquet_dict (en 1 seule fois, car, par construction,
+            # envoi du paquet en 1 seule fois, car, par construction,
             # len(nouv_paquet_dict) = bufsize, ou bien len(nouv_paquet_dict) <= bufsize 
-            # pour le tout dernier paquet)
+            # pour le tout dernier paquet
             self.client.send_data_to_server(nouv_paquet_dict)
             self.client.wait_for_response()
     
@@ -388,7 +387,6 @@ class BitstreamSender:
             nb_paquets_body = len_frame_encodee // self.taille_paquet_elementaire + 1
         
         # construction du body, paquet par paquet
-        # (normalement, ces paquets seront envoyés un par un, d'un client à un serveur)
         for num_paquet_body in range(nb_paquets_body):
             indice_initial = num_paquet_body * self.taille_paquet_elementaire
             
@@ -401,9 +399,9 @@ class BitstreamSender:
                 donnees_paquet = self.frame_encodee[indice_initial : ]
             
             nouv_paquet_body = self.bit_generator.construct_body(donnees_paquet)
-            # --> puis : send nouv_paquet_body (en 1 seule fois, car, par construction,
+            # envoi du paquet en 1 seule fois, car, par construction,
             # len(nouv_paquet_body) = bufsize, ou bien len(nouv_paquet_body) <= bufsize 
-            # pour le tout dernier paquet)
+            # pour le tout dernier paquet
             self.client.send_data_to_server(nouv_paquet_body)
             self.client.wait_for_response()
     
@@ -414,8 +412,8 @@ class BitstreamSender:
         """
         tail_bitstream = self.bit_generator.construct_end_message()
         
-        # --> puis : send tail_bitstream (en 1 seule fois, car len(tail_bitstream) = 18,
-        # et 18 <= 51 <= bufsize)
+        # envoi du paquet en 1 seule fois, car len(tail_bitstream) = 18,
+        # et 18 <= 51 <= bufsize
         self.client.send_data_to_server(tail_bitstream)
         self.client.wait_for_response()
     
@@ -475,7 +473,7 @@ if __name__ == "__main__":
     
     # initialisation de la partie réseau
     
-    HOST = 'localhost'    # localhost ou bien adresse IP
+    HOST = 'localhost' # localhost ou bien adresse IP
     PORT = randint(5000, 15000)
     
     serv = Server(HOST, PORT, bufsize)
