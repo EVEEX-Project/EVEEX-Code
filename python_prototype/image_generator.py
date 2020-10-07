@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import json
 import numpy as np
-from random import randrange
+from random import randrange, random
 
 from logger import Logger
 
@@ -94,16 +94,14 @@ class MosaicImageGenerator(ImageGenerator):
 
     def __init__(self, size, bloc_size):
         super().__init__()
-        self.img_data = np.ones((size[0], size[1], 3))
+        self.img_data = np.zeros((size[0], size[1], 3))
         Logger.get_instance().debug(f"Img size : {self.img_data.shape}")
         for i in range(0, size[0]//bloc_size[0]):
             for j in range(0, size[1]//bloc_size[1]):
-                color = (randrange(0, 255),
-                        randrange(0, 255),
-                        randrange(0, 255))
+                color = (random(), random(), random())
                 Logger.get_instance().debug(f"{i}, {j} : {color}")
                 self.img_data[i*bloc_size[0]:(i+1) * bloc_size[0],
-                                j*bloc_size[1]:(j+1) * bloc_size[1]] *= color
+                                j*bloc_size[1]:(j+1) * bloc_size[1]] = color
 
     def generate(self):
         return self.img_data
