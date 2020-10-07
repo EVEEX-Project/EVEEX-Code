@@ -1,26 +1,32 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np 
-from huffman import Huffman
+from bitstream import BitstreamGenerator
+
+###############################################################################
+
 
 class Decoder:
-
+    
     def __init__(self):
         pass
-
-    def decode_huffman(self, dictionary, enc_data):
+    
+    
+    def decode_bitstream_RLE(self, bitstream):
         """
-        Permet de décoder des données encodées par huffman et de retourner
-        les couples de valeurs RLE issues de l'encodage
-
+        Permet de décoder un bitstream associé une frame RLE avec seulement 
+        les méthodes statiques de la classe Huffman.
+        
         Args:
-            dictionary (dict): dico des symboles d'encodage
-            enc_data (string): chaine de caractères encodée
-
+            bitstream (string): bitstream complet associé à une frame RLE
+        
         Returns:
-            rle_data : paires de données issues de la RLE
+            rle_data: paires de données issues de la RLE
         """
-        huff= Huffman()
-        return huff.decode_phrase(enc_data,dictionary)
-
+        rle_data = BitstreamGenerator.decode_bitstream_RLE(bitstream)
+        return rle_data
+    
+    
     def decode_run_length(self, rle_data):
         """
         Décode les paires de valeurs issues de la RLE et retourne
@@ -32,27 +38,27 @@ class Decoder:
         Returns:
             quantized_data: liste de valeurs quantifiées
         """
-    
+        
         tab = np.int_([])
         for x in rle_data:
             tab=np.concatenate((tab,np.int_(np.zeros(x[0]))))
             tab=np.concatenate((tab,np.array([x[1]])))
         
         return tab
-
-
+    
+    
     def decode_zigzag(self, quantized_data):
         """
         Decode une liste de valeurs quantifiées en un tableau de valeurs
         en respectant le principe de l'encodage en zig zag.
-
+        
         Args:
             quantized_data: liste de valeurs quantifiées
-
+        
         Returns:
             dct_tab: tableau de valeurs issues de la transformation en cosinus
         """
-
+        
         up = False
         # Position du curseur
         i, j = 0, 0
@@ -88,19 +94,21 @@ class Decoder:
                 # Sinon on parcoure la diagonale
                         j -= 1
                         i += 1
-            
+        
         return res
-
+    
+    
     def decode_dct(self, dct_data):
         """
         Decode un tableau de valeurs passées par la transformée discrète en
         cosinus. Il s'agit d'appliquer la DCT inverse.
-
+        
         Args:
             dct_data: tableau de valeurs issues de la DCT
-
+        
         Returns:
             img_data: tableau de valeurs représentant l'image
         """
-
+        
         return NotImplementedError
+
