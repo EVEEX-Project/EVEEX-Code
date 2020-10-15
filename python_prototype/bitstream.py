@@ -614,11 +614,20 @@ if __name__ == "__main__":
     Logger.get_instance().debug("\nNombre de tuples RLE : " + str(len(frame)))
     Logger.get_instance().debug("\nBufsize (ici : puissance de 2 aléatoire) : " + str(bufsize) + "\n")
     
-    # taille des différentes composantes du bitstream
+    # taille des parties principales du bitstream comparées à sa taille totale
+    # Remarque : len(received_data) = len(bit_sender.bit_generator.bitstream)
+    pourcentage_bitstream_dict = round(100 * len(bit_sender.bit_generator.dict) / len(received_data), 2)
+    pourcentage_bitstream_body = round(100 * len(bit_sender.bit_generator.body) / len(received_data), 2)
+    # on remarque que, pour des valeurs de bufsize relativement élevées (ie de
+    # 2**10 à 2**12 octets), le dict prend en moyenne 80% de la taille du bitstream
+    # total !
+    # --> TO DO : compresser dict_huffman_encode **sans perte**
+    
+    # taille des différentes composantes du bitstream (en octets / nombre de '0' et de '1')
     Logger.get_instance().debug("\nTaille du bitstream total : " + str(len(received_data)))
     Logger.get_instance().debug("\nTaille de header_bitstream : " + str(len(bit_sender.bit_generator.header)) + " (taille constante)")
-    Logger.get_instance().debug("\nTaille de dict_bitstream : " + str(len(bit_sender.bit_generator.dict)))
-    Logger.get_instance().debug("\nTaille de body_bitstream : " + str(len(bit_sender.bit_generator.body)))
+    Logger.get_instance().debug("\nTaille de dict_bitstream : " + str(len(bit_sender.bit_generator.dict)) + " (" + str(pourcentage_bitstream_dict) + "%)")
+    Logger.get_instance().debug("\nTaille de body_bitstream : " + str(len(bit_sender.bit_generator.body)) + " (" + str(pourcentage_bitstream_body) + "%)")
     Logger.get_instance().debug("\nTaille de tail_bitstream : " + str(len(bit_sender.bit_generator.tail)) + " (taille constante)" + "\n")
     
     #------------------------------------------------------------------------#
