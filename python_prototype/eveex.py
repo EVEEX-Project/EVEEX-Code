@@ -4,6 +4,8 @@ import numpy as np
 from encoder import Encoder
 from pathlib import Path
 from bitstream import BitstreamGenerator
+from image_generator import ImageGenerator, BlankImageGenerator, MosaicImageGenerator, FromJSONImageGenerator
+from image_visualizer import ImageVisualizer
 
 from PIL import Image
 
@@ -18,7 +20,7 @@ if len(sys.argv) < 2:
               
               -bi sizeX sizeY filename: create a blank image of size (sizeX x sizeY) in the file 'filename'
               
-              -mi sizeX sizeY filename: create a mosaic image of size(sizeX x sizeY) in the file 'filename'
+              -mi sizeX sizeY sizeBloc filename: create a mosaic image of size(sizeX x sizeY) in the file 'filename'
               
               -ji inputFile outputFile: create an image from the config file json 'inputFile' in the file 'outputFile'
               
@@ -27,35 +29,31 @@ if len(sys.argv) < 2:
               
               """)
     sys.exit(1)
-    
-
 
 action = sys.argv[1]
 
-
 if action.lower() == "-e":
-    
+
     ### Vérifie le nombre d'arguments
-    
-    if len(sys.argv)!= 4:
+
+    if len(sys.argv) != 4:
         print("Error: not the right number of arguments")
         sys.exit(1)
-    
+
     ### Vérifie que le fichier existe
-    
-    path =Path(sys.argv[2])
+
+    path = Path(sys.argv[2])
 
     if not path.exists():
         print("Error: file doesn't exist")
         sys.exit(1)
-        
-        
-    #-----------Encoder-----------#
+
+    # -----------Encoder-----------#
 
     image = Image.open("test_img.png")
     img_data = np.asarray(image)
     enc = Encoder()
-    bs=BitstreamGenerator(1, len(img_data)*len(img_data[0]),5)
+    bs = BitstreamGenerator(1, len(img_data) * len(img_data[0]), 5)
 
     # On converti de RGB vers YUV
     yuv_data = enc.RGB_to_YUV(img_data)
@@ -67,69 +65,79 @@ if action.lower() == "-e":
     quanti = enc.quantization(zigzag_data, threshold=1e2)
     # RLE
     rle = enc.run_level(quanti)
-    #RLE to Bitstream ( valeurs aléatoires pour le moment)
-    Bitstream=bs.encode_frame_RLE(1, len(img_data)*len(img_data[0]), 10, rle, 55)
-    fichier = open(sys.argv[3],"w")
+    # RLE to Bitstream ( valeurs aléatoires pour le moment)
+    Bitstream = bs.encode_frame_RLE(1, len(img_data) * len(img_data[0]), 10, rle, 55)
+    fichier = open(sys.argv[3], "w")
     fichier.write(Bitstream)
     fichier.close()
-    
+
     print('The operation is succesful')
-    
+
     sys.exit(1)
-    
+
 elif action.lower() == "-d":
-    
+
     ### Vérifie le nombre d'arguments
-    
-    if len(sys.argv)!= 4:
+
+    if len(sys.argv) != 4:
         print("Error: not the right number of arguments")
         sys.exit(1)
-    
+
     ### Vérifie que le fichier existe
-    
-    path =Path(sys.argv[2])
-    if not path.exists():
-        print("Error: file doesn't exist")
-        sys.exit(1)
-    
-    print("decode")
-    sys.exit(1)
-    
-elif action =="-ji":
-    
-    ### Vérifie le nombre d'arguments
-    
-    if len(sys.argv)!= 4:
-        print("Error: not the right number of arguments")
-        sys.exit(1)
-    
-    ### Vérifie que le fichier existe
-    
+
     path = Path(sys.argv[2])
     if not path.exists():
         print("Error: file doesn't exist")
         sys.exit(1)
-    
-    print("ji")
+
+    print("decode")
     sys.exit(1)
-    
+
+elif action == "-ji":
+
+    ### Vérifie le nombre d'arguments
+
+    if len(sys.argv) != 4:
+        print("Error: not the right number of arguments")
+        sys.exit(1)
+
+    ### Vérifie que le fichier existe
+
+    path = Path(sys.argv[2])
+    if not path.exists():
+        print("Error: file doesn't exist")
+        sys.exit(1)
+    file= sys.argv[2]
+    gen = FromJSONImageGenerator(file)
+    visu = ImageVisualizer()
+    # On enregistre l'image:
+    visu.save_image_to_disk(gen.generate(), sys.argv[3])
+    sys.exit(1)
+
 elif action == "-mi":
     ### Vérifie le nombre d'arguments
-    if len(sys.argv)!= 5:
+    if len(sys.argv) != 6:
         print("Error: not the right number of arguments")
         sys.exit(1)
-        
-    print('mi')
+
+    size = (sys.argv[2], sys.argv[3])
+    gen = BlankImageGenerator(size,(sys.argv[4],sys.argv[4]))
+    visu = ImageVisualizer()
+    # On enregistre l'image:
+    visu.save_image_to_disk(gen.generate(), sys.argv[5])
     sys.exit(1)
-    
+
 elif action == "-bi":
     ### Vérifie le nombre d'arguments
-    if len(sys.argv)!= 5:
+    if len(sys.argv) != 5:
         print("Error: not the right number of arguments")
         sys.exit(1)
-        
-    print('-bi')
+    size=(sys.argv[2],sys.argv[3])
+    gen = BlankImageGenerator(size)
+    visu = ImageVisualizer()
+    # On enregistre l'image:
+    visu.save_image_to_disk(gen.generate(), sys.argv[4])
     sys.exit(1)
-    
-else :
+
+else:
     print("Error: unknown action")
