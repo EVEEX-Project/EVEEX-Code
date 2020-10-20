@@ -6,7 +6,6 @@ from logger import Logger
 
 DEFAULT_QUANTIZATION_THRESHOLD = 0.5
 
-
 ###############################################################################
 
 
@@ -68,11 +67,14 @@ class Encoder:
 
         # On retourne l'image ainsi constituée
         return image_ycbcr
-
+    
     def apply_DCT(self, image):
         """
         Applique la transformée en cosinus discrete à une image au format luminance chrominance.
         On veillera bien à implémenter la DCT-II : https://fr.wikipedia.org/wiki/Transform%C3%A9e_en_cosinus_discr%C3%A8te#DCT-II
+        
+        Source pour la formule **exacte** que l'on utilise :
+        https://www.chireux.fr/mp/cours/Compression%20JPEG.pdf
         
         Args:
             image: tableau de pixels représentant l'image au format Luminance/Chrominance
@@ -81,27 +83,39 @@ class Encoder:
             dct_data: tableau de coefficients issu de la transformée en cosinus discrete
         """
         dct_data = np.zeros(image.shape)
-
-        def compute_energy(image, k1, k2, k3):
+        
+        def C(w):
             """
-            Permet de calculer l'énerge au point k1, k2 sur le canal k3
+            Coefficient permettant de rendre chacune des matrices dct_data[:, :, k]
+            orthogonales, avec 0 <= k <= 2. Fonction auxiliaire.
+            """
+            if w == 0:
+                return(1 / np.sqrt(2))
+            return(1)
+        
+        # ici on suppose que height = width (ie image carrée)
+        (height, width) = (image.shape[0], image.shape[1])
+        
+        def compute_energy(i_ref, j_ref, k):
+            """
+            Permet de calculer l'énerge au point (i_ref, j_ref) sur le canal k
             """
             res = 0
-            for n1 in range(image.shape[0]):
-                for n2 in range(image.shape[1]):
-                    res += image[n1, n2, k3] * \
-                           np.cos(np.pi / image.shape[0] * (n1 + 1 / 2) * k1) * \
-                           np.cos(np.pi / image.shape[1] * (n2 + 1 / 2) * k2)
-            return res
-
-        # On itere sur les 3 canaux
-        # puis sur les pixels de l'image
+            for i in range(height):
+                for j in range(width):
+                    res += image[i, j, k] * \
+                           np.cos((np.pi / height) * i_ref * (i + 1 / 2)) * \
+                           np.cos((np.pi / width) * j_ref * (j + 1 / 2))
+            return((2 / height) * C(i_ref) * C(j_ref) * res)
+        
+        # on itere sur les 3 canaux, puis sur les pixels de l'image
         for k in range(3):
-            for i in range(image.shape[0]):
-                for j in range(image.shape[1]):
-                    dct_data[i, j, k] = compute_energy(image, i, j, k)
-        return dct_data
-
+            for i_ref in range(height):
+                for j_ref in range(width):
+                    dct_data[i_ref, j_ref, k] = compute_energy(i_ref, j_ref, k)
+        
+        return(dct_data)
+    
     def zigzag_linearisation(self, dct_data):
         """
         Parcourt un tableau de coefficients en zig zag de manière à passer d'un
@@ -148,12 +162,13 @@ class Encoder:
                     # Sinon on parcourt la diagonale
                     j -= 1
                     i += 1
-
-        # On transforme le tableau à 3 colonnes en un tableau à une dimension
+        
+        # On transforme le tableau à 3 'couches' en un tableau à une dimension
         res2 = []
-        for i in range(3):
-            for tri in res:
-                res2.append(tri[i])
+        for k in range(3):
+            for pixel_dct in res:
+                res2.append(pixel_dct[k])
+        
         return np.array(res2)
 
     def quantization(self, data, threshold=DEFAULT_QUANTIZATION_THRESHOLD):
@@ -171,12 +186,12 @@ class Encoder:
         # Pour chaque élément de la liste
         for i in range(data.shape[0]):
             # Si la valeur est en dessous du seuil
-            if data[i] <= threshold:
+            if abs(data[i]) <= threshold:
                 # On la met à 0
                 data[i] = 0
-
+        
         return data
-
+    
     def run_level(self, data):
         """
         Permet de transformer un tableau de coefficients dont les valeurs significatives sont séparées par des
@@ -191,28 +206,34 @@ class Encoder:
         Returns:
             pairs: ensemble de paires décrivants les données de l'image
         """
-
         n = 0
         pairs = []
+        
         # Pour chaque élément de la liste
         for x in data:
-            # Si on a un non-nul
-            if int(x + 0.5) != 0:
+            # Dans un premier temps, on considèrera que les 2èmes valeurs
+            # des tuples RLE sont des entiers, et non des flottants
+            # --> "entier" correspond à l'entier le plus proche de x
+            if x > 0:
+                entier = int(x + 0.5)
+            else:
+                entier = int(x - 0.5)
+            
+            # Si on a entier un non-nul
+            if entier != 0:
                 # On enregistre le couple
-                # Dans un premier temps, on considèrera que les 2èmes valeurs
-                # des tuples RLE sont des entiers, et non des flottants
-                # --> int(x + 0.5) correspond à l'entier 'le plus proche' de x
-                pairs.append((n, int(x + 0.5)))
+                pairs.append((n, entier))
                 n = 0
             else:
                 # Sinon, on compte les zéros
                 n += 1
-
+        
         # Si la chaîne se termine par 00000 (cinq zéros) on enregistre (4,0)
         if n != 0:
             pairs.append((n - 1, 0))
+        
         return pairs
-
+    
     def huffman_encode(self, pairs):
         """
         Encode par l'algorithme de Huffman les donnéees. Attribue un identifiant en binaire à chaque symbole
@@ -265,3 +286,4 @@ if __name__ == '__main__':
     Logger.get_instance().debug("Taille originale en bits : " + str(originale))
     Logger.get_instance().debug("Taille compressée : " + str(compressee))
     Logger.get_instance().debug(f"Taux de compression : {round(compressee / originale * 100, 2)}%")
+
