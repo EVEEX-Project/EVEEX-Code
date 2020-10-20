@@ -50,7 +50,7 @@ if action.lower() == "-e":
 
     # -----------Encoder-----------#
 
-    image = Image.open("test_img.png")
+    image = Image.open(path)
     img_data = np.asarray(image)
     enc = Encoder()
     bs = BitstreamGenerator(1, len(img_data) * len(img_data[0]), 5)
