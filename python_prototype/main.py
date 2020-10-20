@@ -66,7 +66,7 @@ rle_data = enc.run_level(quantized_data)
 puiss_2_random = randint(10, 12)
 bufsize = 2 ** puiss_2_random # doit impérativement être >= 51 (en pratique : OK)
 
-HOST = "localhost"
+HOST = 'localhost'
 PORT = randint(5000, 15000)
 
 serv = Server(HOST, PORT, bufsize)
