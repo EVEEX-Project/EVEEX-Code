@@ -186,7 +186,7 @@ class Encoder:
         # Pour chaque élément de la liste
         for i in range(data.shape[0]):
             # Si la valeur est en dessous du seuil
-            if abs(data[i]) <= threshold:
+            if data[i] <= threshold:
                 # On la met à 0
                 data[i] = 0
         
@@ -214,10 +214,7 @@ class Encoder:
             # Dans un premier temps, on considèrera que les 2èmes valeurs
             # des tuples RLE sont des entiers, et non des flottants
             # --> "entier" correspond à l'entier le plus proche de x
-            if x > 0:
-                entier = int(x + 0.5)
-            else:
-                entier = int(x - 0.5)
+            entier = int(x + 0.5)
             
             # Si on a entier un non-nul
             if entier != 0:
