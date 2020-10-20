@@ -236,7 +236,7 @@ class Huffman:
             else:
                 k+=1
                 a=bina[k:k+16]
-                k+=8
+                k+=16
                 b=bina[k:k+16]
                 k+=16
                 size=bina[k:k+8]
