@@ -102,6 +102,7 @@ dec_dct_data = dec.decode_zigzag(dec_quantized_data)
 
 # affichage n°4
 sleep(0.01)
+print(f"\n\nTransmission réseau réussie : {rle_data == dec_rle_data}\n\n")
 print("\n\n\nDécodage - Données DCT  de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_dct_data[:, :, 0])
 
