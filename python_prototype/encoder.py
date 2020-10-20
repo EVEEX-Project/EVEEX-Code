@@ -73,8 +73,8 @@ class Encoder:
         Applique la transformée en cosinus discrete à une image au format luminance chrominance.
         On veillera bien à implémenter la DCT-II : https://fr.wikipedia.org/wiki/Transform%C3%A9e_en_cosinus_discr%C3%A8te#DCT-II
         
-        Source pour la formule **exacte** que l'on utilise :
-        https://www.chireux.fr/mp/cours/Compression%20JPEG.pdf
+        Source pour la formule **exacte** que l'on utilise ici :
+        https://www.chireux.fr/mp/cours/Compression%20JPEG.pdf (page 5/24)
         
         Args:
             image: tableau de pixels représentant l'image au format Luminance/Chrominance
