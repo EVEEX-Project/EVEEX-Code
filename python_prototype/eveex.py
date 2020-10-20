@@ -107,7 +107,7 @@ elif action == "-ji":
     if not path.exists():
         print("Error: file doesn't exist")
         sys.exit(1)
-    file= sys.argv[2]
+    file = sys.argv[2]
     gen = FromJSONImageGenerator(file)
     visu = ImageVisualizer()
     # On enregistre l'image:
@@ -121,7 +121,7 @@ elif action == "-mi":
         sys.exit(1)
 
     size = (sys.argv[2], sys.argv[3])
-    gen = BlankImageGenerator(size,(sys.argv[4],sys.argv[4]))
+    gen = BlankImageGenerator(size, (sys.argv[4], sys.argv[4]))
     visu = ImageVisualizer()
     # On enregistre l'image:
     visu.save_image_to_disk(gen.generate(), sys.argv[5])
@@ -132,7 +132,7 @@ elif action == "-bi":
     if len(sys.argv) != 5:
         print("Error: not the right number of arguments")
         sys.exit(1)
-    size=(sys.argv[2],sys.argv[3])
+    size = (sys.argv[2], sys.argv[3])
     gen = BlankImageGenerator(size)
     visu = ImageVisualizer()
     # On enregistre l'image:

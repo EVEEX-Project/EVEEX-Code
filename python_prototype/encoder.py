@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np 
+import numpy as np
 from huffman import Huffman
 from logger import Logger
 
 DEFAULT_QUANTIZATION_THRESHOLD = 0.5
 
+
 ###############################################################################
 
 
 class Encoder:
-    
+
     def __init__(self, **params):
         pass
-    
-    
+
     def RGB_to_YUV(self, image):
         """
         Convertit une image depuis une représentation RGB (Rouge, Vert, Bleu)
@@ -27,7 +27,7 @@ class Encoder:
             image_yuv: tableau de pixels représentant l'image au format YUV
         """
         image_yuv = np.zeros(image.shape)
-        
+
         # Pour chaque pixel de l'image
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
@@ -38,11 +38,10 @@ class Encoder:
                 u = -0.14713 * r - 0.28886 * g + 0.436 * b
                 v = 0.615 * r - 0.51498 * g - 0.10001 * b
                 image_yuv[i, j] = [y, u, v]
-        
+
         # On retourne l'image ainsi constituée
         return image_yuv
-    
-    
+
     def RGB_to_YCbCr(self, image):
         """
         Convertit une image depuis une représentation RGB (Rouge, Vert, Bleu)
@@ -55,7 +54,7 @@ class Encoder:
             image_ycbcr: tableau de pixels représentant l'image au format YUV
         """
         image_ycbcr = np.zeros(image.shape)
-        
+
         # Pour chaque pixel de l'image
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
@@ -66,11 +65,10 @@ class Encoder:
                 cb = -0.1687 * r - 0.3313 * g + 0.5 * b + 128
                 cr = 0.5 * r - 0.4187 * g - 0.0813 * b + 128
                 image_ycbcr[i, j] = [y, cb, cr]
-        
+
         # On retourne l'image ainsi constituée
         return image_ycbcr
-    
-    
+
     def apply_DCT(self, image):
         """
         Applique la transformée en cosinus discrete à une image au format luminance chrominance.
@@ -83,7 +81,7 @@ class Encoder:
             dct_data: tableau de coefficients issu de la transformée en cosinus discrete
         """
         dct_data = np.zeros(image.shape)
-        
+
         def compute_energy(image, k1, k2, k3):
             """
             Permet de calculer l'énerge au point k1, k2 sur le canal k3
@@ -92,10 +90,10 @@ class Encoder:
             for n1 in range(image.shape[0]):
                 for n2 in range(image.shape[1]):
                     res += image[n1, n2, k3] * \
-                           np.cos(np.pi / image.shape[0] * (n1 + 1/2) * k1) * \
-                           np.cos(np.pi / image.shape[1] * (n2 + 1/2) * k2)
+                           np.cos(np.pi / image.shape[0] * (n1 + 1 / 2) * k1) * \
+                           np.cos(np.pi / image.shape[1] * (n2 + 1 / 2) * k2)
             return res
-        
+
         # On itere sur les 3 canaux
         # puis sur les pixels de l'image
         for k in range(3):
@@ -103,8 +101,7 @@ class Encoder:
                 for j in range(image.shape[1]):
                     dct_data[i, j, k] = compute_energy(image, i, j, k)
         return dct_data
-    
-    
+
     def zigzag_linearisation(self, dct_data):
         """
         Parcourt un tableau de coefficients en zig zag de manière à passer d'un
@@ -124,7 +121,7 @@ class Encoder:
         # Tableau de sortie
         res = []
         # Pour chacun des points qui constituent l'image
-        for t in range(dct_data.size):
+        for t in range(dct_data[:, :, 0].size):
             # On ajoute le point courant
             res.append(dct_data[i, j])
             # Si on parcoure l'image vers le haut
@@ -151,10 +148,14 @@ class Encoder:
                     # Sinon on parcourt la diagonale
                     j -= 1
                     i += 1
-        
-        return np.array(res)
-    
-    
+
+        # On transforme le tableau à 3 colonnes en un tableau à une dimension
+        res2 = []
+        for i in range(3):
+            for tri in res:
+                res2.append(tri[i])
+        return np.array(res2)
+
     def quantization(self, data, threshold=DEFAULT_QUANTIZATION_THRESHOLD):
         """
         Permet de quantifier les coefficients en passant toutes les valeurs sous un certain seuil
@@ -173,10 +174,9 @@ class Encoder:
             if data[i] <= threshold:
                 # On la met à 0
                 data[i] = 0
-         
+
         return data
-    
-    
+
     def run_level(self, data):
         """
         Permet de transformer un tableau de coefficients dont les valeurs significatives sont séparées par des
@@ -191,7 +191,7 @@ class Encoder:
         Returns:
             pairs: ensemble de paires décrivants les données de l'image
         """
-        
+
         n = 0
         pairs = []
         # Pour chaque élément de la liste
@@ -207,13 +207,12 @@ class Encoder:
             else:
                 # Sinon, on compte les zéros
                 n += 1
-        
+
         # Si la chaîne se termine par 00000 (cinq zéros) on enregistre (4,0)
         if n != 0:
             pairs.append((n - 1, 0))
         return pairs
-    
-    
+
     def huffman_encode(self, pairs):
         """
         Encode par l'algorithme de Huffman les donnéees. Attribue un identifiant en binaire à chaque symbole
@@ -227,19 +226,19 @@ class Encoder:
         """
         huff_enc = Huffman(pairs)
         # TODO : Construire le bitstream (structure, données)
-        
+
         return huff_enc.encode_phrase(), huff_enc.symbols
 
 
 if __name__ == '__main__':
     from PIL import Image
     from image_visualizer import ImageVisualizer
-    
+
     image = Image.open("test_img.png")
     img_data = np.asarray(image)
     enc = Encoder()
     visu = ImageVisualizer()
-    
+
     # On converti de RGB vers YUV
     yuv_data = enc.RGB_to_YUV(img_data)
     # On affiche la luminance
@@ -248,22 +247,21 @@ if __name__ == '__main__':
     dct_data = enc.apply_DCT(yuv_data)
     # On affiche la carte d'énergie
     visu.show_image_with_matplotlib(dct_data[:, :, 0])
-    # zigzag linearisation de la luminance
-    zigzag_data = enc.zigzag_linearisation(dct_data[:, :, 0])
+    # zigzag linearisation
+    zigzag_data = enc.zigzag_linearisation(dct_data)
     # On quantiife les données
     quanti = enc.quantization(zigzag_data, threshold=1e2)
-    # On affiche le résultat de la quantification
-    visu.show_image_with_matplotlib(np.reshape(quanti, (img_data.shape[0], img_data.shape[1])))
+    # On affiche le résultat de la quantification de la luminance
+    visu.show_image_with_matplotlib(np.reshape(quanti[:100], (img_data.shape[0], img_data.shape[1])))
     # RLE
     rle = enc.run_level(quanti)
     Logger.get_instance().debug("RLE\n" + str(rle))
     # Encodage avec huffman
     huff_enc = enc.huffman_encode(rle)
     Logger.get_instance().debug("Huffman\n" + str(huff_enc))
-    
-    originale = 3*8*img_data.shape[0]*img_data.shape[1]
-    compressee = len(huff_enc[0]) * 3
+
+    originale = 3 * 8 * img_data.shape[0] * img_data.shape[1]
+    compressee = len(huff_enc[0])
     Logger.get_instance().debug("Taille originale en bits : " + str(originale))
     Logger.get_instance().debug("Taille compressée : " + str(compressee))
-    Logger.get_instance().debug(f"Taux de compression : {round(compressee/originale * 100, 2)}%")
-
+    Logger.get_instance().debug(f"Taux de compression : {round(compressee / originale * 100, 2)}%")
