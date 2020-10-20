@@ -89,7 +89,7 @@ With a bit of tinkering one can generate complex shapes and great test images fo
 
 <center>
 
-![Test image](assets/image_res.png)
+![Test image](https://raw.githubusercontent.com/EVEEX-Project/EVEEX-Code/master/python_prototype/assets/image_res.png)
 
 
 </center>
