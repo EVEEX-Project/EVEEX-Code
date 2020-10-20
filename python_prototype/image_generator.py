@@ -9,11 +9,11 @@ from logger import Logger
 class ColorDecoder:
 
     colors = {
-        "red" : [255, 0, 0],
-        "green" : [0, 255, 0],
-        "blue" : [0, 0, 255],
+        "red" : [1, 0, 0],
+        "green" : [0, 1, 0],
+        "blue" : [0, 0, 1],
         "black" : [0, 0, 0],
-        "white" : [255, 255, 255]
+        "white" : [1, 1, 1]
     }
 
     @staticmethod
@@ -165,9 +165,9 @@ if __name__ == "__main__":
     from image_visualizer import ImageVisualizer
 
     visu = ImageVisualizer()
-    #gen = FromJSONImageGenerator("image_desc.json")
-    #gen = BlankImageGenerator((100, 100), (0, 0, 255))
-    gen = MosaicImageGenerator((100, 100), (10, 10))
+    gen = FromJSONImageGenerator("image_desc.json")
+    #gen = BlankImageGenerator((400, 400), (1, 1, 1))
+    #gen = MosaicImageGenerator((400, 400), (40, 40))
 
     visu.show_image_with_matplotlib(gen.generate())
-    visu.save_image_to_disk(gen.generate(), "image_desc_res.png")
+    visu.save_image_to_disk(gen.generate(), "image_res.png")

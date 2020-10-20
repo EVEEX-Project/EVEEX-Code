@@ -41,7 +41,7 @@ class ImageVisualizer:
             data: tableau de pixels représentant l'image
             file_name: nom du fichier sous lequel sauvegrder l'image
         """
-        plt.imsave(file_name, np.array(data, dtype="uint8"), format="png")
+        plt.imsave(file_name, np.array(data), format="png")
         Logger.get_instance().info(f"Saving image to {os.getcwd()}/{file_name}")
 
     def open_image_with_native_viewer(self, data):
