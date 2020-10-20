@@ -214,7 +214,7 @@ class Huffman:
             bina+='1'
             a,b=cle
             
-            bina+=(np.binary_repr(a,8))
+            bina+=(np.binary_repr(a,16))
             bina+=(np.binary_repr(b,16))
             
             c=valeur
@@ -235,7 +235,7 @@ class Huffman:
                 state=False
             else:
                 k+=1
-                a=bina[k:k+8]
+                a=bina[k:k+16]
                 k+=8
                 b=bina[k:k+16]
                 k+=16
