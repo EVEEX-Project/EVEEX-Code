@@ -124,7 +124,8 @@ print("\n")
 NB : Ici, la perte d'informations est exclusivement dûe au passage aux entiers
      (lors de l'application de la RLE) et au seuillage (quantization).
      Cependant, même avec un seuil de 0, la perte d'informations semble
-     tout de même assez importante, **même en considérant des entiers négatifs**.
+     tout de même assez importante, ce qui démontre de l'impact "violent" du
+     passage aux entiers lors de l'encodage.
 """
 
 
