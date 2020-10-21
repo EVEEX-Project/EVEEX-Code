@@ -86,8 +86,7 @@ class Encoder:
         
         def C(w):
             """
-            Coefficient permettant de rendre chacune des matrices dct_data[:, :, k]
-            orthogonales, avec 0 <= k <= 2. Fonction auxiliaire.
+            Fonction auxiliaire.
             """
             if w == 0:
                 return(1 / np.sqrt(2))
