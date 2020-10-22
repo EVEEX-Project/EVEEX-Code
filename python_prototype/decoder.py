@@ -36,11 +36,11 @@ class Decoder:
         Returns:
             quantized_data: liste de valeurs quantifiées
         """
-        tab = np.array([], dtype=float)
+        tab = np.array([], dtype=int)
         
         for x in rle_data:
-            tab = np.concatenate((tab, np.zeros(x[0])))
-            tab = np.concatenate((tab, np.array([x[1]], dtype=float)))
+            tab = np.concatenate((tab, np.zeros((x[0],), dtype=int)))
+            tab = np.concatenate((tab, np.array([x[1]], dtype=int)))
         
         return tab
     
@@ -61,7 +61,7 @@ class Decoder:
         n = int(split_quantized_data[0].size ** (1 / 2))
         
         # tableau de sortie
-        res2 = np.zeros((n, n, 3), dtype=float)
+        res2 = np.zeros((n, n, 3), dtype=int)
         
         k = 0 # numéro de la couche actuelle (0 <= k <= 2)
         
@@ -71,7 +71,7 @@ class Decoder:
             # Position du curseur
             i, j = 0, 0
             # couche qui va être mise à jour
-            res = np.zeros((n, n), dtype=float)
+            res = np.zeros((n, n), dtype=int)
             # Pour chacun des points qui constituent l'image
             for t in range(data.size):
                 # On ajoute le point courant
@@ -128,7 +128,8 @@ class Decoder:
         
         def C(w):
             """
-            Fonction auxiliaire.
+            Coefficient permettant de rendre chacune des matrices yuv_data[:, :, k]
+            orthogonales, avec 0 <= k <= 2. Fonction auxiliaire.
             """
             if w == 0:
                 return(1 / np.sqrt(2))
