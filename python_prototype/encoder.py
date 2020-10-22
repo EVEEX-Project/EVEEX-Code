@@ -86,7 +86,8 @@ class Encoder:
         
         def C(w):
             """
-            Fonction auxiliaire.
+            Coefficient permettant de rendre chacune des matrices dct_data[:, :, k]
+            orthogonales, avec 0 <= k <= 2. Fonction auxiliaire.
             """
             if w == 0:
                 return(1 / np.sqrt(2))
@@ -182,14 +183,16 @@ class Encoder:
         Returns:
             data: tableau modifié 
         """
-        # Pour chaque élément de la liste
-        for i in range(data.shape[0]):
-            # Si la valeur est en dessous du seuil
-            if data[i] <= threshold:
-                # On la met à 0
-                data[i] = 0
+        quantized_data = np.copy(data)
         
-        return data
+        # Pour chaque élément de la liste
+        for i in range(quantized_data.shape[0]):
+            # Si la valeur est en dessous du seuil
+            if abs(quantized_data[i]) <= threshold:
+                # On la met à 0
+                quantized_data[i] = 0
+        
+        return quantized_data
     
     def run_level(self, data):
         """
@@ -213,7 +216,10 @@ class Encoder:
             # Dans un premier temps, on considèrera que les 2èmes valeurs
             # des tuples RLE sont des entiers, et non des flottants
             # --> "entier" correspond à l'entier le plus proche de x
-            entier = int(x + 0.5)
+            if x > 0:
+                entier = int(x + 0.5)
+            else:
+                entier = int(x - 0.5)
             
             # Si on a entier un non-nul
             if entier != 0:
