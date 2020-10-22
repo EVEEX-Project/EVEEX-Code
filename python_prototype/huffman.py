@@ -215,7 +215,13 @@ class Huffman:
             a,b=cle
             
             bina+=(np.binary_repr(a,16))
-            bina+=(np.binary_repr(b,16))
+            
+            if b >= 0:
+                bina += '0'
+            else:
+                bina += '1'
+            
+            bina+=(np.binary_repr(abs(b),16))
             
             c=valeur
             size=len(c)
@@ -237,8 +243,17 @@ class Huffman:
                 k+=1
                 a=bina[k:k+16]
                 k+=16
-                b=bina[k:k+16]
+                
+                bin_signe = bina[k:k+1]
+                if bin_signe == '0':
+                    signe = 1
+                else:
+                    signe = -1
+                k += 1
+                
+                abs_b=bina[k:k+16]
                 k+=16
+                
                 size=bina[k:k+8]
                 k+=8
                 size=int(size,2)
@@ -246,8 +261,9 @@ class Huffman:
                 k+=size
                 
                 a=int(a,2)
-                b=int(b,2)
-                dico[(a,b)]=c
+                abs_b=int(abs_b, 2)
+                dico[(a, signe * abs_b)] = c
+        
         return dico
 
 
