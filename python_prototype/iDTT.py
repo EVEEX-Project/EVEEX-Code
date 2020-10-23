@@ -71,9 +71,9 @@ def t_tilde(n, x, N):
     return((a1(n, N) * x + a2(n, N)) * t_tilde(n-1, x, N) + a3(n, N) * t_tilde(n-2, x, N))
 
 
-# génère l'opérateur de la DTT (ie la matrice A)
-# la matrice A est censée être orthogonale, ie np.linalg.inv(A) = A.T
-def matrix_A(N):
+# génère l'opérateur de la DTT (ie la matrice A de l'article n°1)
+# la matrice A est orthogonale, ie np.linalg.inv(A) = A.T
+def DTT_operator(N):
     A = np.zeros((N, N))
     
     for i in range(N):
@@ -122,7 +122,7 @@ def decode_DTT(A, dtt_data):
 
 # vérifie si les fonctions "apply_DTT" et "decode_DTT" sont précises
 def check_DTT_functions(N):
-    A = matrix_A(N)
+    A = DTT_operator(N)
     
     # ici on vérifie si on a bien DTT(DTT_inverse(tab)) = tab
     dtt_data = np.random.uniform(0, 255, size=(N, N, 3))
@@ -467,7 +467,7 @@ def decode_iDTT(P, S, int_dtt_data):
 
 # vérifie si les fonctions "apply_iDTT" et "decode_iDTT" sont précises
 def check_iDTT_functions(N):
-    A = matrix_A(N)
+    A = DTT_operator(N)
     (P, S) = generer_decomp(A)
     
     # ici on vérifie que la décomposition de A est bien cohérente
