@@ -110,7 +110,7 @@ class Decoder:
         
         return res2
     
-    def decode_DCT(self, dct_data):
+    def decode_DCT(self, dct_data, operateur_DCT):
         """
         Decode un tableau de valeurs passées par la transformée discrète en
         cosinus. Il s'agit d'appliquer la DCT inverse.
@@ -120,41 +120,19 @@ class Decoder:
         
         Args:
             dct_data: tableau de valeurs issues de la DCT
+            DCT_operator : matrice orthogonale qui sert d'opérateur de la DCT
         
         Returns:
             yuv_data: tableau de valeurs représentant l'image
         """
         yuv_data = np.zeros(dct_data.shape)
         
-        def C(w):
-            """
-            Coefficient permettant de rendre chacune des matrices yuv_data[:, :, k]
-            orthogonales, avec 0 <= k <= 2. Fonction auxiliaire.
-            """
-            if w == 0:
-                return(1 / np.sqrt(2))
-            return(1)
+        # NB : On aurait très bien pu générer l'opérateur ici via la méthode
+        # DCT_operator de Encoder, mais comme cet opérateur est amené à être réutilisé,
+        # autant le mettre en argument (pour éviter de le générer plus d'une fois)
         
-        # ici on suppose que height = width (ie image carrée)
-        (height, width) = (dct_data.shape[0], dct_data.shape[1])
-        
-        def compute_yuv_pixel_component(i_ref, j_ref, k):
-            """
-            Permet de calculer la valeur du pixel au point (i_ref, j_ref) sur le canal k
-            """
-            res = 0
-            for i in range(height):
-                for j in range(width):
-                    res += C(i) * C(j) * dct_data[i, j, k] * \
-                           np.cos((np.pi / height) * i * (i_ref + 1 / 2)) * \
-                           np.cos((np.pi / width) * j * (j_ref + 1 / 2))
-            return((2 / height) * res)
-        
-        # on itere sur les 3 canaux, puis sur les pixels de l'image
         for k in range(3):
-            for i_ref in range(height):
-                for j_ref in range(width):
-                    yuv_data[i_ref, j_ref, k] = compute_yuv_pixel_component(i_ref, j_ref, k)
+            yuv_data[:, :, k] = operateur_DCT.T @ dct_data[:, :, k] @ operateur_DCT
         
         return(yuv_data)
     
