@@ -68,51 +68,64 @@ class Encoder:
         # On retourne l'image ainsi constituée
         return image_ycbcr
     
-    def apply_DCT(self, image):
+    @staticmethod
+    def DCT_operator(N):
         """
-        Applique la transformée en cosinus discrete à une image au format luminance chrominance.
-        On veillera bien à implémenter la DCT-II : https://fr.wikipedia.org/wiki/Transform%C3%A9e_en_cosinus_discr%C3%A8te#DCT-II
+        Génère l'opérateur orthogonal (orthogonal <==> sa transposée = son inverse) 
+        de la DCT.
         
         Source pour la formule **exacte** que l'on utilise ici :
         https://www.chireux.fr/mp/cours/Compression%20JPEG.pdf (page 5/24)
         
+        En fait, la formule donnée sur ce site pour les termes du tableau (2D)
+        encodé définit les coefficients d'une matrice égale à un certain 
+        produit "A @ tableau_a_encoder @ A.T", et on définit ici cette matrice A.
+        
+        De même, la formule donnée pour les termes du tableau (2D) décodé
+        définit les coefficients d'une matrice égale à "A.T @ tableau_a_decoder @ A",
+        où A est l'opérateur qui a été utilisé pour l'encodage.
+        
+        Args:
+            N: Taille d'un côté de l'image / du macrobloc
+        
+        Returns:
+            A: l'opérateur de la DCT (matrice NxN)
+        """
+        A = np.zeros((N, N))
+        
+        # coefficient permettant de rendre l'opérateur de la DCT orthogonal 
+        def C(i, N):
+            if i == 0:
+                return(1 / np.sqrt(N))
+            return(np.sqrt(2 / N))
+        
+        # remplissage de la matrice
+        for i in range(N):
+            for j in range(N):
+                A[i, j] = C(i, N) * np.cos((np.pi / N) * i * (j + 1 / 2))
+        
+        return(A)
+    
+    def apply_DCT(self, image, operateur_DCT):
+        """
+        Applique la transformée en cosinus discrete à une image au format luminance chrominance.
+        On veillera bien à implémenter la DCT-II : https://fr.wikipedia.org/wiki/Transform%C3%A9e_en_cosinus_discr%C3%A8te#DCT-II
+        
         Args:
             image: tableau de pixels représentant l'image au format Luminance/Chrominance
+            DCT_operator : matrice orthogonale qui sert d'opérateur de la DCT
         
         Returns:
             dct_data: tableau de coefficients issu de la transformée en cosinus discrete
         """
         dct_data = np.zeros(image.shape)
         
-        def C(w):
-            """
-            Coefficient permettant de rendre chacune des matrices dct_data[:, :, k]
-            orthogonales, avec 0 <= k <= 2. Fonction auxiliaire.
-            """
-            if w == 0:
-                return(1 / np.sqrt(2))
-            return(1)
+        # NB : On aurait très bien pu générer l'opérateur ici via la méthode
+        # DCT_operator, mais comme cet opérateur est amené à être réutilisé,
+        # autant le mettre en argument (pour éviter de le générer plus d'une fois)
         
-        # ici on suppose que height = width (ie image carrée)
-        (height, width) = (image.shape[0], image.shape[1])
-        
-        def compute_energy(i_ref, j_ref, k):
-            """
-            Permet de calculer l'énerge au point (i_ref, j_ref) sur le canal k
-            """
-            res = 0
-            for i in range(height):
-                for j in range(width):
-                    res += image[i, j, k] * \
-                           np.cos((np.pi / height) * i_ref * (i + 1 / 2)) * \
-                           np.cos((np.pi / width) * j_ref * (j + 1 / 2))
-            return((2 / height) * C(i_ref) * C(j_ref) * res)
-        
-        # on itere sur les 3 canaux, puis sur les pixels de l'image
         for k in range(3):
-            for i_ref in range(height):
-                for j_ref in range(width):
-                    dct_data[i_ref, j_ref, k] = compute_energy(i_ref, j_ref, k)
+            dct_data[:, :, k] = operateur_DCT @ image[:, :, k] @ operateur_DCT.T
         
         return(dct_data)
     
