@@ -26,7 +26,8 @@ log.set_log_level(LogLevel.DEBUG)
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
 
 
-img_gen = MosaicImageGenerator(size=(10, 10), bloc_size=(4, 4))
+N = 8
+img_gen = MosaicImageGenerator(size=(N, N), bloc_size=(4, 4))
 
 image = img_gen.generate()
 
@@ -47,7 +48,8 @@ image_yuv = enc.RGB_to_YUV(image)
 print("\n\n\nEncodage - Image YUV (juste avant DCT) :\n")
 img_visu.show_image_with_matplotlib(image_yuv[:, :, 0])
 
-dct_data = enc.apply_DCT(image_yuv)
+operateur_DCT = Encoder.DCT_operator(N)
+dct_data = enc.apply_DCT(image_yuv, operateur_DCT)
 
 # affichage n°3
 print("\n\n\nEncodage - Image juste après DCT :\n")
@@ -106,7 +108,7 @@ print(f"\n\nTransmission réseau réussie : {rle_data == dec_rle_data}\n\n")
 print("\n\n\nDécodage - Données DCT  de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_dct_data[:, :, 0])
 
-dec_yuv_data = dec.decode_DCT(dec_dct_data)
+dec_yuv_data = dec.decode_DCT(dec_dct_data, operateur_DCT)
 
 # affichage n°5
 print("\n\n\nDécodage - Image YUV :\n")
@@ -130,9 +132,9 @@ NB : Ici, la perte d'informations est exclusivement dûe au passage aux entiers
 
 
 # Preuve que la DCT et la DCT_inverse sont bien cohérentes
-test1 = dec.decode_DCT(enc.apply_DCT(image_yuv))
+test1 = dec.decode_DCT(enc.apply_DCT(image_yuv, operateur_DCT), operateur_DCT)
 epsilon1 = np.linalg.norm(test1 - image_yuv)
-test2 = enc.apply_DCT(dec.decode_DCT(dct_data))
+test2 = enc.apply_DCT(dec.decode_DCT(dct_data, operateur_DCT), operateur_DCT)
 epsilon2 = np.linalg.norm(test2 - dct_data)
 print(f"\nTest de précision (DCT & DCT inverse) : {epsilon1}, {epsilon2}\n")
 # --> plus les 2 valeurs obtenues ici sont proches de 0, plus ces 2 fonctions
