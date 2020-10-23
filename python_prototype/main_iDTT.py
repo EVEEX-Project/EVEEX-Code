@@ -2,18 +2,24 @@
 
 """
 Script permettant de tester l'encodage et le décodage d'une image par notre 
-propre algorithme
+propre algorithme.
 
 Ici : version avec la iDTT (integer Discrete Tchebychev Transform), qui est
 analogue à la DCT entière.
 --> cf. iDTT.py
 """
 
-from iDTT import matrix_A, generer_decomp, apply_iDTT, decode_iDTT, round_matrix
+from iDTT import DTT_operator, generer_decomp, apply_iDTT, decode_iDTT, round_matrix
 
-# si DEFAULT_QUANTIZATION_THRESHOLD = 0 : pas de perte, contrairement à la DCT,
-# car le passage des flottants aux entiers dans run_level fait perdre de l'information !
-DEFAULT_QUANTIZATION_THRESHOLD = 1 # doit être un entier >= 0 du coup
+"""
+Si DEFAULT_QUANTIZATION_THRESHOLD = 0, il n'y a pas de perte entre l'image YUV 
+(arrondie) de départ et l'image YUV décodée (cela n'est pas vrai pour l'image RGB, 
+car au début on a dû arrondir la matrice YUV après conversion de RGB à YUV).
+
+DEFAULT_QUANTIZATION_THRESHOLD doit être un entier >= 0 du coup.
+"""
+DEFAULT_QUANTIZATION_THRESHOLD = 1
+
 
 from time import sleep
 import numpy as np
@@ -45,8 +51,7 @@ img_gen = MosaicImageGenerator(size=(N, N), bloc_size=(4, 4))
 
 image_rgb = 255 * img_gen.generate()
 
-# A : opérateur orthogonal de la DTT (--> cf. iDTT.py)
-A = matrix_A(N)
+A = DTT_operator(N)
 
 # S : matrice contenant l'information des SERMs (--> cf. iDTT.py)
 (P, S) = generer_decomp(A)
@@ -65,13 +70,13 @@ img_visu.show_image_with_matplotlib(image_rgb[:, :, 0])
 image_yuv = round_matrix(enc.RGB_to_YUV(image_rgb))
 
 # affichage n°2
-print("\n\n\nEncodage - Image YUV (juste avant iDTT) :\n")
+print(f"\n\n\nEncodage - Image YUV (juste avant iDTT) :\n")
 img_visu.show_image_with_matplotlib(image_yuv[:, :, 0])
 
 iDTT_data = apply_iDTT(P, S, image_yuv)
 
 # affichage n°3
-print("\n\n\nEncodage - Image juste après iDTT :\n")
+print(f"\n\n\nEncodage - Image juste après iDTT :\n")
 img_visu.show_image_with_matplotlib(iDTT_data[:, :, 0])
 print("\n\n\n")
 
@@ -124,7 +129,7 @@ dec_iDTT_data = dec.decode_zigzag(dec_quantized_data)
 # affichage n°4
 sleep(0.01)
 print(f"\n\nTransmission réseau réussie : {rle_data == dec_rle_data}\n\n")
-print("\n\n\nDécodage - Données iDTT  de l'image :\n")
+print(f"\n\n\nDécodage - Données iDTT de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_iDTT_data[:, :, 0])
 
 dec_yuv_data = decode_iDTT(P, S, dec_iDTT_data)
@@ -141,8 +146,8 @@ img_visu.show_image_with_matplotlib(dec_rgb_data[:, :, 0])
 
 
 # Preuve que la iDTT et la iDTT inverse sont bien cohérentes
-test1 = decode_iDTT(P, S, apply_iDTT(P, S, image_rgb))
-epsilon1 = np.linalg.norm(test1 - image_rgb)
+test1 = decode_iDTT(P, S, apply_iDTT(P, S, image_yuv))
+epsilon1 = np.linalg.norm(test1 - image_yuv)
 test2 = apply_iDTT(P, S, decode_iDTT(P, S, iDTT_data))
 epsilon2 = np.linalg.norm(test2 - iDTT_data)
 print(f"\n\n\nTest de précision (iDTT & iDTT inverse) : {epsilon1}, {epsilon2}\n")
