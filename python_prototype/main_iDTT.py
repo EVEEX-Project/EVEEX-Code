@@ -70,13 +70,13 @@ img_visu.show_image_with_matplotlib(image_rgb[:, :, 0])
 image_yuv = round_matrix(enc.RGB_to_YUV(image_rgb))
 
 # affichage n°2
-print(f"\n\n\nEncodage - Image YUV (juste avant iDTT) :\n")
+print("\n\n\nEncodage - Image YUV (juste avant iDTT) :\n")
 img_visu.show_image_with_matplotlib(image_yuv[:, :, 0])
 
 iDTT_data = apply_iDTT(P, S, image_yuv)
 
 # affichage n°3
-print(f"\n\n\nEncodage - Image juste après iDTT :\n")
+print("\n\n\nEncodage - Image juste après iDTT :\n")
 img_visu.show_image_with_matplotlib(iDTT_data[:, :, 0])
 print("\n\n\n")
 
@@ -129,7 +129,7 @@ dec_iDTT_data = dec.decode_zigzag(dec_quantized_data)
 # affichage n°4
 sleep(0.01)
 print(f"\n\nTransmission réseau réussie : {rle_data == dec_rle_data}\n\n")
-print(f"\n\n\nDécodage - Données iDTT de l'image :\n")
+print("\n\n\nDécodage - Données iDTT de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_iDTT_data[:, :, 0])
 
 dec_yuv_data = decode_iDTT(P, S, dec_iDTT_data)
