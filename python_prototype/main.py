@@ -26,11 +26,12 @@ log.set_log_level(LogLevel.DEBUG)
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
 
 
-N = 8
+N = 16
 img_gen = MosaicImageGenerator(size=(N, N), bloc_size=(4, 4))
 
 image = img_gen.generate()
 
+operateur_DCT = Encoder.DCT_operator(N)
 
 # # # -------------------------IMAGE ENCODING-------------------------- # # #
 
@@ -48,8 +49,7 @@ image_yuv = enc.RGB_to_YUV(image)
 print("\n\n\nEncodage - Image YUV (juste avant DCT) :\n")
 img_visu.show_image_with_matplotlib(image_yuv[:, :, 0])
 
-operateur_DCT = Encoder.DCT_operator(N)
-dct_data = enc.apply_DCT(image_yuv, operateur_DCT)
+dct_data = enc.apply_DCT(operateur_DCT, image_yuv)
 
 # affichage n°3
 print("\n\n\nEncodage - Image juste après DCT :\n")
@@ -59,7 +59,7 @@ print("\n\n\n")
 zigzag_data_line = enc.zigzag_linearisation(dct_data)
 quantized_data = enc.quantization(zigzag_data_line, threshold=DEFAULT_QUANTIZATION_THRESHOLD)
 rle_data = enc.run_level(quantized_data)
-#compressed_data = enc.huffman_encode(rle_data)
+compressed_data = enc.huffman_encode(rle_data)
 
 
 # # # -------------------------SENDING DATA OVER NETWORK-------------------------- # # #
@@ -85,7 +85,7 @@ serv.listen_for_packets(cli, callback=on_received_data)
 
 frame_id = randint(0, 65535)
 img_size = image.shape[0] * image.shape[1]
-macroblock_size = 5 # par exemple
+macroblock_size = 4 # par exemple
 
 bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, rle_data, cli, bufsize)
 bit_sender.send_frame_RLE()
@@ -104,11 +104,12 @@ dec_dct_data = dec.decode_zigzag(dec_quantized_data)
 
 # affichage n°4
 sleep(0.01)
-print(f"\n\nTransmission réseau réussie : {rle_data == dec_rle_data}\n\n")
+print("\n\n\n")
+Logger.get_instance().debug(f"\nTransmission réseau réussie (ie rle_data == decoded_rle_data) : {rle_data == dec_rle_data}\n\n")
 print("\n\n\nDécodage - Données DCT  de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_dct_data[:, :, 0])
 
-dec_yuv_data = dec.decode_DCT(dec_dct_data, operateur_DCT)
+dec_yuv_data = dec.decode_DCT(operateur_DCT, dec_dct_data)
 
 # affichage n°5
 print("\n\n\nDécodage - Image YUV :\n")
@@ -132,13 +133,40 @@ NB : Ici, la perte d'informations est exclusivement dûe au passage aux entiers
 
 
 # Preuve que la DCT et la DCT_inverse sont bien cohérentes
-test1 = dec.decode_DCT(enc.apply_DCT(image_yuv, operateur_DCT), operateur_DCT)
+test1 = dec.decode_DCT(operateur_DCT, enc.apply_DCT(operateur_DCT, image_yuv))
 epsilon1 = np.linalg.norm(test1 - image_yuv)
-test2 = enc.apply_DCT(dec.decode_DCT(dct_data, operateur_DCT), operateur_DCT)
+test2 = enc.apply_DCT(operateur_DCT, dec.decode_DCT(operateur_DCT, dct_data))
 epsilon2 = np.linalg.norm(test2 - dct_data)
-print(f"\nTest de précision (DCT & DCT inverse) : {epsilon1}, {epsilon2}\n")
+print("\n")
+Logger.get_instance().debug(f"\nTest de précision (DCT & DCT inverse) : {epsilon1}, {epsilon2}")
 # --> plus les 2 valeurs obtenues ici sont proches de 0, plus ces 2 fonctions
 # sont précises --> OK
+
+
+# Stats :
+
+taille_originale_en_bits = 8 * 3 * img_size # = 24 * N**2
+
+taille_donnees_compressees_huffman = len(compressed_data[0])
+taille_body_bitstream = len(bit_sender.bit_generator.body)
+taille_dico_encode_huffman = len(compressed_data[2])
+taille_dico_bitstream = len(bit_sender.bit_generator.dict)
+taille_bitstream_total = len(received_data) # = len(bit_sender.bit_generator.bitstream)
+
+taux_donnees_huffman = np.round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
+taux_body_bitstream = np.round(100 * taille_body_bitstream / taille_originale_en_bits, 2)
+taux_dico_huffman = np.round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
+taux_dico_bitstream = np.round(100 * taille_dico_bitstream / taille_originale_en_bits, 2)
+taux_bitstream_total = np.round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
+
+print("\n\n")
+Logger.get_instance().debug(f"Quelques taux de compression (pour un bufsize de {bufsize}) :\n")
+
+Logger.get_instance().debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman}%")
+Logger.get_instance().debug(f"Bitstream associé aux données encodées par l'algo de Huffman : {taux_body_bitstream}%\n")
+Logger.get_instance().debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman}%")
+Logger.get_instance().debug(f"Bitstream associé au dictionnaire de Huffman encodé : {taux_dico_bitstream}%\n")
+Logger.get_instance().debug(f"Bitstream total : {taux_bitstream_total}%\n")
 
 
 # # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
