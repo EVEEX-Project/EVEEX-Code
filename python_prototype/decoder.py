@@ -110,7 +110,7 @@ class Decoder:
         
         return res2
     
-    def decode_DCT(self, dct_data, operateur_DCT):
+    def decode_DCT(self, operateur_DCT, dct_data):
         """
         Decode un tableau de valeurs passées par la transformée discrète en
         cosinus. Il s'agit d'appliquer la DCT inverse.
@@ -119,8 +119,8 @@ class Decoder:
         https://www.chireux.fr/mp/cours/Compression%20JPEG.pdf (page 5/24)
         
         Args:
+            operateur_DCT : matrice orthogonale qui sert d'opérateur à la DCT
             dct_data: tableau de valeurs issues de la DCT
-            DCT_operator : matrice orthogonale qui sert d'opérateur de la DCT
         
         Returns:
             yuv_data: tableau de valeurs représentant l'image
