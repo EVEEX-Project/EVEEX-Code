@@ -3,7 +3,11 @@
 """
 N = image_height = image_width (image carrée / macrobloc carré), N >= 2
 N est typiquement de la taille d'un macrobloc, donc idéalement il faudrait 
-éviter d'avoir N > 10 (par exemple)
+éviter d'avoir N > 16. 
+De plus, le temps de génération de l'opérateur de la DTT pour N > 20 est assez 
+élevé. Avec la nouvelle amélioration de l'algorithme, on n'est plus limité
+par la précision du calcul de S, mais plutôt par le temps de calcul de A !
+(cf. articles)
 
 DTT = Discrete Tchebychev Transform
 iDTT = integer DTT
@@ -16,6 +20,9 @@ Sources :
 En gros : 
 Article 1 (pages 2/7 et 3/7) : Implémentation de la DTT et de la iDTT (+ leur inverse)
 Article 2 (pages 5/12 et 6/12) : Décomposition de l'opérateur A (pour la DTT) en SERMs
+
+Tout au long du code, on a essayé de se rapprocher du plus possible des notations
+de ces 2 articles.
 """
 
 import numpy as np
@@ -71,8 +78,9 @@ def t_tilde(n, x, N):
     return((a1(n, N) * x + a2(n, N)) * t_tilde(n-1, x, N) + a3(n, N) * t_tilde(n-2, x, N))
 
 
-# génère l'opérateur de la DTT (ie la matrice A de l'article n°1)
-# la matrice A est orthogonale, ie np.linalg.inv(A) = A.T
+# Génère l'opérateur de la DTT
+# Pour N = 8, on retrouve bien la matrice A de l'article n°1
+# L'opérateur A est orthogonal, ie np.linalg.inv(A) = A.T
 def DTT_operator(N):
     A = np.zeros((N, N))
     
@@ -121,9 +129,7 @@ def decode_DTT(A, dtt_data):
 
 
 # vérifie si les fonctions "apply_DTT" et "decode_DTT" sont précises
-def check_DTT_functions(N):
-    A = DTT_operator(N)
-    
+def check_DTT_functions(A):
     # ici on vérifie si on a bien DTT(DTT_inverse(tab)) = tab
     dtt_data = np.random.uniform(0, 255, size=(N, N, 3))
     test1 = apply_DTT(A, decode_DTT(A, dtt_data))
@@ -142,7 +148,30 @@ def check_DTT_functions(N):
 ##############################################################################
 
 
-# fonctions auxiliaires
+# fonctions auxiliaires pour pouvoir décomposer A en SERMs
+
+
+"""
+Il y a de nouveau une erreur qui pourrait prêter à confusion dans l'article n°1,
+page 3/7, si jamais on venait à vérifier les calculs.
+
+Il s'agit de la ligne située juste après l'équation (13).
+
+Les vraies équations sont : 
+
+inv(S_0) = I - e_8 @ s_0.T
+inv(S_m) = I - e_m @ s_m.T (m = 1, ..., 7)
+inv(S_8) = S_8 = I + e_8 @ s_8.T
+
+Si on généralise : 
+
+inv(S_0) = I - e_N @ s_0.T
+inv(S_m) = I - e_m @ s_m.T (m = 1, ..., N-1)
+inv(S_N) = S_N = I + e_N @ s_N.T
+
+Le fait que S_N soit de la forme "I + e_N @ s_N.T" et qu'il soit son propre 
+inverse explique notamment pourquoi s_N se finit **toujours** par un -2.
+"""
 
 
 # L : matrice triangulaire inférieure avec que des '1' sur la diagonale
@@ -150,7 +179,7 @@ def check_DTT_functions(N):
 # len(liste_S_m) = N + 1, liste_S_m : [S_0, S_1, ..., S_N]
 # pour tout m dans [0, N], S_m.shape = (N, N)
 def generer_liste_S_m(S_0, L, U):
-    N = L.shape[0]
+    N = S_0.shape[0]
     liste_S_m = [S_0]
     
     M_ref = L @ U
@@ -168,19 +197,20 @@ def generer_liste_S_m(S_0, L, U):
     return(liste_S_m)
 
 
-# S_m.shape = (N, N), m : entier, 0 <= m <= N
+# S_m.shape = (N, N), m : entier, 0 <= m <= N, I = np.eye(N)
 # on sait que S_m est de la forme I + e_m @ s_m.T, et l'objectif est de retrouver
 # s_m à partir de S_m
-def extraire_s_m(S_m, m):
+# Cette fonction ne sert que pour la fonction generer_matrice_S
+def extract_s_m(S_m, m):
     N = S_m.shape[0]
-    I = np.eye(N)
     
     if m == 0:
-        e_m = I[N-1, :]
-    else:
-        e_m = I[m-1, :]
+        s_m = np.copy(S_m[N-1, :])
+        s_m[N-1] -= 1
     
-    s_m = (S_m.T - I) @ e_m
+    else:
+        s_m = np.copy(S_m[m-1, :])
+        s_m[m-1] -= 1
     
     return(s_m)
 
@@ -194,34 +224,85 @@ def generer_matrice_S(liste_S_m):
     
     for m in range(0, N+1):
         S_m = liste_S_m[m]
-        s_m = extraire_s_m(S_m, m)
+        s_m = extract_s_m(S_m, m)
         S[m, :] = s_m
     
     return(S)
 
 
-# détermine l'indice de ligne d'un coeff non-nul de la colonne N de A_modifie 
-# (disons i_ref), et renvoie une matrice de permutation qui échange les lignes
-# k et i_ref
-# on suppose ici que A_modifie[k-1, N-1] = 0, donc on sait que i_ref != k
+# Détermine le numéro de la ligne à échanger avec la ligne n°k_ref, de telle 
+# sorte à ce que la quantité abs((a_k_kref - 1) / a_k_N) soit minimisée
+# Cette fonction ne sert que pour la fonction genere_P_k
+# Attention : dans cette fonction, les s_k dont on parle ne sont pas les vecteurs
+# qui composent la matrice S, mais les opposés des coefficients qui se situent
+# à la dernière ligne de la matrice S_0
+def determine_ligne_a_echanger(k_ref, A_modifie):
+    N = A_modifie.shape[0]
+    
+    indice_du_min = -1
+    signe_ref = 0
+    valeur_ref = -1
+    initialisation_valeur_ref = False
+    
+    # on commence à partir de k_ref, car, à ce stade, les parties sous la 
+    # diagonale des colonnes n°k_i ont déjà été mises à 0, avec k_i dans 
+    # [1, k_ref - 1]
+    for k in range(k_ref, N+1):
+        a_k_N = A_modifie[k-1, N-1]
+        
+        if a_k_N != 0:
+            a_k_kref = A_modifie[k-1, k_ref-1]
+            
+            s_k = (a_k_kref - 1) / a_k_N
+            if s_k >= 0:
+                signe_s_k = 1
+            else:
+                signe_s_k = -1
+            
+            # calcul de la valeur absolue de s_i
+            abs_s_k = abs(s_k)
+            
+            if not(initialisation_valeur_ref):
+                # Ici, valeur_ref = -1, donc on la met à jour quoiqu'il arrive
+                # On passera forcément au moins une fois dans cette boucle, sans
+                # quoi la matrice A_modifie serait non-inversible (ce qui n'est 
+                # pas le cas ici)
+                indice_du_min = k
+                signe_ref = signe_s_k
+                valeur_ref = abs_s_k
+                initialisation_valeur_ref = True
+            
+            else:
+                if abs_s_k < valeur_ref:
+                    signe_ref = signe_s_k
+                    valeur_ref = abs_s_k
+                    indice_du_min = k
+    
+    s_k_min = signe_ref * valeur_ref
+    
+    return(indice_du_min, s_k_min)
+
+
+# détermine l'indice de la ligne de A_modifie pour laquelle le coeff s_i est
+# minimal en valeur absolue (disons k_echange), puis génère une matrice de permutation, qui,
+# une fois multipliée à A_modifie par la **gauche**, échange les lignes k et k_ref
 # k : entier, 1 <= k <= N, A_modifie.shape = (N, N)
-def genere_P_k(k, A_modifie):
+def genere_P_k(k_ref, A_modifie):
     N = A_modifie.shape[0]
     P_k = np.eye(N)
     
-    i_ref = -1
-    for i in range(1, N+1):
-        if (i != k) and (A_modifie[i-1, N-1] != 0):
-            i_ref = i
-            break
+    res_intermediaire = determine_ligne_a_echanger(k_ref, A_modifie)
+    k_echange = res_intermediaire[0]
+    s_k_min = res_intermediaire[1]
     
-    P_k[k-1, k-1] = 0
-    P_k[i_ref-1, i_ref-1] = 0
+    if k_echange != k_ref:
+        P_k[k_ref-1, k_ref-1] = 0
+        P_k[k_echange-1, k_echange-1] = 0
+        
+        P_k[k_ref-1, k_echange-1] = 1
+        P_k[k_echange-1, k_ref-1] = 1
     
-    P_k[k-1, i_ref-1] = 1
-    P_k[i_ref-1, k-1] = 1
-    
-    return(P_k)
+    return(P_k, s_k_min)
 
 
 # permet de générer une matrice de Gauss, qui, une fois multipliée à A_modifie
@@ -238,6 +319,12 @@ def genere_L_k(k, A_modifie):
     return(L_k)
 
 
+# permet d'arrondir chacune des composantes de M à l'entier le plus proche
+# M est une matrice **réelle** de taille quelconque
+def round_matrix(M):
+    return(np.round(M, 0).astype(dtype=int))
+
+
 #----------------------------------------------------------------------------#
 
 
@@ -248,18 +335,19 @@ def generer_decomp(A):
     """
     ATTENTION : Il n'y a pas qu'une seule décomposition en SERMs possible !
     
-    En effet, selon la manière dont on choisit l'indice i_ref dans la fonction
-    genere_P_k, on aura des S_m (et donc des s_m) différents.
+    En effet, selon la manière dont on choisit l'indice 'indice_du_min' dans la 
+    fonction determine_ligne_a_echanger, on aura des S_m (et donc des s_m, et
+    donc une matrice S) vraisemblablement différents.
     
-    Ici il est donc normal de trouver une décomposition différente de l'article
-    n°1 pour N = 8. Cependant, la décomposition obtenue est correcte (utiliser
-    la fonction check_decomp pour s'en convaincre).
+    On a ici fait en sorte de coder determine_ligne_a_echanger de manière à
+    optimiser les performances de la iDTT, ie minimiser (en valeur absolue) le 
+    maximum de S.
+    
+    Par ailleurs, pour N = 8, on retrouve bien la matrice S de l'article n°1.
     """
-    
-    # matrice à décomposer
     N = A.shape[0]
     
-    P = np.eye(N).astype(dtype=int)
+    P = np.eye(N, dtype=int)
     M = np.eye(N)
     S_0 = np.eye(N)
     
@@ -270,25 +358,19 @@ def generer_decomp(A):
     for k in range(1, N):
         # étape 1 : détermination de P_k et mise à jour de P (et de A_modifie)
         
-        p_k_N = A_modifie[k-1, N-1]
+        res = genere_P_k(k, A_modifie)
         
-        # si p_k_N != 0, il n'y a rien à faire dans cette étape, car P_k = np.eye(N),
-        # donc P et A_modifie sont inchangés
-        if p_k_N == 0:
-            P_k_is_identity = False
-            
-            P_k = genere_P_k(k, A_modifie)
-            A_modifie = P_k @ A_modifie
-            p_k_N = A_modifie[k-1, N-1]
-            
-            int_P_k = P_k.astype(dtype=int)
-            P = P @ int_P_k.T
-        else:
-            P_k_is_identity = True
+        P_k = res[0]
+        A_modifie = P_k @ A_modifie
+        
+        P = P @ round_matrix(P_k).T
         
         # étape 2 : détermination de S_0_k et mise à jour de S_0 (et de A_modifie)
         
-        s_k = (A_modifie[k-1, k-1] - 1) / p_k_N
+        # Attention : dans cette fonction, les s_k dont on parle ne sont pas 
+        # les vecteurs qui composent la matrice S, mais les opposés des 
+        # coefficients qui se situent à la dernière ligne de la matrice S_0
+        s_k = res[1]
         
         # si s_k = 0, S_0_k = np.eye(N), et donc il ne se passe rien, ie S_0
         # et A_modifie sont inchangés
@@ -304,11 +386,7 @@ def generer_decomp(A):
         L_k = genere_L_k(k, A_modifie)
         A_modifie = L_k @ A_modifie
         
-        if P_k_is_identity:
-            # dans ce cas précis, P_k = np.eye(N)
-            M = L_k @ M
-        else:
-            M = (L_k @ P_k) @ M
+        M = (L_k @ P_k) @ M
     
     
     L = P.T @ np.linalg.inv(M)
@@ -323,17 +401,18 @@ def generer_decomp(A):
 #----------------------------------------------------------------------------#
 
 
-# S.shape = (N+1, N), I = np.eye(N)
-def extract_S_m(S, m, I):
+# S.shape = (N+1, N)
+def extract_S_m(S, m):
     N = S.shape[1]
-    s_m = S[m, :].reshape((N, 1))
+    S_m = np.eye(N)
+    
+    s_m = S[m, :]
     
     if m == 0:
-        e_m = I[N-1, :].reshape((N, 1))
-    else:
-        e_m = I[m-1, :].reshape((N, 1))
+        S_m[N-1, :] += s_m
     
-    S_m = I + e_m @ s_m.T
+    else:
+        S_m[m-1, :] += s_m
     
     return(S_m)
 
@@ -344,22 +423,15 @@ def extract_S_m(S, m, I):
 def check_decomp(A, P, S):
     N = P.shape[0]
     A_check = np.copy(P).astype(dtype=float)
-    I = np.eye(N)
     
-    # on va de m = N (inclus) à m = 0 (inclus), dans l'ordre **décroissant**
+    # on va de m = N (inclus) à m = 0 (inclus), dans l'ordre décroissant
     for m in range(N, -1, -1):
-        S_m = extract_S_m(S, m, I)
+        S_m = extract_S_m(S, m)
         A_check = A_check @ S_m
     
     precision_decomp = np.linalg.norm(A - A_check)
     
     return(precision_decomp)
-
-
-# permet d'arrondir chacune des composantes de M à l'entier le plus proche
-# M est une matrice **réelle** de taille quelconque
-def round_matrix(M):
-    return(np.round(M, 0).astype(dtype=int))
 
 
 #----------------------------------------------------------------------------#
@@ -370,14 +442,13 @@ def round_matrix(M):
 # int_yuv_data.shape = (N, 1), (N,) ou (N, N)
 def apply_forward_iDTT(P, S, int_yuv_data):
     N = P.shape[0]
-    I = np.eye(N)
     
     # initialisation
-    S_0 = extract_S_m(S, 0, I)
+    S_0 = extract_S_m(S, 0)
     int_dtt_data = round_matrix(S_0 @ int_yuv_data)
     
     for m in range(1, N+1):
-        S_m = extract_S_m(S, m, I)
+        S_m = extract_S_m(S, m)
         int_dtt_data = round_matrix(S_m @ int_dtt_data)
     
     int_dtt_data = P @ int_dtt_data
@@ -393,14 +464,13 @@ def apply_forward_iDTT(P, S, int_yuv_data):
 # int_dtt_data.shape = (N, 1), (N,) ou (N, N)
 def decode_forward_iDTT(P, S, int_dtt_data):
     N = P.shape[0]
-    I = np.eye(N)
     
     # initialisation
-    S_N = extract_S_m(S, N, I)
+    S_N = extract_S_m(S, N)
     int_yuv_data = round_matrix(np.linalg.inv(S_N) @ P.T @ int_dtt_data)
     
     for m in range(N-1, -1, -1):
-        S_m = extract_S_m(S, m, I)
+        S_m = extract_S_m(S, m)
         int_yuv_data = round_matrix(np.linalg.inv(S_m) @ int_yuv_data)
     
     return(int_yuv_data)
@@ -439,7 +509,7 @@ def decode_2D_iDTT(P, S, int_dtt_2D_data):
 
 # int_yuv_data.shape = (N, N, 3)
 def apply_iDTT(P, S, int_yuv_data):
-    int_dtt_data = np.zeros(int_yuv_data.shape).astype(dtype=int)
+    int_dtt_data = np.zeros(int_yuv_data.shape, dtype=int)
     
     for k in range(3):
         int_dtt_data[:, :, k] = apply_2D_iDTT(P, S, int_yuv_data[:, :, k])
@@ -454,7 +524,7 @@ def apply_iDTT(P, S, int_yuv_data):
 
 # int_dtt_data.shape = (N, N, 3)
 def decode_iDTT(P, S, int_dtt_data):
-    int_yuv_data = np.zeros(int_dtt_data.shape).astype(dtype=int)
+    int_yuv_data = np.zeros(int_dtt_data.shape, dtype=int)
     
     for k in range(3):
         int_yuv_data[:, :, k] = decode_2D_iDTT(P, S, int_dtt_data[:, :, k])
@@ -466,10 +536,7 @@ def decode_iDTT(P, S, int_dtt_data):
 
 
 # vérifie si les fonctions "apply_iDTT" et "decode_iDTT" sont précises
-def check_iDTT_functions(N):
-    A = DTT_operator(N)
-    (P, S) = generer_decomp(A)
-    
+def check_iDTT_functions(A, P, S):
     # ici on vérifie que la décomposition de A est bien cohérente
     epsilon_decomp = check_decomp(A, P, S)
     print(f"\nPrécision de la décomposition de A : {epsilon_decomp}")
@@ -493,26 +560,38 @@ def check_iDTT_functions(N):
 
 
 if __name__ == "__main__":
-    # N = image_height = image_width (image carrée / macrobloc carré), N >= 2
-    # N est typiquement de la taille d'un macrobloc, donc idéalement il faudrait
-    # éviter d'avoir N > 10 (par exemple)
-    N = 8
+    """
+    N = image_height = image_width (image carrée / macrobloc carré), N >= 2
+    N est typiquement de la taille d'un macrobloc, donc idéalement il faudrait 
+    éviter d'avoir N > 16. 
+    De plus, le temps de génération de l'opérateur de la DTT pour N > 20 est assez 
+    élevé.
+    """
+    N = 16
     print(f"\n\nN = {N}")
-    # On remarque que, pour N > 12, les erreurs lors de l'application de la iDTT
-    # et la iDTT inverse sont monumentales, alors qu'elles sont (littéralement)
-    # nulles pour N <= 12
+    
+    #------------------------------------------------------------------------#
+    
+    # Génération de l'opérateur de la DTT et de sa décomposition en SERMs
+    
+    # Comme la fonction DTT_operator est assez lourde en termes de calculs, on 
+    # fait en sorte de n'y faire appel qu'une seule fois dans tout le code
+    # Pour optimiser le code, on fait de même avec la fonction generer_decomp
+    # (même si celle-ci s'exécute assez rapidement)
+    A = DTT_operator(N)
+    (P, S) = generer_decomp(A)
     
     #------------------------------------------------------------------------#
     
     # DTT & DTT inverse
     
-    check_DTT_functions(N)
+    check_DTT_functions(A)
     # --> OK
     
     #------------------------------------------------------------------------#
     
     # iDTT & iDTT inverse
     
-    check_iDTT_functions(N)
+    check_iDTT_functions(A, P, S)
     # --> OK
 
