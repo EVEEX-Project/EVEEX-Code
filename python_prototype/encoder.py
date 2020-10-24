@@ -2,7 +2,6 @@
 
 import numpy as np
 from huffman import Huffman
-from logger import Logger
 
 DEFAULT_QUANTIZATION_THRESHOLD = 0.5
 
@@ -106,14 +105,14 @@ class Encoder:
         
         return(A)
     
-    def apply_DCT(self, image, operateur_DCT):
+    def apply_DCT(self, operateur_DCT, image):
         """
         Applique la transformée en cosinus discrete à une image au format luminance chrominance.
         On veillera bien à implémenter la DCT-II : https://fr.wikipedia.org/wiki/Transform%C3%A9e_en_cosinus_discr%C3%A8te#DCT-II
         
         Args:
+            operateur_DCT : matrice orthogonale qui sert d'opérateur à la DCT
             image: tableau de pixels représentant l'image au format Luminance/Chrominance
-            DCT_operator : matrice orthogonale qui sert d'opérateur de la DCT
         
         Returns:
             dct_data: tableau de coefficients issu de la transformée en cosinus discrete
@@ -226,10 +225,41 @@ class Encoder:
         
         # Pour chaque élément de la liste
         for x in data:
-            # Dans un premier temps, on considèrera que les 2èmes valeurs
-            # des tuples RLE sont des entiers, et non des flottants
-            # --> "entier" correspond à l'entier le plus proche de x
-            if x > 0:
+            """
+            Dans un premier temps, on considèrera que les 2èmes valeurs
+            des tuples RLE sont des entiers, et non des flottants
+            --> "entier" correspond à ici l'entier le plus proche de x
+            
+            /!\ ATTENTION /!\
+            Ici, NE PAS UTILISER la fonction round ou np.round (en considérant
+            par exemple 'entier = round(x)' ou 'entier = np.round(x)'), car ici
+            x est soit de type numpy.int32 ou numpy.float64 (et non int ou float)
+            
+            Si x est de type numpy.int32 : OK (pas de problème)
+            
+            Si x est de type numpy.float64 : gros problème
+            En effet, quand la fonction round (ou np.round) reçoit un objet de 
+            type numpy.float64 en entrée, elle renvoie un objet qui est également 
+            de type numpy.float64, et non int (ou numpy.int32) !!
+            
+            Exemple : Soit a = 24.4, avec type(a) = numpy.float64, et soit
+            b = round(a) (ou b = np.round(a)). Alors b = 24.0 (et non 24), et 
+            type(b) = numpy.float64 !
+            
+            Cependant, la fonction int **force** la conversion en int, même si
+            l'objet est de type numpy.float64
+            
+            Autre remarques (moins importantes) : 
+            1) Si x est de type float (et non numpy.float64), round renvoie bien
+            un int, comme on s'y attendrait
+            2) La fonction int n'est pas exactement la partie entière
+            Il s'agit en fait de la 'troncature entière', ie le flottant privé de
+            sa partie décimale. Ainsi, int et la partie entière coïncident sur
+            R+, mais PAS sur R*-. Sur R*-, on a : int(x) = partie_entiere(x) + 1.
+            Si int avait été exactement la partie entière, on aurait directement
+            pu écrire 'entier = int(x + 0.5)' sans aucune disjonction de cas.
+            """
+            if x >= 0:
                 entier = int(x + 0.5)
             else:
                 entier = int(x - 0.5)
@@ -262,43 +292,6 @@ class Encoder:
         """
         huff_enc = Huffman(pairs)
         # TODO : Construire le bitstream (structure, données)
-
-        return huff_enc.encode_phrase(), huff_enc.symbols
-
-
-if __name__ == '__main__':
-    from PIL import Image
-    from image_visualizer import ImageVisualizer
-
-    image = Image.open("test_img.png")
-    img_data = np.asarray(image)
-    enc = Encoder()
-    visu = ImageVisualizer()
-
-    # On converti de RGB vers YUV
-    yuv_data = enc.RGB_to_YUV(img_data)
-    # On affiche la luminance
-    visu.show_image_with_matplotlib(yuv_data[:, :, 0])
-    # On applique la DCT
-    dct_data = enc.apply_DCT(yuv_data)
-    # On affiche la carte d'énergie
-    visu.show_image_with_matplotlib(dct_data[:, :, 0])
-    # zigzag linearisation
-    zigzag_data = enc.zigzag_linearisation(dct_data)
-    # On quantiife les données
-    quanti = enc.quantization(zigzag_data, threshold=1e2)
-    # On affiche le résultat de la quantification de la luminance
-    visu.show_image_with_matplotlib(np.reshape(quanti[:100], (img_data.shape[0], img_data.shape[1])))
-    # RLE
-    rle = enc.run_level(quanti)
-    Logger.get_instance().debug("RLE\n" + str(rle))
-    # Encodage avec huffman
-    huff_enc = enc.huffman_encode(rle)
-    Logger.get_instance().debug("Huffman\n" + str(huff_enc))
-
-    originale = 3 * 8 * img_data.shape[0] * img_data.shape[1]
-    compressee = len(huff_enc[0])
-    Logger.get_instance().debug("Taille originale en bits : " + str(originale))
-    Logger.get_instance().debug("Taille compressée : " + str(compressee))
-    Logger.get_instance().debug(f"Taux de compression : {round(compressee / originale * 100, 2)}%")
+        
+        return huff_enc.encode_phrase(), huff_enc.symbols, huff_enc.dictToBin()
 
