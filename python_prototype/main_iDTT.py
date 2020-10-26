@@ -9,7 +9,7 @@ analogue à la DCT entière.
 --> cf. iDTT.py
 """
 
-from iDTT import DTT_operator, generer_decomp, apply_iDTT, decode_iDTT, round_matrix
+from iDTT import DTT_operator, generer_decomp, apply_iDTT, decode_iDTT, round_matrix, check_iDTT_functions
 
 """
 Si DEFAULT_QUANTIZATION_THRESHOLD = 0, il n'y a pas de perte entre l'image YUV 
@@ -28,7 +28,6 @@ DEFAULT_QUANTIZATION_THRESHOLD = 10
 
 
 from time import sleep
-import numpy as np
 from random import randint
 from encoder import Encoder
 from decoder import Decoder
@@ -43,9 +42,11 @@ from logger import LogLevel, Logger
 
 log = Logger.get_instance()
 log.set_log_level(LogLevel.DEBUG)
+#log.start_file_logging("log_iDTT.log")
 
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
+
 
 """
 N = image_height = image_width (image carrée / macrobloc carré), N >= 2
@@ -68,8 +69,27 @@ image_rgb = 255 * img_gen.generate()
 """
 Pour tester une sorte de "DCT entière" en recyclant la méthode de la iDTT,
 remplacer "A = DTT_operator(N)" par "A = Encoder.DCT_operator(N)".
---> Ce n'est pas "la" DCT entière à proprement parler, mais ça fonctionne
-    plutôt bien
+
+--> Ce n'est pas "la" DCT entière à proprement parler, mais ça fonctionne quand 
+    même plutôt bien. En effet, pour des mêmes valeurs de N, 
+    DEFAULT_QUANTIZATION_THRESHOLD et bufsize, on obtient de meilleurs taux de 
+    compression avec l'opérateur de la DCT !!
+
+Attention : 
+
+Contrairement à l'opérateur de la DTT qui a un déterminant de 1 quel que soit N, 
+l'opérateur de la DCT a un déterminant de +1 ou de -1 (selon les valeurs de N). 
+Or, comme la décomposition en SERMs (telle qu'elle a été codée dans iDTT.py) ne 
+fonctionne correctement que pour des matrices orthogonales (OK ici pour l'opérateur 
+de la DCT) de déterminant égal à 1, si on veut tester ce que ce code donne avec 
+l'opérateur de la DCT dans les meilleures conditions, il est nécessaire de 
+choisir une valeur de N pour laquelle on a det(opérateur DCT) = 1. En voici 
+quelques unes : 4, 5, 8, 9, 12, 13, 16, 17 ou 20. Il se trouve que ces valeurs 
+particulières de N sont **exactement** les entiers de la forme 4*k ou 4*k+1, 
+avec k >= 1 (N=1 fonctionne aussi, mais en pratique on a N >= 2).
+
+A priori, comme N sera très probablement égal à 8 ou à 16 (taille des macroblocs), 
+il n'y aura pas de problème à ce niveau-là.
 """
 A = DTT_operator(N)
 #A = Encoder.DCT_operator(N)
@@ -110,8 +130,8 @@ compressed_data = enc.huffman_encode(rle_data)
 # # # -------------------------SENDING DATA OVER NETWORK-------------------------- # # #
 
 
-puiss_2_random = randint(10, 12)
-bufsize = 2 ** puiss_2_random # doit impérativement être >= 51 (en pratique : OK)
+# le bufsize doit impérativement être >= 51 (en pratique : OK)
+bufsize = 4096
 
 HOST = 'localhost'
 PORT = randint(5000, 15000)
@@ -128,8 +148,8 @@ def on_received_data(data):
 
 serv.listen_for_packets(cli, callback=on_received_data)
 
-frame_id = randint(0, 65535)
-img_size = N ** 2
+frame_id = randint(0, 65535) # 65535 = 2**16 -1
+img_size = N**2
 macroblock_size = 4 # par exemple
 
 bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, rle_data, cli, bufsize)
@@ -150,7 +170,7 @@ dec_iDTT_data = dec.decode_zigzag(dec_quantized_data)
 # affichage n°4
 sleep(0.01)
 print("\n\n")
-Logger.get_instance().debug(f"\nTransmission réseau réussie (ie rle_data == decoded_rle_data) : {rle_data == dec_rle_data}\n\n")
+log.debug(f"\nTransmission réseau réussie (ie rle_data == decoded_rle_data) : {rle_data == dec_rle_data}\n\n")
 print("\n\n\nDécodage - Données iDTT de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_iDTT_data[:, :, 0])
 
@@ -168,14 +188,8 @@ img_visu.show_image_with_matplotlib(dec_rgb_data[:, :, 0])
 
 
 # Preuve que la iDTT et la iDTT inverse sont bien cohérentes
-test1 = decode_iDTT(P, S, apply_iDTT(P, S, image_yuv))
-epsilon1 = np.linalg.norm(test1 - image_yuv)
-test2 = apply_iDTT(P, S, decode_iDTT(P, S, iDTT_data))
-epsilon2 = np.linalg.norm(test2 - iDTT_data)
-print("\n\n\n")
-Logger.get_instance().debug(f"\nTest de précision (iDTT & iDTT inverse) : {epsilon1}, {epsilon2}\n")
-# Plus les 2 valeurs obtenues ici sont proches de 0, plus ces 2 fonctions
-# sont précises --> OK
+print("\n\n")
+check_iDTT_functions(A, P, S)
 
 
 # Stats :
@@ -188,20 +202,20 @@ taille_dico_encode_huffman = len(compressed_data[2])
 taille_dico_bitstream = len(bit_sender.bit_generator.dict)
 taille_bitstream_total = len(received_data) # = len(bit_sender.bit_generator.bitstream)
 
-taux_donnees_huffman = np.round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
-taux_body_bitstream = np.round(100 * taille_body_bitstream / taille_originale_en_bits, 2)
-taux_dico_huffman = np.round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
-taux_dico_bitstream = np.round(100 * taille_dico_bitstream / taille_originale_en_bits, 2)
-taux_bitstream_total = np.round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
+taux_donnees_huffman = round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
+taux_body_bitstream = round(100 * taille_body_bitstream / taille_originale_en_bits, 2)
+taux_dico_huffman = round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
+taux_dico_bitstream = round(100 * taille_dico_bitstream / taille_originale_en_bits, 2)
+taux_bitstream_total = round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
 
 print("\n\n")
-Logger.get_instance().debug(f"Quelques taux de compression (pour un bufsize de {bufsize}) :\n")
+log.debug(f"Quelques taux de compression (pour un bufsize de {bufsize}) :\n")
 
-Logger.get_instance().debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman}%")
-Logger.get_instance().debug(f"Bitstream associé aux données encodées par l'algo de Huffman : {taux_body_bitstream}%\n")
-Logger.get_instance().debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman}%")
-Logger.get_instance().debug(f"Bitstream associé au dictionnaire de Huffman encodé : {taux_dico_bitstream}%\n")
-Logger.get_instance().debug(f"Bitstream total : {taux_bitstream_total}%\n")
+log.debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman}%")
+log.debug(f"Bitstream associé aux données encodées par l'algo de Huffman : {taux_body_bitstream}%\n")
+log.debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman}%")
+log.debug(f"Bitstream associé au dictionnaire de Huffman encodé : {taux_dico_bitstream}%\n")
+log.debug(f"Bitstream total : {taux_bitstream_total}%\n")
 
 
 # # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
