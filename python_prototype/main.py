@@ -6,8 +6,8 @@ propre algorithme
 """
 
 from time import sleep
-import numpy as np
 from random import randint
+from numpy.linalg  import norm
 from encoder import Encoder, DEFAULT_QUANTIZATION_THRESHOLD
 from decoder import Decoder
 from network_transmission import Server, Client
@@ -21,6 +21,7 @@ from logger import LogLevel, Logger
 
 log = Logger.get_instance()
 log.set_log_level(LogLevel.DEBUG)
+#log.start_file_logging("log.log")
 
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
@@ -65,8 +66,8 @@ compressed_data = enc.huffman_encode(rle_data)
 # # # -------------------------SENDING DATA OVER NETWORK-------------------------- # # #
 
 
-puiss_2_random = randint(10, 12)
-bufsize = 2 ** puiss_2_random # doit impérativement être >= 51 (en pratique : OK)
+# le bufsize doit impérativement être >= 51 (en pratique : OK)
+bufsize = 4096 
 
 HOST = 'localhost'
 PORT = randint(5000, 15000)
@@ -83,8 +84,8 @@ def on_received_data(data):
 
 serv.listen_for_packets(cli, callback=on_received_data)
 
-frame_id = randint(0, 65535)
-img_size = image.shape[0] * image.shape[1]
+frame_id = randint(0, 65535) # 65535 = 2**16 -1
+img_size = N**2
 macroblock_size = 4 # par exemple
 
 bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, rle_data, cli, bufsize)
@@ -105,7 +106,7 @@ dec_dct_data = dec.decode_zigzag(dec_quantized_data)
 # affichage n°4
 sleep(0.01)
 print("\n\n\n")
-Logger.get_instance().debug(f"\nTransmission réseau réussie (ie rle_data == decoded_rle_data) : {rle_data == dec_rle_data}\n\n")
+log.debug(f"\nTransmission réseau réussie (ie rle_data == decoded_rle_data) : {rle_data == dec_rle_data}\n\n")
 print("\n\n\nDécodage - Données DCT  de l'image :\n")
 img_visu.show_image_with_matplotlib(dec_dct_data[:, :, 0])
 
@@ -134,11 +135,11 @@ NB : Ici, la perte d'informations est exclusivement dûe au passage aux entiers
 
 # Preuve que la DCT et la DCT_inverse sont bien cohérentes
 test1 = dec.decode_DCT(operateur_DCT, enc.apply_DCT(operateur_DCT, image_yuv))
-epsilon1 = np.linalg.norm(test1 - image_yuv)
+epsilon1 = norm(test1 - image_yuv)
 test2 = enc.apply_DCT(operateur_DCT, dec.decode_DCT(operateur_DCT, dct_data))
-epsilon2 = np.linalg.norm(test2 - dct_data)
+epsilon2 = norm(test2 - dct_data)
 print("\n")
-Logger.get_instance().debug(f"\nTest de précision (DCT & DCT inverse) : {epsilon1}, {epsilon2}")
+log.debug(f"\nTest de précision (DCT & DCT inverse) : {epsilon1}, {epsilon2}")
 # --> plus les 2 valeurs obtenues ici sont proches de 0, plus ces 2 fonctions
 # sont précises --> OK
 
@@ -153,20 +154,20 @@ taille_dico_encode_huffman = len(compressed_data[2])
 taille_dico_bitstream = len(bit_sender.bit_generator.dict)
 taille_bitstream_total = len(received_data) # = len(bit_sender.bit_generator.bitstream)
 
-taux_donnees_huffman = np.round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
-taux_body_bitstream = np.round(100 * taille_body_bitstream / taille_originale_en_bits, 2)
-taux_dico_huffman = np.round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
-taux_dico_bitstream = np.round(100 * taille_dico_bitstream / taille_originale_en_bits, 2)
-taux_bitstream_total = np.round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
+taux_donnees_huffman = round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
+taux_body_bitstream = round(100 * taille_body_bitstream / taille_originale_en_bits, 2)
+taux_dico_huffman = round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
+taux_dico_bitstream = round(100 * taille_dico_bitstream / taille_originale_en_bits, 2)
+taux_bitstream_total = round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
 
 print("\n\n")
-Logger.get_instance().debug(f"Quelques taux de compression (pour un bufsize de {bufsize}) :\n")
+log.debug(f"Quelques taux de compression (pour un bufsize de {bufsize}) :\n")
 
-Logger.get_instance().debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman}%")
-Logger.get_instance().debug(f"Bitstream associé aux données encodées par l'algo de Huffman : {taux_body_bitstream}%\n")
-Logger.get_instance().debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman}%")
-Logger.get_instance().debug(f"Bitstream associé au dictionnaire de Huffman encodé : {taux_dico_bitstream}%\n")
-Logger.get_instance().debug(f"Bitstream total : {taux_bitstream_total}%\n")
+log.debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman}%")
+log.debug(f"Bitstream associé aux données encodées par l'algo de Huffman : {taux_body_bitstream}%\n")
+log.debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman}%")
+log.debug(f"Bitstream associé au dictionnaire de Huffman encodé : {taux_dico_bitstream}%\n")
+log.debug(f"Bitstream total : {taux_bitstream_total}%\n")
 
 
 # # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
