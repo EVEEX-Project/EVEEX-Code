@@ -548,7 +548,11 @@ if __name__ == "__main__":
     # chacun des paquets constituant dict et body
     
     # En effet, les "métadonnées" associées à chacun des paquets élémentaires
-    # de dict et de body font exactement 50 bits
+    # de dict et de body font exactement 50 bits (enfin, pour être précis, ce 
+    # sont des chaînes de caractère de taille 50 qui sont uniquement composées 
+    # de '0' et de '1', mais chacun de ces '0' et '1' est codé sur 8 bits, donc 
+    # sur un octet, donc en réalité ces métadonnées ont une taille de 50 octets,
+    # et non 50 bits)
     
     # Le bufsize est souvent une puissance de 2, et désigne le nombre maximal
     # d'octets qui pourront être reçus (resp. être envoyés) par le serveur (resp. 
