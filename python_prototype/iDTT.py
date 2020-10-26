@@ -51,22 +51,22 @@ Il y a (au moins) 2 erreurs d'étourderie :
 """
 
 
-# n : entier >= 0, N : entier >= 2 et > n
+# N >= 2, 0 <= n < N
 def a1(n, N):
     return((2 / n) * np.sqrt((4 * n**2 - 1) / (N**2 - n**2)))
 
 
-# n : entier >= 0, N : entier >= 2 et > n
+# N >= 2, 0 <= n < N
 def a2(n, N):
     return(((1 - N) / n) * np.sqrt((4 * n**2 - 1) / (N**2 - n**2)))
 
 
-# n : entier >= 0, N : entier >= 2 et > n
+# N >= 2, 0 <= n < N
 def a3(n, N):
     return(((1 - n) / n) * np.sqrt((2 * n + 1) / (2 * n - 3)) * np.sqrt((N**2 - (n - 1)**2) / (N**2 - n**2)))
 
 
-# n : entier >= 0, x : entier >= 0, N : entier >= 2 et > n
+# N >= 2, 0 <= n < N, x : entier >= 0
 # algo récursif
 def t_tilde(n, x, N):
     if n == 0:
@@ -218,7 +218,7 @@ def generer_liste_S_m(S_0, L, U):
     return(liste_S_m)
 
 
-# S_m.shape = (N, N), m : entier, 0 <= m <= N, I = np.eye(N)
+# S_m.shape = (N, N), m : entier, 0 <= m <= N
 # on sait que S_m est de la forme I + e_m @ s_m.T, et l'objectif est de retrouver
 # s_m à partir de S_m
 # Cette fonction ne sert que pour la fonction generer_matrice_S
@@ -250,11 +250,12 @@ def generer_matrice_S(liste_S_m):
 
 
 # Détermine le numéro de la ligne à échanger avec la ligne n°k_ref, de telle 
-# sorte à ce que la quantité abs((a_k_kref - 1) / a_k_N) soit minimisée
+# sorte à ce que la quantité abs((a_k_kref - 1) / a_k_N) (ie abs(s_k)) soit 
+# minimisée
 # Cette fonction ne sert que pour la fonction genere_P_k
 # Attention : dans cette fonction, les s_k dont on parle ne sont pas les vecteurs
-# qui composent la matrice S, mais les opposés des coefficients qui se situent
-# à la dernière ligne de la matrice S_0
+# qui composent la matrice S, mais les coefficients qui se situent à la dernière 
+# ligne de la matrice S_0
 # k_ref : entier, 1 <= k_ref <= N-1
 def determine_ligne_a_echanger(k_ref, A_modifie):
     N = A_modifie.shape[0]
@@ -283,12 +284,9 @@ def determine_ligne_a_echanger(k_ref, A_modifie):
             abs_s_k = abs(s_k)
             
             if not(initialisation_valeur_ref):
-                """
-                Ici, valeur_ref = -1, donc on la met à jour quoiqu'il arrive
-                
-                On passera forcément au moins une fois dans cette boucle, sans
-                quoi A_modifie serait non-inversible (--> absurde)
-                """
+                # Ici, valeur_ref = -1, donc on la met à jour quoiqu'il arrive
+                # On passera forcément au moins une fois dans cette boucle, sans
+                # quoi A_modifie serait non-inversible (--> absurde)
                 indice_du_min = k
                 signe_ref = signe_s_k
                 valeur_ref = abs_s_k
@@ -306,8 +304,8 @@ def determine_ligne_a_echanger(k_ref, A_modifie):
 
 
 # Attention : dans cette fonction, les s_k dont on parle ne sont pas les vecteurs 
-# qui composent la matrice S, mais les opposés des coefficients qui se situent 
-# à la dernière ligne de la matrice S_0
+# qui composent la matrice S, mais les coefficients qui se situent à la dernière 
+# ligne de la matrice S_0
 # Détermine l'indice de la ligne de A_modifie pour laquelle le coeff s_k est
 # minimal en valeur absolue (disons k_echange), puis génère une matrice de 
 # permutation, qui, une fois multipliée à A_modifie par la **gauche**, échange 
@@ -383,7 +381,9 @@ def generer_decomp(A):
     
     # ici, on met à jour itérativement P, M, et S_0 (et A_modifie)
     for k in range(1, N):
-        # étape 1 : détermination de P_k et mise à jour de P (et de A_modifie)
+        #--------------------------------------------------------------------#
+        
+        # Étape 1 : détermination de P_k et mise à jour de P (et de A_modifie)
         
         res = genere_P_k(k, A_modifie)
         
@@ -392,11 +392,13 @@ def generer_decomp(A):
         
         P = P @ round_matrix(P_k).T
         
-        # étape 2 : détermination de S_0_k et mise à jour de S_0 (et de A_modifie)
+        #--------------------------------------------------------------------#
+        
+        # Étape 2 : détermination de S_0_k et mise à jour de S_0 (et de A_modifie)
         
         # Attention : dans cette fonction, les s_k dont on parle ne sont pas 
-        # les vecteurs qui composent la matrice S, mais les opposés des 
-        # coefficients qui se situent à la dernière ligne de la matrice S_0
+        # les vecteurs qui composent la matrice S, mais les coefficients
+        # qui se situent à la dernière ligne de la matrice S_0
         s_k = res[1]
         
         # si s_k = 0, S_0_k = np.eye(N), et donc il ne se passe rien, ie S_0
@@ -408,15 +410,31 @@ def generer_decomp(A):
             
             S_0 = np.linalg.inv(S_0_k) @ S_0
         
-        # étape 3 : détermination de L_k et mise à jour de M (et de A_modifie)
+        #--------------------------------------------------------------------#
+        
+        # Étape 3 : détermination de L_k et mise à jour de M (et de A_modifie)
         
         L_k = genere_L_k(k, A_modifie)
         A_modifie = L_k @ A_modifie
         
         M = (L_k @ P_k) @ M
+        
+        #--------------------------------------------------------------------#
     
     
     L = P.T @ np.linalg.inv(M)
+    
+    # En réalité, il s'agit ici de la matrice D_R @ U, où D_R = diag(1, ..., 1, epsilon),
+    # où epsilon = det(A) * produit(k=1, k=N-1, det(P_k)) 
+    # Si det(A) = +/- 1 (ce qui est le cas ici), epsilon vaut +/- 1, car les 
+    # P_k ont tous un det de +/- 1
+    # Faire la décomposition de L @ (D_R @ U) au lieu de celle de L @ U n'est
+    # ici pas très gênant, car en fin de compte ce qui importe c'est que les
+    # coefficients de la matrice S finale soient faibles en valeur absolue
+    # Or, ce changement n'est pas dramatique, car la seule chose qui est modifiée 
+    # c'est (en gros) le dernier terme de s_N, qui vaut -2 au lieu de 0, mais en
+    # contrepartie sans ce changement on doit considérer une 2ème matrice de 
+    # permutation dans la décomposition de A (cf. article n°2) !
     U = np.copy(A_modifie)
     
     liste_S_m = generer_liste_S_m(S_0, L, U)
