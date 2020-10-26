@@ -37,6 +37,7 @@ from image_generator import MosaicImageGenerator
 from image_visualizer import ImageVisualizer
 from logger import LogLevel, Logger
 
+
 # # # ----------------------SETTING UP THE LOGGER------------------------ # # #
 
 
@@ -70,26 +71,10 @@ image_rgb = 255 * img_gen.generate()
 Pour tester une sorte de "DCT entière" en recyclant la méthode de la iDTT,
 remplacer "A = DTT_operator(N)" par "A = Encoder.DCT_operator(N)".
 
---> Ce n'est pas "la" DCT entière à proprement parler, mais ça fonctionne quand 
-    même plutôt bien. En effet, pour des mêmes valeurs de N, 
-    DEFAULT_QUANTIZATION_THRESHOLD et bufsize, on obtient de meilleurs taux de 
-    compression avec l'opérateur de la DCT !!
-
-Attention : 
-
-Contrairement à l'opérateur de la DTT qui a un déterminant de 1 quel que soit N, 
-l'opérateur de la DCT a un déterminant de +1 ou de -1 (selon les valeurs de N). 
-Or, comme la décomposition en SERMs (telle qu'elle a été codée dans iDTT.py) ne 
-fonctionne correctement que pour des matrices orthogonales (OK ici pour l'opérateur 
-de la DCT) de déterminant égal à 1, si on veut tester ce que ce code donne avec 
-l'opérateur de la DCT dans les meilleures conditions, il est nécessaire de 
-choisir une valeur de N pour laquelle on a det(opérateur DCT) = 1. En voici 
-quelques unes : 4, 5, 8, 9, 12, 13, 16, 17 ou 20. Il se trouve que ces valeurs 
-particulières de N sont **exactement** les entiers de la forme 4*k ou 4*k+1, 
-avec k >= 1 (N=1 fonctionne aussi, mais en pratique on a N >= 2).
-
-A priori, comme N sera très probablement égal à 8 ou à 16 (taille des macroblocs), 
-il n'y aura pas de problème à ce niveau-là.
+Ce n'est pas "la" DCT entière à proprement parler, mais ça fonctionne quand 
+même plutôt bien. En effet, pour des mêmes valeurs de N, DEFAULT_QUANTIZATION_THRESHOLD 
+et bufsize, on obtient de meilleurs taux de compression avec l'opérateur de 
+la DCT (pour au moins N = 8 et N = 16) !!
 """
 A = DTT_operator(N)
 #A = Encoder.DCT_operator(N)
