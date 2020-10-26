@@ -96,11 +96,16 @@ def DTT_operator(N):
 
 # DTT
 
-# yuv_data.shape = (N, N, 3)
-# A : opérateur orthogonal de la DTT
-# on aurait pu générer A directement dans la fonction, mais comme A est
+# yuv_data.shape = (N, N) ou (N, N, 3)
+# A : opérateur orthogonal de la DTT, A.shape = (N, N)
+# On aurait pu générer A directement dans la fonction, mais comme A est
 # amenée à être réutilisée, autant la mettre en argument
 def apply_DTT(A, yuv_data):
+    if len(yuv_data.shape) == 2:
+        # ici yuv_data.shape = (N, N)
+        return(A @ yuv_data @ A.T)
+    
+    # si on est arrivé jusque là, on a yuv_data.shape = (N, N, 3)
     dtt_data = np.zeros(yuv_data.shape)
     
     for k in range(3):
@@ -130,6 +135,8 @@ def decode_DTT(A, dtt_data):
 
 # vérifie si les fonctions "apply_DTT" et "decode_DTT" sont précises
 def check_DTT_functions(A):
+    N = A.shape[0]
+    
     # ici on vérifie si on a bien DTT(DTT_inverse(tab)) = tab
     dtt_data = np.random.uniform(0, 255, size=(N, N, 3))
     test1 = apply_DTT(A, decode_DTT(A, dtt_data))
@@ -163,14 +170,28 @@ inv(S_0) = I - e_8 @ s_0.T
 inv(S_m) = I - e_m @ s_m.T (m = 1, ..., 7)
 inv(S_8) = S_8 = I + e_8 @ s_8.T
 
-Si on généralise : 
+Le fait que S_8 soit de la forme "I + e_8 @ s_8.T" et qu'il soit son propre 
+inverse explique notamment pourquoi s_8 se finit par -2.
+
+En fait, contrairement à ce que dit l'article dans cette ligne, S_0 ne sera 
+**jamais** égal à son propre inverse. Le seul SERM (ie le seul S_m, avec 
+0 <= m <= N) qui pourra potentiellement être égal à son propre inverse est S_N,
+et cela arrive **ssi** s_N se termine par -2.
+
+Les 2 premières équations se généralisent bien :
 
 inv(S_0) = I - e_N @ s_0.T
 inv(S_m) = I - e_m @ s_m.T (m = 1, ..., N-1)
-inv(S_N) = S_N = I + e_N @ s_N.T
 
-Le fait que S_N soit de la forme "I + e_N @ s_N.T" et qu'il soit son propre 
-inverse explique notamment pourquoi s_N se finit **toujours** par un -2.
+Cependant, la dernière équation ne se généralise pas très bien.
+
+En effet, si on considère les entiers N de 1 (inclus) à 30 (inclus), on a que
+le dernier terme de s_N vaudra toujours 0, sauf pour N = 6, 8, 13, 16, 20, 24, 
+25, 26 et 27, où celui-ci vaudra -2.
+Si ce coeff vaut -2, alors S_N est son propre inverse, et on a bien la propriété
+suivante : inv(S_N) = S_N = I + e_N @ s_N.T
+Cependant, s'il vaut 0, alors on a : inv(S_N) = I - e_N @ s_N.T (comme pour 
+les autres S_m, avec 1 <= m <= N-1).
 """
 
 
@@ -180,7 +201,7 @@ inverse explique notamment pourquoi s_N se finit **toujours** par un -2.
 # pour tout m dans [0, N], S_m.shape = (N, N)
 def generer_liste_S_m(S_0, L, U):
     N = S_0.shape[0]
-    liste_S_m = [S_0]
+    liste_S_m = [np.copy(S_0)]
     
     M_ref = L @ U
     for m in range(1, N):
@@ -205,14 +226,12 @@ def extract_s_m(S_m, m):
     N = S_m.shape[0]
     
     if m == 0:
-        s_m = np.copy(S_m[N-1, :])
-        s_m[N-1] -= 1
+        return(extract_s_m(S_m, N))
     
     else:
         s_m = np.copy(S_m[m-1, :])
         s_m[m-1] -= 1
-    
-    return(s_m)
+        return(s_m)
 
 
 # len(liste_S_m) = N + 1
@@ -236,6 +255,7 @@ def generer_matrice_S(liste_S_m):
 # Attention : dans cette fonction, les s_k dont on parle ne sont pas les vecteurs
 # qui composent la matrice S, mais les opposés des coefficients qui se situent
 # à la dernière ligne de la matrice S_0
+# k_ref : entier, 1 <= k_ref <= N-1
 def determine_ligne_a_echanger(k_ref, A_modifie):
     N = A_modifie.shape[0]
     
@@ -246,7 +266,7 @@ def determine_ligne_a_echanger(k_ref, A_modifie):
     
     # on commence à partir de k_ref, car, à ce stade, les parties sous la 
     # diagonale des colonnes n°k_i ont déjà été mises à 0, avec k_i dans 
-    # [1, k_ref - 1]
+    # [1, k_ref - 1] (et si k_ref = 1 rien n'a encore été fait)
     for k in range(k_ref, N+1):
         a_k_N = A_modifie[k-1, N-1]
         
@@ -259,14 +279,16 @@ def determine_ligne_a_echanger(k_ref, A_modifie):
             else:
                 signe_s_k = -1
             
-            # calcul de la valeur absolue de s_i
+            # calcul de la valeur absolue de s_k
             abs_s_k = abs(s_k)
             
             if not(initialisation_valeur_ref):
-                # Ici, valeur_ref = -1, donc on la met à jour quoiqu'il arrive
-                # On passera forcément au moins une fois dans cette boucle, sans
-                # quoi la matrice A_modifie serait non-inversible (ce qui n'est 
-                # pas le cas ici)
+                """
+                Ici, valeur_ref = -1, donc on la met à jour quoiqu'il arrive
+                
+                On passera forcément au moins une fois dans cette boucle, sans
+                quoi A_modifie serait non-inversible (--> absurde)
+                """
                 indice_du_min = k
                 signe_ref = signe_s_k
                 valeur_ref = abs_s_k
@@ -283,15 +305,20 @@ def determine_ligne_a_echanger(k_ref, A_modifie):
     return(indice_du_min, s_k_min)
 
 
-# détermine l'indice de la ligne de A_modifie pour laquelle le coeff s_i est
-# minimal en valeur absolue (disons k_echange), puis génère une matrice de permutation, qui,
-# une fois multipliée à A_modifie par la **gauche**, échange les lignes k et k_ref
-# k : entier, 1 <= k <= N, A_modifie.shape = (N, N)
+# Attention : dans cette fonction, les s_k dont on parle ne sont pas les vecteurs 
+# qui composent la matrice S, mais les opposés des coefficients qui se situent 
+# à la dernière ligne de la matrice S_0
+# Détermine l'indice de la ligne de A_modifie pour laquelle le coeff s_k est
+# minimal en valeur absolue (disons k_echange), puis génère une matrice de 
+# permutation, qui, une fois multipliée à A_modifie par la **gauche**, échange 
+# les lignes k_ref et k_echange
+# k_ref : entier, 1 <= k_ref <= N-1, A_modifie.shape = (N, N)
 def genere_P_k(k_ref, A_modifie):
     N = A_modifie.shape[0]
     P_k = np.eye(N)
     
     res_intermediaire = determine_ligne_a_echanger(k_ref, A_modifie)
+    
     k_echange = res_intermediaire[0]
     s_k_min = res_intermediaire[1]
     
@@ -308,7 +335,7 @@ def genere_P_k(k_ref, A_modifie):
 # permet de générer une matrice de Gauss, qui, une fois multipliée à A_modifie
 # par la **gauche**, met à 0 tous les coefficients sous la diagonale, dans la
 # colonne k de A_modifie
-# k : entier, 1 <= k <= N, A_modifie.shape = (N, N)
+# k : entier, 1 <= k <= N-1, A_modifie.shape = (N, N)
 def genere_L_k(k, A_modifie):
     N = A_modifie.shape[0]
     L_k = np.eye(N)
@@ -419,7 +446,6 @@ def extract_S_m(S, m):
 
 # P.shape = (N, N), S.shape = (N+1, N), A_ref.shape = (N, N) = A_check.shape
 # on veut vérifier que A = P * S_N * ... * S_0
-# /!\ S : matrice des s_i (et NON des S_i) /!\
 def check_decomp(A, P, S):
     N = P.shape[0]
     A_check = np.copy(P).astype(dtype=float)
@@ -462,6 +488,7 @@ def apply_forward_iDTT(P, S, int_yuv_data):
 # iDTT inverse "intermédiaire"
 
 # int_dtt_data.shape = (N, 1), (N,) ou (N, N)
+# Ici, int_dtt_data.shape est plus voué à être (N, N)
 def decode_forward_iDTT(P, S, int_dtt_data):
     N = P.shape[0]
     
@@ -479,12 +506,57 @@ def decode_forward_iDTT(P, S, int_dtt_data):
 #----------------------------------------------------------------------------#
 
 
+"""
+Remarque concernant la définition de la iDTT (et de son inverse) pour 
+une matrice en 2D, telle qu'elle a été énoncée dans l'article n°1
+
+Cette remarque traite essentiellement du lien entre les équations (12) à (15) 
+(page 3/7) et l'équation (9) (page 2/7)
+
+D'après (12) et (10), on peut considérer que iDTT_forward(X) n'est autre qu'une 
+sorte "d'approximation entière" (ou "AE") de A @ X. (A priori, on ne peut pas
+supposer que "AE" et "round" sont exactement les mêmes fonctions.) De même, 
+d'après (13) et (10), on peut dire que iDTT_inverse(Y) est une AE de inv(A) @ Y,
+ie une AE de A.T @ Y (car A est orthogonale).
+
+Ainsi : 
+(14) fournit que Y est une AE de A @ (A @ X).T = A @ X.T @ A.T = (A @ X @ A.T).T
+(15) fournit que X est une AE de A.T @ (A.T @ Y).T = A.T @ Y.T @ A = (A.T @ Y @ A).T
+
+On obtient donc que (cf. equation (9)) : 
+1) Y est une AE de DTT_2D(X).T
+2) X est une AE de DTT_2D_inverse(Y).T
+
+Or, on s'attendrait logiquement à obtenir, dans les équations (14) et (15), que :
+1) Y est une AE DTT_2D(X) (et non de sa transposée)
+2) X est une AE de DTT_2D_inverse(Y) (et non de sa transposée)
+
+En conséquence, pour rester fidèle à la DTT de base (et à l'appellation "integer
+DTT" !), dans la fonction apply_2D_iDTT, nous allons transposer la formule de 
+l'encodage de l'article 1 (ie (14)) pour stocker (et afficher) la vraie 
+repésentation des données issues de la DTT. Et donc, dans la fonction 
+decode_2D_iDTT, comme on sait que la matrice iDTT traitée (2D) est la 
+transposée de ce qui a été encodé, on transpose directement l'entrée avant de 
+passer au décodage avec la formule de l'article 1 (ie (15)).
+
+En toute rigueur, les modifications précédentes ne sont pas nécessaires, car
+les fonctions matricielles X --> (A @ X @ A.T).T et X --> (A.T @ X @ A).T sont
+inverses l'une de l'autre (car A est orthogonale), et donc on peut considérer
+que des AE de ces 2 fonctions le sont aussi. En d'autres termes, on peut 
+considérer que (14) et (15) sont inverses l'une de l'autre, ce qui est le 
+cas en pratique (ouf).
+"""
+
+
+#----------------------------------------------------------------------------#
+
+
 # iDTT bidimensionnelle
 
 # int_yuv_2D_data.shape = (N, N)
 def apply_2D_iDTT(P, S, int_yuv_2D_data):
     res_intermediaire = apply_forward_iDTT(P, S, int_yuv_2D_data)
-    int_dtt_2D_data = apply_forward_iDTT(P, S, res_intermediaire.T)
+    int_dtt_2D_data = apply_forward_iDTT(P, S, res_intermediaire.T).T
     
     return(int_dtt_2D_data)
 
@@ -496,7 +568,7 @@ def apply_2D_iDTT(P, S, int_yuv_2D_data):
 
 # int_dtt_2D_data.shape = (N, N)
 def decode_2D_iDTT(P, S, int_dtt_2D_data):
-    res_intermediaire = decode_forward_iDTT(P, S, int_dtt_2D_data)
+    res_intermediaire = decode_forward_iDTT(P, S, int_dtt_2D_data.T)
     int_yuv_2D_data = decode_forward_iDTT(P, S, res_intermediaire.T)
     
     return(int_yuv_2D_data)
@@ -537,6 +609,8 @@ def decode_iDTT(P, S, int_dtt_data):
 
 # vérifie si les fonctions "apply_iDTT" et "decode_iDTT" sont précises
 def check_iDTT_functions(A, P, S):
+    N = A.shape[0]
+    
     # ici on vérifie que la décomposition de A est bien cohérente
     epsilon_decomp = check_decomp(A, P, S)
     print(f"\nPrécision de la décomposition de A : {epsilon_decomp}")
@@ -567,7 +641,7 @@ if __name__ == "__main__":
     De plus, le temps de génération de l'opérateur de la DTT pour N > 20 est assez 
     élevé.
     """
-    N = 16
+    N = 8
     print(f"\n\nN = {N}")
     
     #------------------------------------------------------------------------#
@@ -577,7 +651,8 @@ if __name__ == "__main__":
     # Comme la fonction DTT_operator est assez lourde en termes de calculs, on 
     # fait en sorte de n'y faire appel qu'une seule fois dans tout le code
     # Pour optimiser le code, on fait de même avec la fonction generer_decomp
-    # (même si celle-ci s'exécute assez rapidement)
+    # (même si celle-ci s'exécute assez rapidement une fois que l'opérateur
+    # A est généré)
     A = DTT_operator(N)
     (P, S) = generer_decomp(A)
     
