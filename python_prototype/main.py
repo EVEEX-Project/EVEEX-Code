@@ -139,9 +139,9 @@ epsilon1 = norm(test1 - image_yuv)
 test2 = enc.apply_DCT(operateur_DCT, dec.decode_DCT(operateur_DCT, dct_data))
 epsilon2 = norm(test2 - dct_data)
 print("\n")
-log.debug(f"\nTest de précision (DCT & DCT inverse) : {epsilon1}, {epsilon2}")
-# --> plus les 2 valeurs obtenues ici sont proches de 0, plus ces 2 fonctions
-# sont précises --> OK
+log.debug(f"\nTest de précision (DCT & DCT inverse) : {epsilon1:.2e}, {epsilon2:.2e}")
+# Plus les 2 valeurs obtenues ici sont proches de 0, plus ces 2 fonctions sont
+# précises --> OK
 
 
 # Stats :
