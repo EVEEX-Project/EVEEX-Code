@@ -96,8 +96,8 @@ def DTT_operator(N):
 
 # DTT
 
-# yuv_data.shape = (N, N) ou (N, N, 3)
 # A : opérateur orthogonal de la DTT, A.shape = (N, N)
+# yuv_data.shape = (N, N) ou (N, N, 3)
 # On aurait pu générer A directement dans la fonction, mais comme A est
 # amenée à être réutilisée, autant la mettre en argument
 def apply_DTT(A, yuv_data):
@@ -109,7 +109,7 @@ def apply_DTT(A, yuv_data):
     dtt_data = np.zeros(yuv_data.shape)
     
     for k in range(3):
-        dtt_data[:, :, k] = A @ yuv_data[:, :, k] @ A.T
+        dtt_data[:, :, k] = apply_DTT(A, yuv_data[:, :, k])
     
     return(dtt_data)
 
@@ -119,13 +119,18 @@ def apply_DTT(A, yuv_data):
 
 # DTT inverse
 
-# dtt_data.shape = (N, N, 3)
-# A : opérateur orthogonal de la DTT
+# A : opérateur orthogonal de la DTT, A.shape = (N, N)
+# dtt_data.shape = (N, N) ou (N, N, 3)
 def decode_DTT(A, dtt_data):
+    if len(dtt_data.shape) == 2:
+        # ici dtt_data.shape = (N, N)
+        return(A.T @ dtt_data @ A)
+    
+    # si on est arrivé jusque là, on a dtt_data.shape = (N, N, 3)
     yuv_data = np.zeros(dtt_data.shape)
     
     for k in range(3):
-        yuv_data[:, :, k] = A.T @ dtt_data[:, :, k] @ A
+        yuv_data[:, :, k] = decode_DTT(A, dtt_data[:, :, k])
     
     return(yuv_data)
 
@@ -147,7 +152,7 @@ def check_DTT_functions(A):
     test2 = decode_DTT(A, apply_DTT(A, yuv_data))
     epsilon2 = np.linalg.norm(test2 - yuv_data)
     
-    print(f"\nTest de précision (DTT & DTT inverse) : {epsilon1}, {epsilon2}")
+    print(f"\nTest de précision (DTT & DTT inverse) : {epsilon1:.2e}, {epsilon2:.2e}")
 
 
 ##############################################################################
@@ -631,7 +636,7 @@ def check_iDTT_functions(A, P, S):
     
     # ici on vérifie que la décomposition de A est bien cohérente
     epsilon_decomp = check_decomp(A, P, S)
-    print(f"\nPrécision de la décomposition de A : {epsilon_decomp}")
+    print(f"\nPrécision de la décomposition de A : {epsilon_decomp:.2e}")
     
     # ici on vérifie si on a bien iDTT(iDTT_inverse(tab)) = tab
     int_dtt_data = np.random.randint(0, 256, size=(N, N, 3))
