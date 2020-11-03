@@ -26,5 +26,7 @@ int Image_load(Image *img, const char *file_name);
 int Image_create(Image *img, int width, int height, int channels, bool init_with_zeros);
 void Image_save(Image *img, const char *file_name);
 void Image_free(Image *img);
+void Image_to_gray(const Image *orig, Image *gray);
+void Image_to_sepia(const Image *orig, Image *sepia);
 
 #endif //C_PROTOTYPE_IMAGE_H
