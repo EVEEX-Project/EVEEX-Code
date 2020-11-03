@@ -32,9 +32,9 @@ int Image_create(Image *img, int width, int height, int channels, bool init_with
     size_t size = width * height * channels;
     // if the image has to be init with zeros, calloc instead of malloc
     if(init_with_zeros) {
-        img->data = calloc(size, 1);
+        img->data = (uint8_t *) calloc(size, 1);
     } else {
-        img->data = malloc(size);
+        img->data = (uint8_t *) malloc(size);
     }
 
     // if the data is null, there was a problem allocating the data
@@ -58,7 +58,7 @@ void Image_save(Image *img, const char *file_name) {
         || str_ends_in(file_name, ".JPG")
         || str_ends_in(file_name, ".jpeg")
         || str_ends_in(file_name, ".JPEG")) {
-        stbi_write_jpg(file_name, img->width, img->height, img->channels, img->data, 100);
+        stbi_write_jpg(file_name, img->width, img->height, img->channels, img->data, img->width * img->channels);
     }
     else if(str_ends_in(file_name, ".png")
         || str_ends_in(file_name, ".PNG")) {

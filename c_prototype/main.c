@@ -2,8 +2,7 @@
 #include "image.c"
 #include "utils.h"
 
-
-int main() {
+void loadImageTest() {
     Image img, gray;
 
     Image_load(&img, "image_res.jpg");
@@ -13,8 +12,17 @@ int main() {
 
     printf("Image loaded with a width of %dpx and height of %dpx with %d channels\n", img.width, img.height, img.channels);
 
-    Image_free(&img);
     Image_free(&gray);
+    Image_free(&img);
+}
+
+int main() {
+    Image blank;
+    Image_create(&blank, 100, 100, 3, true);
+
+    ON_ERROR_EXIT( blank.data == NULL, "Error while creating the image");
+    Image_save(&blank, "blank.jpg");
+    Image_free(&blank);
 
     return 0;
 }
