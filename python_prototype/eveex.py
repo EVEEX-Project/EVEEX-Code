@@ -2,13 +2,15 @@
 import sys
 import numpy as np
 from encoder import Encoder
+from decoder import Decoder
 from pathlib import Path
-from bitstream import BitstreamGenerator
+from bitstream import BitstreamGenerator, BitstreamSender
 from image_generator import ImageGenerator, BlankImageGenerator, MosaicImageGenerator, FromJSONImageGenerator
 from image_visualizer import ImageVisualizer
 
 from PIL import Image
 
+operateur_DCT = Encoder.DCT_operator(16)
 if len(sys.argv) < 2:
     print("""Voici comment utiliser ce programme:  
           
@@ -54,13 +56,14 @@ if action.lower() == "-e":
     img_data = np.asarray(image)
     enc = Encoder()
     bs = BitstreamGenerator(1, len(img_data) * len(img_data[0]), 5)
+    operateur_DCT = Encoder.DCT_operator(16)
 
     # On converti de RGB vers YUV
-    yuv_data = enc.RGB_to_YUV(img_data)
+    image_yuv = enc.RGB_to_YUV(img_data)
     # On applique la DCT
-    dct_data = enc.apply_DCT(yuv_data)
-    # zigzag linearisation de la luminance
-    zigzag_data = enc.zigzag_linearisation(dct_data[:, :, 0])
+    dct_data = enc.apply_DCT(operateur_DCT, image_yuv)
+    # zigzag linearisation
+    zigzag_data = enc.zigzag_linearisation(dct_data)
     # On quantiife les données
     quanti = enc.quantization(zigzag_data, threshold=1e2)
     # RLE
@@ -90,7 +93,26 @@ elif action.lower() == "-d":
         print("Error: file doesn't exist")
         sys.exit(1)
 
-    print("decode")
+    received_data = open(path, 'r')
+    dec = Decoder()
+
+    dec_rle_data = dec.decode_bitstream_RLE(received_data.read())
+    received_data.close()
+    dec_quantized_data = dec.decode_run_length(dec_rle_data)
+    dec_dct_data = dec.decode_zigzag(dec_quantized_data)
+
+    dec_yuv_data = dec.decode_DCT(operateur_DCT, dec_dct_data)
+
+    dec_rgb_data = dec.YUV_to_RGB(dec_yuv_data)
+    visu = ImageVisualizer()
+    # On enregistre l'image:
+    print(dec_rgb_data)
+    for i in range(len(dec_rgb_data)):
+        for x in range(len(dec_rgb_data[0])):
+            for y in range(len(dec_rgb_data[0][0])):
+                dec_rgb_data[i][x][y] = dec_rgb_data[i][x][y] / 255
+
+    visu.save_image_to_disk(dec_rgb_data, sys.argv[3])
     sys.exit(1)
 
 elif action == "-ji":
@@ -120,7 +142,7 @@ elif action == "-mi":
         print("Error: not the right number of arguments")
         sys.exit(1)
 
-    size = (sys.argv[2], sys.argv[3])
+    size = (int(sys.argv[2]), int(sys.argv[3]))
     gen = BlankImageGenerator(size, (sys.argv[4], sys.argv[4]))
     visu = ImageVisualizer()
     # On enregistre l'image:
@@ -132,8 +154,8 @@ elif action == "-bi":
     if len(sys.argv) != 5:
         print("Error: not the right number of arguments")
         sys.exit(1)
-    size = (sys.argv[2], sys.argv[3])
-    gen = BlankImageGenerator(size)
+    size = (int(sys.argv[2]), int(sys.argv[3]))
+    gen = BlankImageGenerator(size, (1, 1, 1))
     visu = ImageVisualizer()
     # On enregistre l'image:
     visu.save_image_to_disk(gen.generate(), sys.argv[4])

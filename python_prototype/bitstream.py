@@ -8,6 +8,11 @@ from logger import Logger
 ###############################################################################
 
 
+global DICT_MSG
+DICT_MSG = 1
+
+
+
 class BitstreamGenerator:
     """
     Classe permettant de générer un bitstream à partir des infos d'une frame 
