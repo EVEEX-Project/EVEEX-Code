@@ -99,7 +99,7 @@ class MosaicImageGenerator(ImageGenerator):
         for i in range(0, size[0]//bloc_size[0]):
             for j in range(0, size[1]//bloc_size[1]):
                 color = (random(), random(), random())
-                Logger.get_instance().debug(f"{i}, {j} : {color}")
+                #Logger.get_instance().debug(f"{i}, {j} : {color}")
                 self.img_data[i*bloc_size[0]:(i+1) * bloc_size[0],
                                 j*bloc_size[1]:(j+1) * bloc_size[1]] = color
 
