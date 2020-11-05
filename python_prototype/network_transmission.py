@@ -11,13 +11,14 @@ class ThreadListen(threading.Thread):
     """
     Thread pour gérer le mode écoute du serveur.
     """
-    def __init__(self, socket_server, callback, bufsize):
+    def __init__(self, socket_server, callback, bufsize, affiche_messages):
         threading.Thread.__init__(self)
         
         self.callback = callback
         
         self.socket_server = socket_server
         self.bufsize = bufsize
+        self.affiche_messages = affiche_messages
     
     
     @staticmethod
@@ -35,11 +36,18 @@ class ThreadListen(threading.Thread):
         # de la classe Server
         desc_type_msg = dict_types_msg[type_msg]
         
-        if type_msg in [1, 2]:
-            index_ref = int(msgClient[18 : 34], 2)
-            msg_index = "index_" + desc_type_msg + " = " + str(index_ref)
-            desc_paquet = desc_type_msg + ", " + msg_index
+        # dict
+        if type_msg == 1:
+            index_paquet_dict = int(msgClient[18 : 34], 2)
+            desc_paquet = f"dict, index_paquet_dict = {index_paquet_dict}"
         
+        # body
+        elif type_msg == 2:
+            num_macrobloc = int(msgClient[18 : 34], 2)
+            index_paquet_macrobloc = int(msgClient[34 : 50], 2)
+            desc_paquet = f"body, numero_macrobloc = {num_macrobloc}, index_paquet_macrobloc = {index_paquet_macrobloc}"
+        
+        # header et tail (ie type_msg = 0 ou 3)
         else:
             desc_paquet = desc_type_msg
         
@@ -56,7 +64,7 @@ class ThreadListen(threading.Thread):
         while True:
             # établissement de la connexion
             connexion, adresse = self.socket_server.accept()
-            Server.safe_print("\nServeur> Client connecté, adresse IP %s, port %s.\n\n" % (adresse[0], adresse[1]))
+            Server.safe_print(f"\nServeur> Client connecté, adresse IP {adresse[0]}, port {adresse[1]}.\n\n")
             
             # dialogue avec le client            
             msgClient = connexion.recv(self.bufsize)
@@ -74,9 +82,10 @@ class ThreadListen(threading.Thread):
                         self.callback(msgClient)
                         
                         desc_paquet = self.generer_description_paquet(msgClient)
-                        msgServeur = "Données bien reçues : " + desc_paquet
+                        msgServeur = f"Données bien reçues : {desc_paquet}"
                         
-                        Server.safe_print("\nServeur> " + msgServeur)
+                        if self.affiche_messages:
+                            Server.safe_print(f"\nServeur> {msgServeur}")
                         msgServeur = msgServeur.encode("utf8")
                         connexion.send(msgServeur)
                         
@@ -108,10 +117,11 @@ class Server:
     Classe permettant à une entité d'écouter et d'attendre de recevoir des 
     paquets depuis un correspondant connu ou inconnu.
     """
-    def __init__(self, HOST, PORT, bufsize):
+    def __init__(self, HOST, PORT, bufsize, affiche_messages):
         self.HOST = HOST
         self.PORT = PORT
         self.bufsize = bufsize
+        self.affiche_messages = affiche_messages
         
         global verrou
         verrou = threading.RLock()
@@ -159,7 +169,7 @@ class Server:
             client: client qui va interagir avec le serveur
             callback: fonction à appeler dès que le serveur reçoit des données
         """
-        th_Listen = ThreadListen(self.mySocket, callback, self.bufsize)
+        th_Listen = ThreadListen(self.mySocket, callback, self.bufsize, self.affiche_messages)
         th_Listen.start()
         
         client.connect_to_server()
@@ -178,6 +188,7 @@ class Client:
         self.HOST = server.HOST        
         self.PORT = server.PORT
         self.bufsize = server.bufsize
+        self.affiche_messages = server.affiche_messages
         
         self.connexion = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
@@ -211,7 +222,8 @@ class Client:
             sleep(temps_pause_apres_envoi)
             self.premier_message_envoye = False
         
-        Server.safe_print("\nClient> " + data)
+        if self.affiche_messages:
+            Server.safe_print(f"\nClient> {data}")
         data = data.encode("utf8")
         self.connexion.send(data)
         sleep(temps_pause_apres_envoi)
@@ -234,7 +246,8 @@ class Client:
                 try:
                     if msgServeur[ : 19] == "Données bien reçues":
                         desc_paquet = msgServeur[22 : ]
-                        Server.safe_print("\nClient> Réponse du serveur reçue : " + desc_paquet + "\n\n")
+                        if self.affiche_messages:
+                            Server.safe_print(f"\nClient> Réponse du serveur reçue : {desc_paquet}\n\n")
                         break
                 except:
                     pass
