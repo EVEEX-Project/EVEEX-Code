@@ -7,10 +7,21 @@ from logger import Logger
 
 ###############################################################################
 
+# définition des variables globales (= différents types de messages à encoder)
+
+global HEADER_MSG
+HEADER_MSG = 0
 
 global DICT_MSG
 DICT_MSG = 1
 
+global BODY_MSG
+BODY_MSG = 2
+
+global TAIL_MSG
+TAIL_MSG = 3
+
+###############################################################################
 
 
 class BitstreamGenerator:
@@ -25,22 +36,6 @@ class BitstreamGenerator:
     """
     
     def __init__(self, frame_id, img_size, macroblock_size):
-        # définition des variables globales (= différents types de messages à encoder)
-        
-        global HEADER_MSG
-        HEADER_MSG = 0
-        
-        global DICT_MSG
-        DICT_MSG = 1
-        
-        global BODY_MSG
-        BODY_MSG = 2
-        
-        global TAIL_MSG
-        TAIL_MSG = 3
-        
-        # variables d'instance
-        
         self.frame_id = frame_id
         self.img_size = img_size # multiple de macroblock_size**2
         self.macroblock_size = macroblock_size
