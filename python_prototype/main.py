@@ -30,9 +30,10 @@ log.set_log_level(LogLevel.DEBUG)
 N = 16
 img_gen = MosaicImageGenerator(size=(N, N), bloc_size=(4, 4))
 
-image = img_gen.generate()
+image = 255 * img_gen.generate()
 
 operateur_DCT = Encoder.DCT_operator(N)
+
 
 # # # -------------------------IMAGE ENCODING-------------------------- # # #
 
