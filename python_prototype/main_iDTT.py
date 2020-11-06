@@ -24,6 +24,7 @@ from logger import LogLevel, Logger
 
 # # # ----------------------SETTING UP THE LOGGER------------------------ # # #
 
+
 t_debut_algo = time()
 
 log = Logger.get_instance()
@@ -35,6 +36,7 @@ log.debug("iDTT (ou iDCT)\n\n")
 
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
+
 
 """
 On a ici 2 méthodes. Décommenter celle qui a été choisie et commenter l'autre.
@@ -81,7 +83,6 @@ Méthode n°2 : Si l'on veut générer une image aléatoirement
 #from image_generator import MosaicImageGenerator
 #
 ## Valeurs standards de macroblock_size : 8, 16 et 32
-## Ici, 24 et 48 fonctionnent aussi très bien
 ## Doit être <= 63
 #macroblock_size = 16
 #
@@ -201,8 +202,7 @@ dec_rgb_data = dec.YUV_to_RGB(dec_yuv_data)
 
 # Vérification des valeurs de la frame RGB décodée (on devrait les avoir entre
 # 0 et 255)
-# Les "valeurs illégales", en forte minorité (heureusement), sont ici 
-# principalement dues au passage aux entiers lors de la RLE (à l'encodage)
+# Les "valeurs illégales" sont ici en forte minorité (heureusement)
 (num_low_values, num_high_values) = (0, 0)
 for k in range(3):
     for i in range(img_height):
@@ -220,8 +220,10 @@ for k in range(3):
                 num_high_values += 1
 
 
+dec_rgb_data = np.round(dec_rgb_data).astype(dtype=np.uint8)
+
 print("\n\nDécodage - Image RGB :\n")
-img_visu.show_image_with_matplotlib(dec_rgb_data / 255)
+img_visu.show_image_with_matplotlib(dec_rgb_data)
 
 t_fin_algo = time()
 duree_algo = round(t_fin_algo - t_debut_algo, 3)
@@ -258,10 +260,5 @@ log.debug(f"\nTemps d'exécution de tout l'algorithme : {duree_algo} s\n")
 cli.connexion.close()
 
 
-# # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
-
-
-#img_visu = ImageVisualizer()
-#img_visu.save_image_to_disk(dec_yuv_image, "decoded_image.png")
-#img_visu.show_image_with_matplotlib(dec_yuv_image)
+#img_visu.save_image_to_disk(dec_rgb_data, "decoded_image.png")
 
