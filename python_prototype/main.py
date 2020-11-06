@@ -19,17 +19,19 @@ from logger import LogLevel, Logger
 
 # # # ----------------------SETTING UP THE LOGGER------------------------ # # #
 
+
 t_debut_algo = time()
 
 log = Logger.get_instance()
 log.set_log_level(LogLevel.DEBUG)
-#log.start_file_logging("log_iDTT.log")
+#log.start_file_logging("log.log")
 
 print("\n")
 log.debug("DCT classique\n\n")
 
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
+
 
 """
 On a ici 2 méthodes. Décommenter celle qui a été choisie et commenter l'autre.
@@ -77,7 +79,6 @@ Méthode n°2 : Si l'on veut générer une image aléatoirement
 #from image_generator import MosaicImageGenerator
 #
 ## Valeurs standards de macroblock_size : 8, 16 et 32
-## Ici, 24 et 48 fonctionnent aussi très bien
 ## Doit être <= 63
 #macroblock_size = 16
 #
@@ -209,8 +210,11 @@ for k in range(3):
                 num_high_values += 1
 
 
+dec_rgb_data = np.round(dec_rgb_data).astype(dtype=np.uint8)
+
+
 print("\n\nDécodage - Image RGB :\n")
-img_visu.show_image_with_matplotlib(dec_rgb_data / 255)
+img_visu.show_image_with_matplotlib(dec_rgb_data)
 
 t_fin_algo = time()
 duree_algo = round(t_fin_algo - t_debut_algo, 3)
@@ -247,10 +251,5 @@ log.debug(f"\nTemps d'exécution de tout l'algorithme : {duree_algo} s\n")
 cli.connexion.close()
 
 
-# # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
-
-
-#img_visu = ImageVisualizer()
-#img_visu.save_image_to_disk(dec_yuv_image, "decoded_image.png")
-#img_visu.show_image_with_matplotlib(dec_yuv_image)
+#img_visu.save_image_to_disk(dec_rgb_data, "decoded_image.png")
 
