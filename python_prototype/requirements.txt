@@ -1,4 +1,4 @@
 colorama
 numpy
 matplotlib
-socket
+sockets
