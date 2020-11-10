@@ -39,7 +39,7 @@ List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols) {
     // Adding the nodes to the list
     List **dicoKeys = Dico_keys(symbols);
     List *ptr;
-    for (ptr = *dicoKeys; ptr->next != NULL; ptr = ptr->next) {
+    for (ptr = *dicoKeys; ptr != NULL; ptr = ptr->next) {
         Noeud *n = Noeud_createNoeud(ptr->element, *Dico_get(symbols, ptr->element));
         List_append(listeNoeuds, n);
     }

@@ -35,20 +35,22 @@ void dictionary_test() {
     Dictionary **hashtab = Dico_create();
     ON_ERROR_EXIT(hashtab == NULL, "Error while allocating dico memory");
 
+    int a = 5, b = 2, c = 10;
+
     // on ajoute des éléments
-    Dico_set(hashtab, "foo", "bar");
-    Dico_set(hashtab, "bar", "foo");
+    Dico_set(hashtab, "foo", &a);
+    Dico_set(hashtab, "bar", &b);
     Dico_print(hashtab);
 
-    printf("La valeur du dico avec la clé %s est %s\n", "foo", Dico_get(hashtab, "foo"));
+    printf("La valeur du dico avec la clé %s est %d\n", "foo", *Dico_get(hashtab, "foo"));
 
     Dico_del(hashtab, "foo");
     Dico_del(hashtab, "bar");
     Dico_print(hashtab);
 
-    Dico_set(hashtab, "foo", "bar");
-    Dico_set(hashtab, "bar", "foo");
-    Dico_set(hashtab, "bar", "pan");
+    Dico_set(hashtab, "foo", &a);
+    Dico_set(hashtab, "bar", &b);
+    Dico_set(hashtab, "bar", &c);
     Dico_print(hashtab);
 
     Dico_free(hashtab);
@@ -77,21 +79,24 @@ void huffman_test() {
     printf("===============HUFFMAN TEST===============\n");
 
     Dictionary **symbols = Dico_create();
-    char *phrase = "aaa bb ccccc citrons";
+    char *phrase = "j'aime beaucoup trop les citrons";
     List **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
-    printf("Phrase de test huffman : '%s'\n", phrase);
+    printf("Testing sentence : '%s'\n", phrase);
+
+    printf("Symbol keys : ");
+    List_print(Dico_keys(symbols));
 
     char *letter = "c";
-    printf("Frequence d'apparition du char %s : %d\n", letter, *Dico_get(symbols, letter));
+    printf("Symbol apparition frequency for '%s' : %d\n", letter, *Dico_get(symbols, letter));
 
-    printf("Freq apparition des lettres : ");
+    printf("Letters apparition frequency : ");
     Dico_print(symbols);
 
-    printf("Liste des noeuds : \n");
+    printf("Nodes list (%d elements) (value: frequency): ", List_size(liste_noeuds));
     List *ptr;
-    for (ptr = *liste_noeuds; ptr->next != NULL; ptr = ptr->next) {
+    for (ptr = *liste_noeuds; ptr != NULL; ptr = ptr->next) {
         Noeud *n = ptr->element;
-        printf("-- Valeur : %s, Fréquence : %d\n", n->valeur, n->frequence);
+        printf("(%s: %d) ", n->valeur, n->frequence);
     }
 
     printf("\n\n");
