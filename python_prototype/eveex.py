@@ -12,7 +12,22 @@ from image_visualizer import ImageVisualizer
 from PIL import Image
 DEFAULT_QUANTIZATION_THRESHOLD = 10
 
-operateur_DCT = Encoder.DCT_operator(16)
+# Valeurs standards de macroblock_size : 8, 16 et 32
+# Ici, 24 et 48 fonctionnent aussi très bien
+# Doit être <= 63
+macroblock_size = 16
+
+# création de l'opérateur orthogonal de la DCT
+A = Encoder.DCT_operator(macroblock_size)
+
+# il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
+# divise bien ses 2 dimensions
+img_width = 720
+img_height = 480
+
+# format standard
+img_size = (img_width, img_height)
+
 if len(sys.argv) < 2:
     print("""Voici comment utiliser ce programme:  
           
@@ -56,31 +71,15 @@ if action.lower() == "-e":
 
     nom_image = path
 
-    # Valeurs standards de macroblock_size : 8, 16 et 32
-    # Ici, 24 et 48 fonctionnent aussi très bien
-    # Doit être <= 63
-    macroblock_size = 16
-
-    # il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
-    # divise bien ses 2 dimensions
-    img_width = 720
-    img_height = 480
-
-    # format standard
-    img_size = (img_width, img_height)
-
     image = Image.open(nom_image)
     image_intermediaire = image.getdata()
 
     image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
 
-    frame_id = 0  # 65535 = 2**16 - 1
+    frame_id = 0
 
     # le bufsize doit impérativement être >= 67 (en pratique : OK)
     bufsize = 4096
-
-    # création de l'opérateur orthogonal de la DCT
-    A = Encoder.DCT_operator(macroblock_size)
 
     enc = Encoder()
 
@@ -121,14 +120,12 @@ elif action.lower() == "-d":
 
     img_visu = ImageVisualizer()
     dec = Decoder()
-    macroblock_size = 16
+    
     # bitstream --> frame RLE
     dec_rle_data = dec.decode_bitstream_RLE(received_data.read())
-    A = DTT_operator(macroblock_size)
-    (P, S) = generer_decomp(A)
+    
     # frame RLE --> frame YUV
-    img_width, img_height = (720,480)
-    dec_yuv_data = dec.recompose_frame_via_iDTT(dec_rle_data, (720,480), macroblock_size, P, S)
+    dec_yuv_data = dec.recompose_frame_via_DCT(dec_rle_data, img_size, macroblock_size, A)
 
     # frame YUV --> frame RGB
     dec_rgb_data = dec.YUV_to_RGB(dec_yuv_data)
