@@ -2,14 +2,16 @@
 
 import numpy as np
 from bitstream import BitstreamGenerator
+from iDTT import decode_iDTT
 
 ###############################################################################
 
 
 class Decoder:
-
+    
     def __init__(self):
         pass
+    
     
     def decode_bitstream_RLE(self, bitstream):
         """
@@ -25,7 +27,8 @@ class Decoder:
         rle_data = BitstreamGenerator.decode_bitstream_RLE(bitstream)
         return rle_data
     
-    def decode_run_length(self, rle_data, scale=1):
+    
+    def decode_run_length(self, rle_data):
         """
         Décode les paires de valeurs issues de la RLE et retourne
         une liste corrspondant aux valeurs quantifiées.
@@ -43,6 +46,7 @@ class Decoder:
             tab = np.concatenate((tab, np.array([x[1]], dtype=int)))
         
         return tab
+    
     
     def decode_zigzag(self, quantized_data):
         """
@@ -110,6 +114,7 @@ class Decoder:
         
         return res2
     
+    
     def decode_DCT(self, operateur_DCT, dct_data):
         """
         Decode un tableau de valeurs passées par la transformée discrète en
@@ -135,6 +140,7 @@ class Decoder:
             yuv_data[:, :, k] = operateur_DCT.T @ dct_data[:, :, k] @ operateur_DCT
         
         return(yuv_data)
+    
     
     def YUV_to_RGB(self, yuv_data):
         """
@@ -162,4 +168,94 @@ class Decoder:
         
         # On retourne l'image ainsi constituée
         return rgb_data
+    
+    
+    def recompose_frame_via_DCT(self, frame_RLE, img_size, macroblock_size, A):
+        """
+        Recompose une frame YUV à partir des données encodées d'une frame RLE,
+        grâce à la DCT classique.
+        
+        Args:
+            frame_RLE: frame entière encodée (liste de listes de tuples RLE)
+            img_size: tuple égal à (img_width, img_height)
+            macroblock_size: taille (d'un côté) d'un macrobloc
+            A: opérateur orthogonal de la DCT, de taille (macroblock_size, macroblock_size)
+        
+        Returns:
+            image_yuv_decodee: tableau représentant l'image YUV décodée, de 
+                               taille (img_height, img_width, 3)
+        """
+        
+        # définition des paramètres de l'image
+        img_width = img_size[0]
+        img_height = img_size[1]
+        total_num_of_macroblocks = (img_width * img_height) // macroblock_size**2
+        num_macroblocks_per_line = img_width // macroblock_size
+        
+        image_yuv_decodee = np.zeros((img_height, img_width, 3), dtype=float)
+        
+        for num_macrobloc in range(total_num_of_macroblocks):
+            (i_macrobloc, j_macrobloc) = divmod(num_macrobloc, num_macroblocks_per_line)
+            
+            i_debut_macrobloc = i_macrobloc * macroblock_size
+            i_fin_macrobloc = i_debut_macrobloc + macroblock_size
+            
+            j_debut_macrobloc = j_macrobloc * macroblock_size
+            j_fin_macrobloc = j_debut_macrobloc + macroblock_size
+            
+            macrobloc = np.copy(frame_RLE[num_macrobloc])
+            
+            # c'est ici que l'on décode les données du macrobloc
+            dec_quantized_data = self.decode_run_length(macrobloc)
+            dec_DCT_data = self.decode_zigzag(dec_quantized_data)
+            dec_yuv_data = self.decode_DCT(A, dec_DCT_data)
+            
+            image_yuv_decodee[i_debut_macrobloc : i_fin_macrobloc, j_debut_macrobloc : j_fin_macrobloc, :] = dec_yuv_data
+        
+        return(image_yuv_decodee)
+    
+    
+    def recompose_frame_via_iDTT(self, frame_RLE, img_size, macroblock_size, P, S):
+        """
+        Recompose une frame YUV à partir des données encodées d'une frame RLE.
+        
+        Args:
+            frame_RLE: frame entière encodée (liste de listes de tuples RLE)
+            img_size: tuple égal à (img_width, img_height)
+            macroblock_size: taille (d'un côté) d'un macrobloc
+            P et S: matrices contenant les infos de la décomposition de l'opérateur 
+                    (de la DCT ou la DTT) en SERMs, de taille (macroblock_size, macroblock_size)
+        
+        Returns:
+            image_yuv_decodee: tableau représentant l'image YUV décodée, de 
+                               taille (img_height, img_width, 3)
+        """
+        
+        # définition des paramètres de l'image
+        img_width = img_size[0]
+        img_height = img_size[1]
+        total_num_of_macroblocks = (img_width * img_height) // macroblock_size**2
+        num_macroblocks_per_line = img_width // macroblock_size
+        
+        image_yuv_decodee = np.zeros((img_height, img_width, 3), dtype=int)
+        
+        for num_macrobloc in range(total_num_of_macroblocks):
+            (i_macrobloc, j_macrobloc) = divmod(num_macrobloc, num_macroblocks_per_line)
+            
+            i_debut_macrobloc = i_macrobloc * macroblock_size
+            i_fin_macrobloc = i_debut_macrobloc + macroblock_size
+            
+            j_debut_macrobloc = j_macrobloc * macroblock_size
+            j_fin_macrobloc = j_debut_macrobloc + macroblock_size
+            
+            macrobloc = np.copy(frame_RLE[num_macrobloc])
+            
+            # c'est ici que l'on décode les données du macrobloc
+            dec_quantized_data = self.decode_run_length(macrobloc)
+            dec_iDTT_data = self.decode_zigzag(dec_quantized_data)
+            dec_yuv_data = decode_iDTT(P, S, dec_iDTT_data)
+            
+            image_yuv_decodee[i_debut_macrobloc : i_fin_macrobloc, j_debut_macrobloc : j_fin_macrobloc, :] = dec_yuv_data
+        
+        return(image_yuv_decodee)
 

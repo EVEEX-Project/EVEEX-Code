@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from huffman import Huffman
-
-DEFAULT_QUANTIZATION_THRESHOLD = 0.5
+from iDTT import apply_iDTT
 
 ###############################################################################
 
 
 class Encoder:
-
+    
     def __init__(self, **params):
         pass
-
+    
+    
     def RGB_to_YUV(self, image):
         """
         Convertit une image depuis une représentation RGB (Rouge, Vert, Bleu)
@@ -39,7 +38,8 @@ class Encoder:
 
         # On retourne l'image ainsi constituée
         return image_yuv
-
+    
+    
     def RGB_to_YCbCr(self, image):
         """
         Convertit une image depuis une représentation RGB (Rouge, Vert, Bleu)
@@ -66,6 +66,7 @@ class Encoder:
 
         # On retourne l'image ainsi constituée
         return image_ycbcr
+    
     
     @staticmethod
     def DCT_operator(N):
@@ -105,6 +106,7 @@ class Encoder:
         
         return(A)
     
+    
     def apply_DCT(self, operateur_DCT, image):
         """
         Applique la transformée en cosinus discrete à une image au format luminance chrominance.
@@ -127,6 +129,7 @@ class Encoder:
             dct_data[:, :, k] = operateur_DCT @ image[:, :, k] @ operateur_DCT.T
         
         return(dct_data)
+    
     
     def zigzag_linearisation(self, dct_data):
         """
@@ -182,11 +185,12 @@ class Encoder:
                 res2.append(pixel_dct[k])
         
         return np.array(res2)
-
-    def quantization(self, data, threshold=DEFAULT_QUANTIZATION_THRESHOLD):
+    
+    
+    def quantization(self, data, threshold):
         """
-        Permet de quantifier les coefficients en passant toutes les valeurs sous un certain seuil
-        à 0.
+        Permet de quantifier les coefficients en passant toutes les valeurs 
+        sous un certain seuil à 0.
         
         Args:
             data: tableau à une dimension des coefficients de l'image passés par la DCT
@@ -205,6 +209,7 @@ class Encoder:
                 quantized_data[i] = 0
         
         return quantized_data
+    
     
     def run_level(self, data):
         """
@@ -279,19 +284,97 @@ class Encoder:
         
         return pairs
     
-    def huffman_encode(self, pairs):
+    
+    def decompose_frame_en_macroblocs_via_DCT(self, image_yuv, img_size, macroblock_size, threshold, A):
         """
-        Encode par l'algorithme de Huffman les donnéees. Attribue un identifiant en binaire à chaque symbole
-        de sorte que les symboles récurrents soient exprimés avec le minimum de bits possibles.
+        Décompose une image (au format YUV) en macroblocs RLE grâce à la DCT 
+        classique.
         
         Args:
-            pairs: paires décrivant les données de l'image
+            image_yuv: tableau représentant l'image YUV, de taille (img_height, img_width, 3)
+            img_size: tuple égal à (img_width, img_height)
+            macroblock_size: taille (d'un côté) d'un macrobloc
+            threshold: seuil de quantization
+            A: opérateur orthogonal de la DCT, de taille (macroblock_size, macroblock_size)
         
         Returns:
-            bitstream: le bitstream compressé correspondant à l'image
+            frame_RLE_encodee: frame entière encodée (liste de listes de tuples RLE)
         """
-        huff_enc = Huffman(pairs)
-        # TODO : Construire le bitstream (structure, données)
         
-        return huff_enc.encode_phrase(), huff_enc.symbols, huff_enc.dictToBin()
+        # définition des paramètres de l'image
+        img_width = img_size[0]
+        img_height = img_size[1]
+        total_num_of_macroblocks = (img_width * img_height) // macroblock_size**2
+        num_macroblocks_per_line = img_width // macroblock_size
+        
+        frame_RLE_encodee = []
+        
+        for num_macrobloc in range(total_num_of_macroblocks):
+            (i_macrobloc, j_macrobloc) = divmod(num_macrobloc, num_macroblocks_per_line)
+            
+            i_debut_macrobloc = i_macrobloc * macroblock_size
+            i_fin_macrobloc = i_debut_macrobloc + macroblock_size
+            
+            j_debut_macrobloc = j_macrobloc * macroblock_size
+            j_fin_macrobloc = j_debut_macrobloc + macroblock_size
+            
+            macrobloc = np.copy(image_yuv[i_debut_macrobloc : i_fin_macrobloc, j_debut_macrobloc : j_fin_macrobloc, :])
+            
+            # c'est ici que l'on encode les données du macrobloc
+            DCT_data = self.apply_DCT(A, macrobloc)
+            
+            zigzag_data_line = self.zigzag_linearisation(DCT_data)
+            quantized_data = self.quantization(zigzag_data_line, threshold)
+            rle_data = self.run_level(quantized_data)
+            
+            frame_RLE_encodee.append(rle_data)
+        
+        return(frame_RLE_encodee)
+    
+    
+    def decompose_frame_en_macroblocs_via_iDTT(self, image_yuv, img_size, macroblock_size, threshold, P, S):
+        """
+        Décompose une image (au format YUV) en macroblocs RLE grâce à la iDTT (ou
+        la iDCT).
+        
+        Args:
+            image_yuv: tableau représentant l'image YUV, de taille (img_height, img_width, 3)
+            img_size: tuple égal à (img_width, img_height)
+            macroblock_size: taille (d'un côté) d'un macrobloc
+            threshold: seuil de quantization
+            P et S: matrices contenant les infos de la décomposition de l'opérateur 
+                    (de la DCT ou la DTT) en SERMs, de taille (macroblock_size, macroblock_size)
+        
+        Returns:
+            frame_RLE_encodee: frame entière encodée (liste de listes de tuples RLE)
+        """
+        
+        # définition des paramètres de l'image
+        img_width = img_size[0]
+        img_height = img_size[1]
+        total_num_of_macroblocks = (img_width * img_height) // macroblock_size**2
+        num_macroblocks_per_line = img_width // macroblock_size
+        
+        frame_RLE_encodee = []
+        
+        for num_macrobloc in range(total_num_of_macroblocks):
+            (i_macrobloc, j_macrobloc) = divmod(num_macrobloc, num_macroblocks_per_line)
+            
+            i_debut_macrobloc = i_macrobloc * macroblock_size
+            i_fin_macrobloc = i_debut_macrobloc + macroblock_size
+            
+            j_debut_macrobloc = j_macrobloc * macroblock_size
+            j_fin_macrobloc = j_debut_macrobloc + macroblock_size
+            
+            macrobloc = np.copy(image_yuv[i_debut_macrobloc : i_fin_macrobloc, j_debut_macrobloc : j_fin_macrobloc, :])
+            
+            # c'est ici que l'on encode les données du macrobloc
+            iDTT_data = apply_iDTT(P, S, macrobloc)
+            zigzag_data_line = self.zigzag_linearisation(iDTT_data)
+            quantized_data = self.quantization(zigzag_data_line, threshold)
+            rle_data = self.run_level(quantized_data)
+            
+            frame_RLE_encodee.append(rle_data)
+        
+        return(frame_RLE_encodee)
 

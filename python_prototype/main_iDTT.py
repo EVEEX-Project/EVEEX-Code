@@ -9,31 +9,15 @@ analogue à la DCT entière.
 --> cf. iDTT.py
 """
 
-from iDTT import DTT_operator, generer_decomp, apply_iDTT, decode_iDTT, round_matrix, check_iDTT_functions
-
-"""
-Si DEFAULT_QUANTIZATION_THRESHOLD = 0, il n'y a pas de perte entre l'image YUV 
-(arrondie) de départ et l'image YUV décodée (cela n'est pas vrai pour l'image RGB, 
-car au début on a dû arrondir la matrice YUV après conversion de RGB à YUV).
-
-DEFAULT_QUANTIZATION_THRESHOLD doit être un entier >= 0 du coup.
-"""
-
-# On peut jouer sur ce paramètre pour voir jusqu'à combien on monter sans perdre
-# trop d'information (on peut monter jusqu'à 10 sans problème !)
-# Si ce seuil est faible (disons égal à 1), on n'aura quasiment pas de dégradation
-# visuelle, cependant il faudra en payer le prix avec un taux de compression
-# plus élevé
 DEFAULT_QUANTIZATION_THRESHOLD = 10
 
-
-from time import sleep
+from iDTT import DTT_operator, generer_decomp, round_matrix
+from time import time, sleep
 from random import randint
 from encoder import Encoder
 from decoder import Decoder
 from network_transmission import Server, Client
 from bitstream import BitstreamSender
-from image_generator import MosaicImageGenerator
 from image_visualizer import ImageVisualizer
 from logger import LogLevel, Logger
 
@@ -41,87 +25,139 @@ from logger import LogLevel, Logger
 # # # ----------------------SETTING UP THE LOGGER------------------------ # # #
 
 
+t_debut_algo = time()
+
 log = Logger.get_instance()
 log.set_log_level(LogLevel.DEBUG)
 #log.start_file_logging("log_iDTT.log")
+
+print("\n")
+log.debug("iDTT (ou iDCT)\n\n")
 
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
 
 
 """
-N = image_height = image_width (image carrée / macrobloc carré), N >= 2
-
-N est typiquement de la taille d'un macrobloc, donc idéalement il faudrait 
-éviter d'avoir N > 16. 
-
-De plus, le temps de génération de l'opérateur de la DTT pour N > 20 est assez 
-élevé.
-
-Justement, si on itère ce processus sur des macroblocs 8x8 (ou 16x16) avec une 
-matrice A générée une seule fois tout au début, le code devrait tourner assez vite.
+On a ici 2 méthodes. Décommenter celle qui a été choisie et commenter l'autre.
 """
-N = 16
 
-img_gen = MosaicImageGenerator(size=(N, N), bloc_size=(4, 4))
-
-image_rgb = 255 * img_gen.generate()
 
 """
-Pour tester une sorte de "DCT entière" en recyclant la méthode de la iDTT,
-remplacer "A = DTT_operator(N)" par "A = Encoder.DCT_operator(N)".
-
-Ce n'est pas "la" DCT entière à proprement parler, mais ça fonctionne quand 
-même plutôt bien. En effet, pour des mêmes valeurs de N, DEFAULT_QUANTIZATION_THRESHOLD 
-et bufsize, on obtient de meilleurs taux de compression avec l'opérateur de 
-la DCT (pour au moins N = 8 et N = 16) !!
+Méthode n°1 : Si l'on veut considérer une image pré-existante
 """
-A = DTT_operator(N)
-#A = Encoder.DCT_operator(N)
 
-# S : matrice contenant l'information des SERMs (--> cf. iDTT.py)
-(P, S) = generer_decomp(A)
+
+from PIL import Image
+import numpy as np
+
+nom_image = "Sunset.jpg"
+
+# Valeurs standards de macroblock_size : 8, 16 et 32
+# Ici, 24 et 48 fonctionnent aussi très bien
+# Doit être <= 63
+macroblock_size = 16
+
+# il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
+# divise bien ses 2 dimensions
+img_width = 720
+img_height = 480
+
+# format standard
+img_size = (img_width, img_height)
+
+image = Image.open(nom_image)
+image_intermediaire = image.getdata()
+
+image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
+
+
+#----------------------------------------------------------------------------#
+
+
+"""
+Méthode n°2 : Si l'on veut générer une image aléatoirement
+"""
+
+
+#from image_generator import MosaicImageGenerator
+#
+## Valeurs standards de macroblock_size : 8, 16 et 32
+## Doit être <= 63
+#macroblock_size = 16
+#
+#num_macroblocks_per_line = 45
+#num_macroblocks_per_column = 30
+#
+#img_width = num_macroblocks_per_line * macroblock_size
+#img_height = num_macroblocks_per_column * macroblock_size
+#
+## format standard
+#img_size = (img_width, img_height)
+#
+## pour MosaicGenerator
+#taille_image = (img_height, img_width)
+#
+## doit être comprise entre 1 et img_height
+#hauteur_blocs_aleatoires = 8
+#
+## doit être comprise entre 1 et img_width
+#epaisseur_blocs_aleatoires = 8
+#
+#taille_blocs_aleatoires = (hauteur_blocs_aleatoires, epaisseur_blocs_aleatoires)
+#
+#img_gen = MosaicImageGenerator(size=taille_image, bloc_size=taille_blocs_aleatoires)
+#image_rgb = round_matrix(255 * img_gen.generate())
 
 
 # # # -------------------------IMAGE ENCODING-------------------------- # # #
 
 
+"""
+Pour tester une sorte de "DCT entière" en recyclant la méthode de la iDTT,
+remplacer "A = DTT_operator(macroblock_size)" par "A = Encoder.DCT_operator(macroblock_size)"
+"""
+A = DTT_operator(macroblock_size)
+#A = Encoder.DCT_operator(macroblock_size)
+
+# génération de la décomposition de A en SERMs (--> cf. iDTT.py)
+(P, S) = generer_decomp(A)
+
+
 img_visu = ImageVisualizer()
 enc = Encoder()
 
-# affichage n°1
-print("\n\n\nEncodage - Image RGB :\n")
-img_visu.show_image_with_matplotlib(image_rgb[:, :, 0])
 
+print("\n\nEncodage - Image RGB :\n")
+img_visu.show_image_with_matplotlib(image_rgb)
+print("\n\n")
+
+# frame RGB --> frame YUV
 image_yuv = round_matrix(enc.RGB_to_YUV(image_rgb))
 
-# affichage n°2
-print("\n\n\nEncodage - Image YUV (juste avant iDTT) :\n")
-img_visu.show_image_with_matplotlib(image_yuv[:, :, 0])
-
-iDTT_data = apply_iDTT(P, S, image_yuv)
-
-# affichage n°3
-print("\n\n\nEncodage - Image juste après iDTT :\n")
-img_visu.show_image_with_matplotlib(iDTT_data[:, :, 0])
-print("\n\n\n")
-
-zigzag_data_line = enc.zigzag_linearisation(iDTT_data)
-quantized_data = enc.quantization(zigzag_data_line, threshold=DEFAULT_QUANTIZATION_THRESHOLD)
-rle_data = enc.run_level(quantized_data)
-compressed_data = enc.huffman_encode(rle_data)
+# frame YUV --> frame RLE
+rle_data = enc.decompose_frame_en_macroblocs_via_iDTT(image_yuv, img_size, macroblock_size, DEFAULT_QUANTIZATION_THRESHOLD, P, S)
 
 
 # # # -------------------------SENDING DATA OVER NETWORK-------------------------- # # #
 
 
-# le bufsize doit impérativement être >= 51 (en pratique : OK)
+# le bufsize doit impérativement être >= 67 (en pratique : OK)
 bufsize = 4096
 
 HOST = 'localhost'
 PORT = randint(5000, 15000)
 
-serv = Server(HOST, PORT, bufsize)
+# booléen indiquant si l'on veut afficher les messages entre le client et
+# le serveur
+affiche_messages = False
+
+# On désactive les messages par défaut si on sait qu'il va y avoir beaucoup de
+# données à afficher
+if 3 * img_width * img_height > 10000:
+    affiche_messages = False
+
+serv = Server(HOST, PORT, bufsize, affiche_messages)
 cli = Client(serv)
 
 global received_data
@@ -133,14 +169,11 @@ def on_received_data(data):
 
 serv.listen_for_packets(cli, callback=on_received_data)
 
-frame_id = randint(0, 65535) # 65535 = 2**16 -1
-img_size = N**2
-macroblock_size = 4 # par exemple
+frame_id = randint(0, 65535) # 65535 = 2**16 - 1
 
+# frame RLE --> bitstream
 bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, rle_data, cli, bufsize)
 bit_sender.send_frame_RLE()
-
-cli.connexion.close()
 
 
 # # # -------------------------DATA DECODING TO IMAGE-------------------------- # # #
@@ -148,65 +181,84 @@ cli.connexion.close()
 
 dec = Decoder()
 
+# bitstream --> frame RLE
 dec_rle_data = dec.decode_bitstream_RLE(received_data)
-dec_quantized_data = dec.decode_run_length(dec_rle_data)
-dec_iDTT_data = dec.decode_zigzag(dec_quantized_data)
 
-# affichage n°4
 sleep(0.01)
+
+if not(affiche_messages):
+    print("\n")
+    log.debug("\nLes messages entre le client et le serveur n'ont ici pas été affichés pour plus de lisibilité.")
+
 print("\n\n")
-log.debug(f"\nTransmission réseau réussie (ie rle_data == decoded_rle_data) : {rle_data == dec_rle_data}\n\n")
-print("\n\n\nDécodage - Données iDTT de l'image :\n")
-img_visu.show_image_with_matplotlib(dec_iDTT_data[:, :, 0])
+log.debug(f"\nTransmission réseau réussie : {rle_data == dec_rle_data}\n")
 
-dec_yuv_data = decode_iDTT(P, S, dec_iDTT_data)
+# frame RLE --> frame YUV
+dec_yuv_data = dec.recompose_frame_via_iDTT(dec_rle_data, img_size, macroblock_size, P, S)
 
-# affichage n°5
-print("\n\n\nDécodage - Image YUV :\n")
-img_visu.show_image_with_matplotlib(dec_yuv_data[:, :, 0])
-
+# frame YUV --> frame RGB
 dec_rgb_data = dec.YUV_to_RGB(dec_yuv_data)
 
-# affichage n°6
-print("\n\n\nDécodage - Image RGB :\n")
-img_visu.show_image_with_matplotlib(dec_rgb_data[:, :, 0])
+
+# Vérification des valeurs de la frame RGB décodée (on devrait les avoir entre
+# 0 et 255)
+# Les "valeurs illégales" sont ici en forte minorité (heureusement)
+(num_low_values, num_high_values) = (0, 0)
+for k in range(3):
+    for i in range(img_height):
+        for j in range(img_width):
+            pixel_component = dec_rgb_data[i, j, k]
+            
+            # On remet 'pixel_component' entre 0 (inclus) et 255 (inclus) si besoin
+            
+            if pixel_component < 0:
+                dec_rgb_data[i, j, k] = 0
+                num_low_values += 1
+            
+            if pixel_component > 255:
+                dec_rgb_data[i, j, k] = 255
+                num_high_values += 1
 
 
-# Preuve que la iDTT et la iDTT inverse sont bien cohérentes
-print("\n\n")
-check_iDTT_functions(A, P, S)
+dec_rgb_data = np.round(dec_rgb_data).astype(dtype=np.uint8)
+
+print("\n\nDécodage - Image RGB :\n")
+img_visu.show_image_with_matplotlib(dec_rgb_data)
+
+t_fin_algo = time()
+duree_algo = round(t_fin_algo - t_debut_algo, 3)
 
 
-# Stats :
+# # # ----------------------------STATISTICS------------------------------ # # #
 
-taille_originale_en_bits = 8 * 3 * img_size # = 24 * N**2
 
-taille_donnees_compressees_huffman = len(compressed_data[0])
-taille_body_bitstream = len(bit_sender.bit_generator.body)
-taille_dico_encode_huffman = len(compressed_data[2])
-taille_dico_bitstream = len(bit_sender.bit_generator.dict)
+taille_originale_en_bits = 8 * 3 * img_width * img_height
+
+taille_donnees_compressees_huffman = bit_sender.taille_donnees_compressees_huffman
+taille_dico_encode_huffman = len(bit_sender.dict_huffman_encode)
 taille_bitstream_total = len(received_data) # = len(bit_sender.bit_generator.bitstream)
 
+# on considère que le header et le tail font partie des métadonnees du bitstream
+taille_metadonnees = taille_bitstream_total - taille_donnees_compressees_huffman - taille_dico_encode_huffman
+
 taux_donnees_huffman = round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
-taux_body_bitstream = round(100 * taille_body_bitstream / taille_originale_en_bits, 2)
 taux_dico_huffman = round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
-taux_dico_bitstream = round(100 * taille_dico_bitstream / taille_originale_en_bits, 2)
 taux_bitstream_total = round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
+taux_metadonnees = round(100 * taille_metadonnees / taille_originale_en_bits, 2)
 
 print("\n\n")
-log.debug(f"Quelques taux de compression (pour un bufsize de {bufsize}) :\n")
+log.debug(f"\nTailles relatives par rapport à la taille originale de l'image (en bits) :\n")
 
-log.debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman}%")
-log.debug(f"Bitstream associé aux données encodées par l'algo de Huffman : {taux_body_bitstream}%\n")
-log.debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman}%")
-log.debug(f"Bitstream associé au dictionnaire de Huffman encodé : {taux_dico_bitstream}%\n")
-log.debug(f"Bitstream total : {taux_bitstream_total}%\n")
+log.debug(f"\nDonnées encodées par l'algo de Huffman : {taux_donnees_huffman}%")
+log.debug(f"\nDictionnaire de Huffman encodé : {taux_dico_huffman}%")
+log.debug(f"\nMétadonnées du bitstream : {taux_metadonnees}%")
+log.debug(f"\nBitstream total : {taux_bitstream_total}% --> taux de compression\n")
 
-
-# # # -------------------------VISUALIZING THE IMAGE-------------------------- # # #
+log.debug(f"\nTemps d'exécution de tout l'algorithme : {duree_algo} s\n")
 
 
-#img_visu = ImageVisualizer()
-#img_visu.save_image_to_disk(dec_yuv_image, "decoded_image.png")
-#img_visu.show_image_with_matplotlib(dec_yuv_image)
+cli.connexion.close()
+
+
+#img_visu.save_image_to_disk(dec_rgb_data, "decoded_image.png")
 
