@@ -10,13 +10,13 @@
 
 typedef struct Dictionary_struct { /* table entry: */
     char *key; /* defined name */
-    char *value; /* replacement text */
+    int *value; /* replacement text */
     struct Dictionary_struct *next; /* next entry in chain */
 } Dictionary;
 
 int Dico_size(Dictionary **hashtab);
-char *Dico_get(Dictionary **hashtab, char *key);
-Dictionary *Dico_set(Dictionary **hashtab, char *key, char *value);
+int *Dico_get(Dictionary **hashtab, char *key);
+void *Dico_set(Dictionary **hashtab, char *key, int *value);
 Dictionary **Dico_create();
 void Dico_free(Dictionary **hashtab);
 void Dico_del(Dictionary **hashtab, char *key);

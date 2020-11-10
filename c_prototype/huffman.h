@@ -5,19 +5,20 @@
 #ifndef C_PROTOTYPE_HUFFMAN_H
 #define C_PROTOTYPE_HUFFMAN_H
 
+#include "list.h"
 #include "dictionary.h"
 
 typedef struct {
     int frequence;
-    int valeur;
+    void *valeur;
     struct Noeud *droite;
     struct Noeud *gauche;
 } Noeud;
 
-Noeud **Noeud_createList();
+Noeud *Noeud_createNoeud(void *valeur, int frequence);
 Noeud *Noeud_mergeTwoNodes(Noeud noeud_a, Noeud noeud_b);
 
-Noeud **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols);
+List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols);
 Noeud *Huffman_getTwoLowestSymbols(Noeud **listeNoeud);
 Noeud *Huffman_sortNodes(Noeud **listeNoeud);
 

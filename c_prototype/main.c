@@ -57,7 +57,7 @@ void dictionary_test() {
 }
 
 void list_test() {
-    printf("===============DICO TEST===============\n");
+    printf("===============LIST TEST===============\n");
 
     List **maListe = List_create();
 
@@ -74,15 +74,28 @@ void list_test() {
 }
 
 void huffman_test() {
+    printf("===============HUFFMAN TEST===============\n");
+
     Dictionary **symbols = Dico_create();
-    Noeud **liste_noeuds = Huffman_splitPhraseInNodes("jaime les citrons", symbols);
+    char *phrase = "aaa bb ccccc citrons";
+    Noeud **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
+    printf("Phrase de test huffman : '%s'\n", phrase);
+
+    char *letter = "c";
+    printf("Frequence d'apparition du char %s : %d\n", letter, *Dico_get(symbols, letter));
+
+    printf("Freq apparition des lettres : ");
+    Dico_print(symbols);
+
+    printf("\n\n");
 }
 
 int main() {
-    /*dictionary_test();
+    dictionary_test();
     img_test();
-    huffman_test();*/
     list_test();
+
+    huffman_test();
 
     return 0;
 }

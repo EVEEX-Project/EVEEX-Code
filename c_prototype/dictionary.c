@@ -15,10 +15,11 @@ int Dico_size(Dictionary **hashtab) {
 }
 
 /* lookup: look for s in hashtab */
-char *Dico_get(Dictionary **hashtab, char *key)
+int *Dico_get(Dictionary **hashtab, char *key)
 {
     Dictionary *ptr;
     for (ptr = *hashtab; ptr != NULL; ptr = ptr->next) {
+        //printf("Testing : %c & %s with res : %d\n", key, ptr->key, strcmp(ptr->key, key));
         if (strcmp(ptr->key, key) == 0) {
             return ptr->value;
         }
@@ -28,7 +29,7 @@ char *Dico_get(Dictionary **hashtab, char *key)
 }
 
 /* install: put (name, defn) in hashtab */
-Dictionary *Dico_set(Dictionary **hashtab, char *key, char *value)
+void *Dico_set(Dictionary **hashtab, char *key, int *value)
 {
     Dico_del(hashtab, key); /* If we already have a item with this key, delete it. */
     Dictionary *d = malloc(sizeof(Dictionary));
@@ -83,7 +84,7 @@ void Dico_print(Dictionary **hashtab) {
     Dictionary *ptr;
     printf("Dictionnary : {");
     for (ptr = *hashtab; ptr != NULL; ptr = ptr->next) {
-        printf("'%s': '%s'", ptr->key, ptr->value);
+        printf("'%s': '%d'", ptr->key, *ptr->value);
         if (ptr->next != NULL)
             printf(", ");
     }
