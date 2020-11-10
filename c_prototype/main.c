@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "image.h"
 #include "dictionary.h"
+#include "list.h"
 #include "huffman.h"
 #include "utils.h"
 
@@ -55,6 +56,23 @@ void dictionary_test() {
     printf("\n\n");
 }
 
+void list_test() {
+    printf("===============DICO TEST===============\n");
+
+    List **maListe = List_create();
+
+    List_append(maListe, "hello");
+    List_append(maListe, "world");
+    List_add(maListe, "I'm saying : ");
+    List_append(maListe, "!");
+
+    List_print(maListe);
+    printf("This list contains : %d elements\n", List_size(maListe));
+    List_free(maListe);
+
+    printf("\n\n");
+}
+
 void huffman_test() {
     Dictionary **symbols = Dico_create();
     Noeud **liste_noeuds = Huffman_splitPhraseInNodes("jaime les citrons", symbols);
@@ -62,8 +80,9 @@ void huffman_test() {
 
 int main() {
     /*dictionary_test();
-    img_test();*/
-    huffman_test();
+    img_test();
+    huffman_test();*/
+    list_test();
 
     return 0;
 }

@@ -2,6 +2,7 @@
 // Created by alexandre on 10/11/2020.
 //
 
+#include <stdio.h>
 #include "dictionary.h"
 
 int Dico_size(Dictionary **hashtab) {
