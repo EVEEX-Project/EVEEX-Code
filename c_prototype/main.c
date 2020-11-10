@@ -78,7 +78,7 @@ void huffman_test() {
 
     Dictionary **symbols = Dico_create();
     char *phrase = "aaa bb ccccc citrons";
-    Noeud **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
+    List **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
     printf("Phrase de test huffman : '%s'\n", phrase);
 
     char *letter = "c";
@@ -86,6 +86,13 @@ void huffman_test() {
 
     printf("Freq apparition des lettres : ");
     Dico_print(symbols);
+
+    printf("Liste des noeuds : \n");
+    List *ptr;
+    for (ptr = *liste_noeuds; ptr->next != NULL; ptr = ptr->next) {
+        Noeud *n = ptr->element;
+        printf("-- Valeur : %s, Fréquence : %d\n", n->valeur, n->frequence);
+    }
 
     printf("\n\n");
 }

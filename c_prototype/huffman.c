@@ -16,6 +16,7 @@ Noeud *Noeud_createNoeud(void *valeur, int frequence) {
 List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols) {
     List **listeNoeuds = List_create();
 
+    // Calculating the frequencies
     int *freq;
     char key[2];
     key[1] = '\0';
@@ -33,6 +34,14 @@ List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols) {
             (*freq)++;
         }
         Dico_set(symbols, key, freq);
+    }
+
+    // Adding the nodes to the list
+    List **dicoKeys = Dico_keys(symbols);
+    List *ptr;
+    for (ptr = *dicoKeys; ptr->next != NULL; ptr = ptr->next) {
+        Noeud *n = Noeud_createNoeud(ptr->element, *Dico_get(symbols, ptr->element));
+        List_append(listeNoeuds, n);
     }
 
     return listeNoeuds;

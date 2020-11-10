@@ -90,3 +90,13 @@ void Dico_print(Dictionary **hashtab) {
     }
     printf("}\n");
 }
+
+List **Dico_keys(Dictionary **hashtab) {
+    List **keysList = List_create();
+    Dictionary *ptr;
+
+    for (ptr = *hashtab; ptr != NULL; ptr = ptr->next) {
+        List_append(keysList, ptr->key);
+    }
+    return keysList;
+}

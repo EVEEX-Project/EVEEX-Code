@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "list.h"
 
 typedef struct Dictionary_struct { /* table entry: */
     char *key; /* defined name */
@@ -21,5 +22,6 @@ Dictionary **Dico_create();
 void Dico_free(Dictionary **hashtab);
 void Dico_del(Dictionary **hashtab, char *key);
 void Dico_print(Dictionary **hashtab);
+List **Dico_keys(Dictionary **hashtab);
 
 #endif //C_PROTOTYPE_DICTIONARY_H
