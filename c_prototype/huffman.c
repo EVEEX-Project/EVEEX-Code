@@ -1,7 +1,7 @@
 #include "huffman.h"
 #include "list.h"
 #include "dictionary.h"
-#include "utils.h"
+#include <stdio.h>
 
 Noeud *Noeud_createNoeud(void *valeur, int frequence) {
     Noeud *n = (Noeud *) malloc(sizeof(Noeud));
@@ -12,6 +12,23 @@ Noeud *Noeud_createNoeud(void *valeur, int frequence) {
 
     return n;
 }
+
+Noeud *Noeud_mergeTwoNodes(Noeud *noeud_a, Noeud *noeud_b)
+{
+    char *newValeur = malloc(sizeof(char) * 255);
+    sprintf(newValeur, "[%s, %s]", noeud_a->valeur, noeud_b->valeur);
+    Noeud *newNode = Noeud_createNoeud(newValeur, noeud_a->frequence + noeud_b->frequence);
+    newNode->gauche = noeud_a;
+    newNode->droite = noeud_b;
+
+    return newNode;
+}
+
+void Noeud_printNode(Noeud *noeud) {
+    printf("Noeud : {Value: %s, Frequency: %d}\n", noeud->valeur, noeud->frequence);
+}
+
+/* ------------------- HUFFMAN ------------------ */
 
 List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols) {
     List **listeNoeuds = List_create();
@@ -45,4 +62,17 @@ List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols) {
     }
 
     return listeNoeuds;
+}
+
+Noeud *Huffman_getLowestFrequencySymbol(List **listeNoeud)
+{
+    List *ptr;
+    Noeud *mini;
+    for (ptr = *listeNoeud; ptr != NULL; ptr = ptr->next) {
+        Noeud *current = ptr->element;
+        if (current->frequence < mini->frequence)
+            mini = current;
+    }
+
+    return mini;
 }

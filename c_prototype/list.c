@@ -55,6 +55,15 @@ void List_print(List **list) {
     printf("}\n");
 }
 
+void List_remove(List **list, void *elementToRemove) {
+    List *ptr;
+    for (ptr = *list; ptr != NULL; ptr = ptr->next) {
+        if (ptr->element == elementToRemove) {
+            printf("Element trouvé !");
+        }
+    }
+}
+
 void List_free(List **list) {
     List *ptr = *list;
     List *toFree;

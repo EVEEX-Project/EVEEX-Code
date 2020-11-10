@@ -98,6 +98,19 @@ void huffman_test() {
         Noeud *n = ptr->element;
         printf("(%s: %d) ", n->valeur, n->frequence);
     }
+    printf("\n");
+
+    Noeud *noeud_a = Noeud_createNoeud("a", 5);
+    Noeud *noeud_b = Noeud_createNoeud("b", 3);
+    Noeud_printNode(noeud_a);
+    Noeud_printNode(noeud_b);
+    Noeud *noeud_c = Noeud_mergeTwoNodes(noeud_a, noeud_b);
+    Noeud_printNode(noeud_c);
+    Noeud_printNode(Noeud_mergeTwoNodes(noeud_c, noeud_a));
+
+    Noeud *lowestFrequency = Huffman_getLowestFrequencySymbol(liste_noeuds);
+    printf("The symbol with the lowest frequency is: '%s' with a frequency of: %d\n", lowestFrequency->valeur, lowestFrequency->frequence);
+    List_remove(liste_noeuds, lowestFrequency);
 
     printf("\n\n");
 }

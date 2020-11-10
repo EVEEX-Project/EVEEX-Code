@@ -13,6 +13,7 @@ typedef struct List_struct {
 List **List_create();
 void List_add(List **list, void *elementToAdd);
 void List_append(List **list, void *elementToAdd);
+void List_remove(List **list, void *elementToRemove);
 int List_size(List **list);
 void List_free(List **list);
 void List_print(List **list);

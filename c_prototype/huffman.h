@@ -8,18 +8,19 @@
 #include "list.h"
 #include "dictionary.h"
 
-typedef struct {
+typedef struct Noeud_struct {
     int frequence;
     void *valeur;
-    struct Noeud *droite;
-    struct Noeud *gauche;
+    struct Noeud_struct *droite;
+    struct Noeud_struct *gauche;
 } Noeud;
 
 Noeud *Noeud_createNoeud(void *valeur, int frequence);
-Noeud *Noeud_mergeTwoNodes(Noeud noeud_a, Noeud noeud_b);
+Noeud *Noeud_mergeTwoNodes(Noeud *noeud_a, Noeud *noeud_b);
+void Noeud_printNode(Noeud *noeud);
 
 List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols);
-Noeud *Huffman_getTwoLowestSymbols(Noeud **listeNoeud);
+Noeud *Huffman_getLowestFrequencySymbol(List **listeNoeud);
 Noeud *Huffman_sortNodes(Noeud **listeNoeud);
 
 
