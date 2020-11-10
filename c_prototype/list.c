@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "list.h"
 
 List **List_create() {
@@ -55,13 +56,24 @@ void List_print(List **list) {
     printf("}\n");
 }
 
-void List_remove(List **list, void *elementToRemove) {
+bool List_remove(List **list, void *elementToRemove) {
     List *ptr;
+    List *precedent;
     for (ptr = *list; ptr != NULL; ptr = ptr->next) {
         if (ptr->element == elementToRemove) {
-            printf("Element trouvé !");
+            // if it's the first element
+            if (ptr == *list)
+                *list = ptr->next;
+            // else the element to remove is not the first
+            else
+                precedent->next = ptr->next;
+
+            return true;
         }
+        // if the element is not found we update the precedent
+        precedent = ptr;
     }
+    return false;
 }
 
 void List_free(List **list) {

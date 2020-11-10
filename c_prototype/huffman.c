@@ -1,6 +1,7 @@
 #include "huffman.h"
 #include "list.h"
 #include "dictionary.h"
+#include "utils.h"
 #include <stdio.h>
 
 Noeud *Noeud_createNoeud(void *valeur, int frequence) {
@@ -68,11 +69,38 @@ Noeud *Huffman_getLowestFrequencySymbol(List **listeNoeud)
 {
     List *ptr;
     Noeud *mini;
-    for (ptr = *listeNoeud; ptr != NULL; ptr = ptr->next) {
+    for (ptr = *listeNoeud, mini = ptr->element; ptr != NULL; ptr = ptr->next) {
         Noeud *current = ptr->element;
         if (current->frequence < mini->frequence)
             mini = current;
     }
 
     return mini;
+}
+
+Noeud *Huffman_generateTreeFromList(List **listeNoeud)
+{
+    printf("GENERATING TREE\n");
+    Noeud *n1, *n2, *n12;
+    bool find_result;
+    while (List_size(listeNoeud) > 1) {
+        //printf("List size : %d\n", List_size(listeNoeud));
+        // we get the two lowest scores to merge them
+        n1 = Huffman_getLowestFrequencySymbol(listeNoeud);
+        find_result = List_remove(listeNoeud, n1);
+        ON_ERROR_EXIT(find_result == false, "Node(1) not found in list");
+        n2 = Huffman_getLowestFrequencySymbol(listeNoeud);
+        find_result = List_remove(listeNoeud, n2);
+        ON_ERROR_EXIT(find_result == false, "Node(2) not found in list");
+
+        // merging them
+        n12 = Noeud_mergeTwoNodes(n1, n2);
+        // adding the node back into the list
+        List_append(listeNoeud, n12);
+
+        printf("Merging : (%s: %d) + (%s: %d) => (%s: %d)\n", n1->valeur, n1->frequence, n2->valeur, n2->frequence, n12->valeur, n12->frequence);
+    }
+
+    List *racine = *listeNoeud;
+    return racine->element;
 }

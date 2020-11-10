@@ -75,18 +75,18 @@ void list_test() {
     printf("\n\n");
 }
 
-void huffman_test() {
-    printf("===============HUFFMAN TEST===============\n");
+void nodes_test() {
+    printf("===============NODES TEST===============\n");
 
     Dictionary **symbols = Dico_create();
-    char *phrase = "j'aime beaucoup trop les citrons";
+    char *phrase = "hello world";
     List **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
     printf("Testing sentence : '%s'\n", phrase);
 
     printf("Symbol keys : ");
     List_print(Dico_keys(symbols));
 
-    char *letter = "c";
+    char *letter = "e";
     printf("Symbol apparition frequency for '%s' : %d\n", letter, *Dico_get(symbols, letter));
 
     printf("Letters apparition frequency : ");
@@ -110,8 +110,21 @@ void huffman_test() {
 
     Noeud *lowestFrequency = Huffman_getLowestFrequencySymbol(liste_noeuds);
     printf("The symbol with the lowest frequency is: '%s' with a frequency of: %d\n", lowestFrequency->valeur, lowestFrequency->frequence);
+    printf("# element before removing : %d\n", List_size(liste_noeuds));
     List_remove(liste_noeuds, lowestFrequency);
+    printf("# element after removing : %d\n", List_size(liste_noeuds));
+    List_append(liste_noeuds, lowestFrequency);
 
+    Noeud *racine = Huffman_generateTreeFromList(liste_noeuds);
+    printf("Racine : ");
+    Noeud_printNode(racine);
+    printf("Sentence length : %lu\n", strlen(phrase));
+
+    printf("\n\n");
+}
+
+void huffman_test() {
+    printf("===============NODES TEST===============\n");
     printf("\n\n");
 }
 
@@ -119,7 +132,7 @@ int main() {
     dictionary_test();
     img_test();
     list_test();
-
+    nodes_test();
     huffman_test();
 
     return 0;
