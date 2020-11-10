@@ -1,13 +1,3 @@
-// Needed to use the library
-#ifndef STB_IMAGE_IMPLEMENTATION
-    #define STB_IMAGE_IMPLEMENTATION
-    #include "lib/stb_image.h"
-#endif
-#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
-    #define STB_IMAGE_WRITE_IMPLEMENTATION
-    #include "lib/stb_image_write.h"
-#endif
-
 #include "image.h"
 #include "utils.h"
 
@@ -38,7 +28,7 @@ int Image_create(Image *img, int width, int height, int channels, bool init_with
     }
 
     // if the data is null, there was a problem allocating the data
-    if(img->data != NULL)
+    if(img->data == NULL)
         return 1;
 
     // else we set the rest of the infos
@@ -93,11 +83,15 @@ void Image_free(Image *img) {
 void Image_to_gray(const Image *orig, Image *gray) {
     ON_ERROR_EXIT(!(orig->allocationType != NO_ALLOCATION && orig->channels >= 3), "The input image must have at least 3 channels.");
     int channels = orig->channels == 4 ? 2 : 1;
-    Image_create(gray, orig->width, orig->height, channels, false);
-    ON_ERROR_EXIT(gray->data == NULL, "Error in creating the image");
+    int creation_result = Image_create(gray, orig->width, orig->height, channels, false);
+    ON_ERROR_EXIT((gray->data == NULL) || (creation_result != 0), "Error in creating the gray image");
 
-    for(unsigned char *p = orig->data, *pg = gray->data; p != orig->data + orig->size; p += orig->channels, pg += gray->channels) {
-        *pg = (uint8_t)((*p + *(p + 1) + *(p + 2))/3.0);
+    uint8_t p0, p1, p2;
+    int counter = 0;
+    for(uint8_t *p = orig->data, *pg = gray->data; p != orig->data + orig->size; p += orig->channels, pg += gray->channels) {
+        counter += gray->channels;
+        p0 = *p, p1 = *(p + 1), p2 = *(p + 2);
+        *pg = (uint8_t)((p0 + p1 + p2)/3.0);
         if(orig->channels == 4) {
             *(pg + 1) = *(p + 3);
         }
@@ -106,8 +100,8 @@ void Image_to_gray(const Image *orig, Image *gray) {
 
 void Image_to_sepia(const Image *orig, Image *sepia) {
     ON_ERROR_EXIT(!(orig->allocationType != NO_ALLOCATION && orig->channels >= 3), "The input image must have at least 3 channels.");
-    Image_create(sepia, orig->width, orig->height, orig->channels, false);
-    ON_ERROR_EXIT(sepia->data == NULL, "Error in creating the image");
+    int creation_result = Image_create(sepia, orig->width, orig->height, orig->channels, false);
+    ON_ERROR_EXIT((sepia->data == NULL) || (creation_result != 0), "Error in creating the sepia image");
 
     // Sepia filter coefficients from https://stackoverflow.com/questions/1061093/how-is-a-sepia-tone-created
     for(unsigned char *p = orig->data, *pg = sepia->data; p != orig->data + orig->size; p += orig->channels, pg += sepia->channels) {
