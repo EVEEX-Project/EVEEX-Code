@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include "image.c"
-#include "dictionary.c"
+#include "image.h"
+#include "dictionary.h"
+#include "huffman.h"
 #include "utils.h"
 
 
@@ -54,9 +55,15 @@ void dictionary_test() {
     printf("\n\n");
 }
 
+void huffman_test() {
+    Dictionary **symbols = Dico_create();
+    Noeud **liste_noeuds = Huffman_splitPhraseInNodes("jaime les citrons", symbols);
+}
+
 int main() {
-    dictionary_test();
-    img_test();
+    /*dictionary_test();
+    img_test();*/
+    huffman_test();
 
     return 0;
 }

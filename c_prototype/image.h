@@ -5,16 +5,6 @@
 #ifndef C_PROTOTYPE_IMAGE_H
 #define C_PROTOTYPE_IMAGE_H
 
-// Needed to use the library
-#ifndef STB_IMAGE_IMPLEMENTATION
-    #define STB_IMAGE_IMPLEMENTATION
-    #include "lib/stb_image.h"
-#endif
-#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
-    #define STB_IMAGE_WRITE_IMPLEMENTATION
-    #include "lib/stb_image_write.h"
-#endif
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
