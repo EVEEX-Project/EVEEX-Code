@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include "image.c"
-#include "dictionary.c"
+#include "image.h"
+#include "dictionary.h"
+#include "list.h"
+#include "huffman.h"
 #include "utils.h"
 
 
@@ -54,9 +56,53 @@ void dictionary_test() {
     printf("\n\n");
 }
 
+void list_test() {
+    printf("===============LIST TEST===============\n");
+
+    List **maListe = List_create();
+
+    List_append(maListe, "hello");
+    List_append(maListe, "world");
+    List_add(maListe, "I'm saying : ");
+    List_append(maListe, "!");
+
+    List_print(maListe);
+    printf("This list contains : %d elements\n", List_size(maListe));
+    List_free(maListe);
+
+    printf("\n\n");
+}
+
+void huffman_test() {
+    printf("===============HUFFMAN TEST===============\n");
+
+    Dictionary **symbols = Dico_create();
+    char *phrase = "aaa bb ccccc citrons";
+    List **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
+    printf("Phrase de test huffman : '%s'\n", phrase);
+
+    char *letter = "c";
+    printf("Frequence d'apparition du char %s : %d\n", letter, *Dico_get(symbols, letter));
+
+    printf("Freq apparition des lettres : ");
+    Dico_print(symbols);
+
+    printf("Liste des noeuds : \n");
+    List *ptr;
+    for (ptr = *liste_noeuds; ptr->next != NULL; ptr = ptr->next) {
+        Noeud *n = ptr->element;
+        printf("-- Valeur : %s, Fréquence : %d\n", n->valeur, n->frequence);
+    }
+
+    printf("\n\n");
+}
+
 int main() {
     dictionary_test();
     img_test();
+    list_test();
+
+    huffman_test();
 
     return 0;
 }
