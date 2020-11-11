@@ -10,6 +10,7 @@ add_executable(c_prototype
         huffman.c
         image.c
         list.c
+        bitstream.c
         main.c)
 
 target_link_libraries(c_prototype m)
