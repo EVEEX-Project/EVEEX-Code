@@ -15,6 +15,6 @@ typedef struct Bitstream_struct {
 Bitstream *Bitstream_create();
 void Bitstream_free(Bitstream *bitstream);
 void Bitstream_encodeData(Dictionary **encodingDict, char *plaintext);
-void Bitstream_decodeData(Dictionary **decodingDict, char *cipherData)
+void Bitstream_decodeData(Dictionary **decodingDict, char *cipherData);
 
 #endif //C_PROTOTYPE_BITSTREAM_H
