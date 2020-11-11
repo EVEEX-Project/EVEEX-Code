@@ -40,18 +40,18 @@ void dictionary_test() {
     // on ajoute des éléments
     Dico_set(hashtab, "foo", &a);
     Dico_set(hashtab, "bar", &b);
-    Dico_print(hashtab);
+    Dico_printInt(hashtab);
 
-    printf("La valeur du dico avec la clé %s est %d\n", "foo", *Dico_get(hashtab, "foo"));
+    printf("La valeur du dico avec la clé %s est %d\n", "foo", *((int *) Dico_get(hashtab, "foo")));
 
     Dico_del(hashtab, "foo");
     Dico_del(hashtab, "bar");
-    Dico_print(hashtab);
+    Dico_printInt(hashtab);
 
     Dico_set(hashtab, "foo", &a);
     Dico_set(hashtab, "bar", &b);
     Dico_set(hashtab, "bar", &c);
-    Dico_print(hashtab);
+    Dico_printInt(hashtab);
 
     Dico_free(hashtab);
 
@@ -87,10 +87,10 @@ void nodes_test() {
     List_print(Dico_keys(symbols));
 
     char *letter = "e";
-    printf("Symbol apparition frequency for '%s' : %d\n", letter, *Dico_get(symbols, letter));
+    printf("Symbol apparition frequency for '%s' : %d\n", letter, *((int *) Dico_get(symbols, letter)));
 
     printf("Letters apparition frequency : ");
-    Dico_print(symbols);
+    Dico_printInt(symbols);
 
     printf("Nodes list (%d elements) (value: frequency): ", List_size(liste_noeuds));
     List *ptr;
@@ -134,6 +134,10 @@ void huffman_test() {
 
     printf("Printing the tree : \n");
     Huffman_printTree(racine);
+
+    Dictionary **encoding = Dico_create();
+    Huffman_generateEncodingDict(encoding, racine, "");
+    Dico_printString(encoding);
 
     printf("\n\n");
 }

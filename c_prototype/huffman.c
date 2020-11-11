@@ -58,7 +58,7 @@ List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols) {
     List **dicoKeys = Dico_keys(symbols);
     List *ptr;
     for (ptr = *dicoKeys; ptr != NULL; ptr = ptr->next) {
-        Noeud *n = Noeud_createNoeud(ptr->element, *Dico_get(symbols, ptr->element));
+        Noeud *n = Noeud_createNoeud(ptr->element, *((int *) Dico_get(symbols, ptr->element)));
         List_append(listeNoeuds, n);
     }
 
@@ -122,7 +122,7 @@ int _print_t(Noeud *noeud, int is_left, int offset, int depth, char s[20][255])
     int left  = _print_t(noeud->gauche,  1, offset,                depth + 1, s);
     int right = _print_t(noeud->droite, 0, offset + left + width, depth + 1, s);
 
-    printf("Noeud : %s, Depth : %d, Left : %d, right : %d, offset : %d\n", noeud->valeur, depth, left, right, offset);
+    //printf("Noeud : %s, Depth : %d, Left : %d, right : %d, offset : %d\n", noeud->valeur, depth, left, right, offset);
     for (int i = 0; i < width; i++) {
         if (b[i] != '\0')
             s[2 * depth][offset + left + i] = b[i];
@@ -158,6 +158,47 @@ void Huffman_printTree(Noeud *racine) {
 
     _print_t(racine, 0, 0, 0, s);
 
-    for (int i = 0; i < 20; i++)
-        printf("%s\n", s[i]);
+    for (int i = 0; i < 20; i++) {
+        int empty = 1;
+        int c = 0;
+        while (s[i][c] != '\0' && c < 255) {
+            if (s[i][c] != ' ') {
+                empty = 0;
+                //printf("Ligne %d:%d pas vide\n : %c", i, c, s[i][c]);
+                break;
+            }
+            c++;
+        }
+
+        if (!empty) {
+            for (int j = 0; j < 255; j++) {
+                printf("%c", s[i][j]);
+            }
+            printf("\n");
+        }
+    }
+}
+
+void Huffman_generateEncodingDict(Dictionary **encoding, Noeud *racine, char *prefixe)
+{
+    if (racine->gauche == NULL && racine->droite == NULL) {
+        char *newPrefixe = strdup(prefixe);
+        Dico_set(encoding, racine->valeur, newPrefixe);
+        return;
+    }
+
+    char newPrefixe[strlen(prefixe) + 2];
+    strcpy(newPrefixe, prefixe);
+    newPrefixe[strlen(prefixe) + 1] = '\0';
+
+    //printf("Prefixe : %s, newPrefixe : %s\n", prefixe, newPrefixe);
+
+    if (racine->gauche != NULL) {
+        newPrefixe[strlen(prefixe)] = '0';
+        Huffman_generateEncodingDict(encoding, racine->gauche, newPrefixe);
+    }
+    if (racine->droite != NULL) {
+        newPrefixe[strlen(prefixe)] = '1';
+        Huffman_generateEncodingDict(encoding, racine->droite, newPrefixe);
+    }
 }

@@ -11,17 +11,18 @@
 
 typedef struct Dictionary_struct { /* table entry: */
     char *key; /* defined name */
-    int *value; /* replacement text */
+    void *value; /* replacement text */
     struct Dictionary_struct *next; /* next entry in chain */
 } Dictionary;
 
 int Dico_size(Dictionary **hashtab);
-int *Dico_get(Dictionary **hashtab, char *key);
-void *Dico_set(Dictionary **hashtab, char *key, int *value);
+void *Dico_get(Dictionary **hashtab, char *key);
+void *Dico_set(Dictionary **hashtab, char *key, void *value);
 Dictionary **Dico_create();
 void Dico_free(Dictionary **hashtab);
 void Dico_del(Dictionary **hashtab, char *key);
-void Dico_print(Dictionary **hashtab);
+void Dico_printInt(Dictionary **hashtab);
+void Dico_printString(Dictionary **hashtab);
 List **Dico_keys(Dictionary **hashtab);
 
 #endif //C_PROTOTYPE_DICTIONARY_H
