@@ -104,3 +104,60 @@ Noeud *Huffman_generateTreeFromList(List **listeNoeud)
     List *racine = *listeNoeud;
     return racine->element;
 }
+
+// from : https://stackoverflow.com/questions/801740/c-how-to-draw-a-binary-tree-to-the-console
+int _print_t(Noeud *noeud, int is_left, int offset, int depth, char s[20][255])
+{
+    char b[20];
+    int width = 3;
+
+    if (!noeud) return 0;
+
+    if (!noeud->gauche && !noeud->droite) {
+        sprintf(b, "(%s)", noeud->valeur);
+    }
+    else
+        sprintf(b, " | ");
+
+    int left  = _print_t(noeud->gauche,  1, offset,                depth + 1, s);
+    int right = _print_t(noeud->droite, 0, offset + left + width, depth + 1, s);
+
+    printf("Noeud : %s, Depth : %d, Left : %d, right : %d, offset : %d\n", noeud->valeur, depth, left, right, offset);
+    for (int i = 0; i < width; i++) {
+        if (b[i] != '\0')
+            s[2 * depth][offset + left + i] = b[i];
+        else
+            break;
+    }
+
+    if (depth && is_left) {
+
+        for (int i = 0; i < width + right; i++)
+            s[2 * depth - 1][offset + left + width/2 + i] = '-';
+
+        s[2 * depth - 1][offset + left + width/2] = '+';
+        s[2 * depth - 1][offset + left + width + right + width/2] = '+';
+
+    } else if (depth && !is_left) {
+
+        for (int i = 0; i < left + width; i++)
+            s[2 * depth - 1][offset - width/2 + i] = '-';
+
+        s[2 * depth - 1][offset + left + width/2] = '+';
+        s[2 * depth - 1][offset - width/2 - 1] = '+';
+    }
+
+    return left + width + right;
+}
+
+void Huffman_printTree(Noeud *racine) {
+    char s[20][255];
+    for (int i = 0; i < 20; i++)
+        for (int j = 0; j < 255; j++)
+            s[i][j] = ' ';
+
+    _print_t(racine, 0, 0, 0, s);
+
+    for (int i = 0; i < 20; i++)
+        printf("%s\n", s[i]);
+}

@@ -124,7 +124,17 @@ void nodes_test() {
 }
 
 void huffman_test() {
-    printf("===============NODES TEST===============\n");
+    printf("===============HUFFMAN TEST===============\n");
+
+    char *phrase = "le chic de l'ensta bretagne sur la compression video";
+    Dictionary **symbols = Dico_create();
+    List **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
+    Noeud *racine = Huffman_generateTreeFromList(liste_noeuds);
+    Noeud_printNode(racine);
+
+    printf("Printing the tree : \n");
+    Huffman_printTree(racine);
+
     printf("\n\n");
 }
 

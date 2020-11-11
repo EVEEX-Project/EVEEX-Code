@@ -22,6 +22,6 @@ void Noeud_printNode(Noeud *noeud);
 List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols);
 Noeud *Huffman_getLowestFrequencySymbol(List **listeNoeud);
 Noeud *Huffman_generateTreeFromList(List **listeNoeud);
-
+void Huffman_printTree(Noeud *racine);
 
 #endif //C_PROTOTYPE_HUFFMAN_H
