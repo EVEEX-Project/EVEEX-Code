@@ -13,6 +13,7 @@ DEFAULT_QUANTIZATION_THRESHOLD = 10
 
 from iDTT import DTT_operator, generer_decomp, round_matrix
 from time import time, sleep
+import numpy as np
 from random import randint
 from encoder import Encoder
 from decoder import Decoder
@@ -49,13 +50,13 @@ Méthode n°1 : Si l'on veut considérer une image pré-existante
 
 
 from PIL import Image
-import numpy as np
 
 nom_image = "Sunset.jpg"
 
 # Valeurs standards de macroblock_size : 8, 16 et 32
 # Ici, 24 et 48 fonctionnent aussi très bien
-# Doit être <= 63
+# Doit être <= 63 (pour la iDTT, doit être <= 20 sinon le temps de calcul de
+# l'opérateur orthogonal de la DTT devient trop élevé)
 macroblock_size = 16
 
 # il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
@@ -83,7 +84,8 @@ Méthode n°2 : Si l'on veut générer une image aléatoirement
 #from image_generator import MosaicImageGenerator
 #
 ## Valeurs standards de macroblock_size : 8, 16 et 32
-## Doit être <= 63
+## Doit être <= 63 (pour la iDTT, doit être <= 20 sinon le temps de calcul de
+## l'opérateur orthogonal de la DTT devient trop élevé)
 #macroblock_size = 16
 #
 #num_macroblocks_per_line = 45
@@ -99,10 +101,10 @@ Méthode n°2 : Si l'on veut générer une image aléatoirement
 #taille_image = (img_height, img_width)
 #
 ## doit être comprise entre 1 et img_height
-#hauteur_blocs_aleatoires = 8
+#hauteur_blocs_aleatoires = 4
 #
 ## doit être comprise entre 1 et img_width
-#epaisseur_blocs_aleatoires = 8
+#epaisseur_blocs_aleatoires = 4
 #
 #taille_blocs_aleatoires = (hauteur_blocs_aleatoires, epaisseur_blocs_aleatoires)
 #
@@ -154,7 +156,7 @@ affiche_messages = False
 
 # On désactive les messages par défaut si on sait qu'il va y avoir beaucoup de
 # données à afficher
-if 3 * img_width * img_height > 10000:
+if img_width * img_height > 10000:
     affiche_messages = False
 
 serv = Server(HOST, PORT, bufsize, affiche_messages)
@@ -225,6 +227,9 @@ dec_rgb_data = np.round(dec_rgb_data).astype(dtype=np.uint8)
 print("\n\nDécodage - Image RGB :\n")
 img_visu.show_image_with_matplotlib(dec_rgb_data)
 
+#print("\n\n")
+#img_visu.save_image_to_disk(dec_rgb_data, "decoded_image.png")
+
 t_fin_algo = time()
 duree_algo = round(t_fin_algo - t_debut_algo, 3)
 
@@ -258,7 +263,4 @@ log.debug(f"\nTemps d'exécution de tout l'algorithme : {duree_algo} s\n")
 
 
 cli.connexion.close()
-
-
-#img_visu.save_image_to_disk(dec_rgb_data, "decoded_image.png")
 
