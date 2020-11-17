@@ -1,7 +1,3 @@
-//
-// Created by alexandre on 11/11/2020.
-//
-
 #include <stdlib.h>
 #include <stdio.h>
 #include "dictionary.h"
@@ -15,10 +11,13 @@
  *  returns: new instance of Bitstream
  */
 Bitstream *Bitstream_create() {
+    // Allocating the required space for the bitsteam
     Bitstream *stream = (Bitstream *) malloc(sizeof(Bitstream));
 
+    // creating the encoding dictionary
     Dictionary **symbols = Dico_create();
     stream->symbols = symbols;
+    // allocation of the space for the data
     stream->data = malloc(sizeof(char));
 
     return stream;
@@ -33,8 +32,9 @@ Bitstream *Bitstream_create() {
  *  bitstream: the Bitstream to free
  */
 void Bitstream_free(Bitstream *bitstream) {
-    free(bitstream->data);
+    // we have to think about each memory allocation
     Dico_free(bitstream->symbols);
+    free(bitstream->data);
     free(bitstream);
 }
 
@@ -49,30 +49,36 @@ void Bitstream_free(Bitstream *bitstream) {
  *  returns: the encoded data corresponding to the plain text
  */
 char *Bitstream_encodeData(Bitstream *bitstream, char *plaintext) {
+    // creating a dynamic size string to store the data
     char *cipher_data = malloc(sizeof(char));
     cipher_data[0] = '\0'; // closing the string
 
     // going through the whole plaintext data
     for (int i = 0; i < strlen(plaintext); i++)
     {
+        // building a string key from a char
         char key[2];
         key[0] = plaintext[i];
         key[1] = '\0';
 
+        // getting back the value from the dictionary
         char *value = Dico_get(bitstream->symbols, key);
         // if the encoding key is found
         if (value != NULL)
         {
-            unsigned long cipher_size = strlen(cipher_data);
-            unsigned long buf_size = strlen(value);
-            unsigned long data_size = cipher_size + buf_size;
+            // getting sizes for later usage
+            unsigned long cipher_size = strlen(cipher_data),
+                            buf_size = strlen(value),
+                            data_size = cipher_size + buf_size;
 
+            // changing the size of the data
             cipher_data = (char *) realloc(cipher_data, data_size + 1);
+            // pasting the new value onto the data
             for (unsigned long j = 0; j < buf_size; j++) {
                 cipher_data[j + cipher_size] = value[j];
             }
+            // closing the data string
             cipher_data[data_size] = '\0';
-            //printf("Bitstream : %s Cipher_data_size : %d Data_size : %d\n", cipher_data, cipher_size, data_size);
         }
     }
 
@@ -90,9 +96,11 @@ char *Bitstream_encodeData(Bitstream *bitstream, char *plaintext) {
  *  returns: the decoded data corresponding to the ciphered text
  */
 char *Bitstream_decodeData(Bitstream *bitstream, char *cipherData) {
+    // first step is to get the reverse encoding dictionary
     Dictionary **reversedSymbols = Dico_create();
     Dico_getReversedDico(bitstream->symbols, reversedSymbols);
 
+    // dynamic sized strings for the plaintext data and the buffer for the encoded data
     char *buffer = malloc(sizeof(char));
     buffer[0] = '\0';
     char *plaintext_data = malloc(sizeof(char));
@@ -100,32 +108,39 @@ char *Bitstream_decodeData(Bitstream *bitstream, char *cipherData) {
 
     // going through the whole cipher data
     for (int i = 0; i < strlen(cipherData) - 1; i++) {
+        // adding the next char to the buffer
         unsigned long buf_size = strlen(buffer);
         buffer = (char *) realloc(buffer, buf_size + 2);
         buffer[buf_size] = cipherData[i];
         buffer[buf_size + 1] = '\0';
 
+        // getting back the value from the dictionary
         char *value = Dico_get(reversedSymbols, buffer);
         // if the encoding key is found
         if (value != NULL) {
+            // getting different sizes for later usage
             unsigned long plain_size = strlen(plaintext_data);
             buf_size = strlen(value);
             unsigned long data_size = plain_size + buf_size;
 
+            // changing the size of the plaintext data string
             plaintext_data = (char *) realloc(plaintext_data, data_size + 1);
+            // pasting the new value
             for (unsigned long j = 0; j < buf_size; j++) {
                 plaintext_data[j + plain_size] = value[j];
             }
+            // closing the data string
             plaintext_data[data_size] = '\0';
-            //printf("PlainText : %s Plain_data_size : %d Data_size : %d\n", plaintext_data, plain_size, data_size);
 
+            // we have to make a new buffer as the old one become useless
             free(buffer);
             buffer = (char *) malloc(sizeof(char));
             buffer[0] = '\0';
         }
     }
-    // freeing the temporary dictionary
+    // freeing the temporary variables
     Dico_free(reversedSymbols);
+    free(buffer);
 
     return plaintext_data;
 }
