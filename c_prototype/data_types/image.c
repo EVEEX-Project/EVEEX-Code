@@ -1,11 +1,11 @@
 #include "image.h"
-#include "utils.h"
+#include "../utils.h"
 
 // Needed to use the library
 #define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
+#include "../lib/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "lib/stb_image_write.h"
+#include "../lib/stb_image_write.h"
 
 int Image_load(Image *img, const char *file_name) {
     // loading the data into the data variable

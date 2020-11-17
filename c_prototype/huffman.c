@@ -1,6 +1,6 @@
 #include "huffman.h"
-#include "list.h"
-#include "dictionary.h"
+#include "data_types/list.h"
+#include "data_types/dictionary.h"
 #include "utils.h"
 #include <stdio.h>
 

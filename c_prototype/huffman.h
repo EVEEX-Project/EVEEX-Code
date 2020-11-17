@@ -5,8 +5,8 @@
 #ifndef C_PROTOTYPE_HUFFMAN_H
 #define C_PROTOTYPE_HUFFMAN_H
 
-#include "list.h"
-#include "dictionary.h"
+#include "data_types/list.h"
+#include "data_types/dictionary.h"
 
 typedef struct Noeud_struct {
     int frequence;

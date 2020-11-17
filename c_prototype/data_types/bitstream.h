@@ -8,7 +8,6 @@
 #include "dictionary.h"
 
 typedef struct Bitstream_struct {
-  int size;
   Dictionary **symbols;
   void *data;
 } Bitstream;

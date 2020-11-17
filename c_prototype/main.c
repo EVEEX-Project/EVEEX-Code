@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-#include "bitstream.h"
-#include "image.h"
-#include "dictionary.h"
-#include "list.h"
+#include "data_types/bitstream.h"
+#include "data_types/image.h"
+#include "data_types/dictionary.h"
+#include "data_types/list.h"
 #include "huffman.h"
 #include "utils.h"
 

@@ -6,11 +6,11 @@ set(CMAKE_C_STANDARD 99)
 configure_file(assets/image_res.jpg assets/image_res.jpg COPYONLY)
 
 add_executable(c_prototype
-        dictionary.c
+        data_types/dictionary.c
+        data_types/image.c
+        data_types/list.c
+        data_types/bitstream.c
         huffman.c
-        image.c
-        list.c
-        bitstream.c
         main.c)
 
 target_link_libraries(c_prototype m)
