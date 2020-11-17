@@ -45,11 +45,21 @@ Méthode n°1 : Si l'on veut considérer une image pré-existante
 
 
 from PIL import Image
+from os import getcwd
 
-nom_image = "Sunset.jpg"
+dico_noms_images = {1 : "Autumn.png", 
+                    2 : "Bridge_BW.bmp", 
+                    3 : "Ferrari.jpg", 
+                    4 : "Lykan.jpg", 
+                    5 : "Sunset.jpg"}
+
+numero_image = 5 # ∈ [1, 5]
+nom_image = dico_noms_images[numero_image]
+
+path_image = getcwd() + "\\assets\\" + nom_image
 
 # Valeurs standards de macroblock_size : 8, 16 et 32
-# Ici, 24 et 48 fonctionnent aussi très bien
+# Ici, 24, 48 et 60 fonctionnent aussi très bien
 # Doit être <= 63
 macroblock_size = 16
 
@@ -61,7 +71,7 @@ img_height = 480
 # format standard
 img_size = (img_width, img_height)
 
-image = Image.open(nom_image)
+image = Image.open(path_image)
 image_intermediaire = image.getdata()
 
 image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
