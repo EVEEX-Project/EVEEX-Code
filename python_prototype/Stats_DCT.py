@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 ######################## IMAGES GÉNÉRÉES ALÉATOIREMENT ########################
 
 
+# à titre informatif (donnée commune à toutes les images générées aléatoirement)
 dimensions_blocs_aleatoires = (4, 4)
 
 macroblock_sizes = [8, 16, 32]
@@ -36,53 +37,53 @@ colors = {8 : "r", 16 : "g", 32 : "b"}
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des données encodées par l'algo de 
 # Huffman, par rapport à la taille originale de l'image (en bits)
-huff_ratios_DCT = {8  : [28.06, 32.06, 32.66, 33.62, 33.98], 
-                   16 : [38.50, 43.23, 45.51, 45.61, 45.88], 
-                   32 : [46.98, 46.85, 48.65, 49.41, 49.45]}
+huff_ratios_random_images = {8  : [28.06, 32.06, 32.66, 33.62, 33.98], 
+                             16 : [38.50, 43.23, 45.51, 45.61, 45.88], 
+                             32 : [46.98, 46.85, 48.65, 49.41, 49.45]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des dictionnaires de Huffman encodés, par 
 # rapport à la taille originale de l'image (en bits)
-dict_ratios_DCT = {8  : [101.72, 66.96, 37.81, 18.30, 7.49], 
-                   16 : [125.91, 70.53, 34.14, 14.27, 6.14], 
-                   32 : [122.79, 65.62, 31.16, 13.13, 5.10]}
+dict_ratios_random_images = {8  : [101.72, 66.96, 37.81, 18.30, 7.49], 
+                             16 : [125.91, 70.53, 34.14, 14.27, 6.14], 
+                             32 : [122.79, 65.62, 31.16, 13.13, 5.10]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des tailles des métadonnées, par rapport 
 # à la taille originale de l'image (en bits)
-metadata_ratios_DCT = {8  : [5.99, 5.23, 4.78, 4.53, 4.39], 
-                       16 : [2.97, 2.06, 1.52, 1.26, 1.15], 
-                       32 : [2.70, 1.69, 1.28, 1.12, 1.03]}
+metadata_ratios_random_images = {8  : [5.99, 5.23, 4.78, 4.53, 4.39], 
+                                 16 : [2.97, 2.06, 1.52, 1.26, 1.15], 
+                                 32 : [2.70, 1.69, 1.28, 1.12, 1.03]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : taux de compression (en %) associés aux images générées aléatoirement
-comp_rates_DCT = {8  : [135.77, 104.25, 75.25, 56.45, 45.87], 
-                  16 : [167.38, 115.83, 81.17, 61.14, 53.17], 
-                  32 : [172.47, 114.16, 81.09, 63.66, 55.57]}
+comp_rates_random_images = {8  : [135.77, 104.25, 75.25, 56.45, 45.87], 
+                            16 : [167.38, 115.83, 81.17, 61.14, 53.17], 
+                            32 : [172.47, 114.16, 81.09, 63.66, 55.57]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : temps d'exécution (en secondes) de l'algorithme
-exec_times_DCT = {8  : [0.875, 2.281, 8.178, 29.929, 107.432], 
-                  16 : [0.755, 1.704, 4.678, 14.210,  47.391], 
-                  32 : [0.765, 1.500, 4.215, 12.879,  41.067]}
+exec_times_random_images = {8  : [0.875, 2.281, 8.178, 29.929, 107.432], 
+                            16 : [0.755, 1.704, 4.678, 14.210,  47.391], 
+                            32 : [0.765, 1.500, 4.215, 12.879,  41.067]}
 
 
 # Clés : colonnes d'affichage des données (j)
 # Valeurs : données associées aux images générées aléatoirement
-dict_data_DCT = {0 : huff_ratios_DCT, 
-                 1 : dict_ratios_DCT, 
-                 2 : metadata_ratios_DCT, 
-                 3 : comp_rates_DCT, 
-                 4 : exec_times_DCT}
+dict_data_random_images = {0 : huff_ratios_random_images, 
+                           1 : dict_ratios_random_images, 
+                           2 : metadata_ratios_random_images, 
+                           3 : comp_rates_random_images, 
+                           4 : exec_times_random_images}
 
 
 # Clés : colonnes d'affichage des données (j)
 # Valeurs : types des données
-# Ce dictionnaire sera également utilisé par la fonction 'plot_stats_Sunset_DCT'
+# Ce dictionnaire sera également utilisé par la fonction 'plot_stats_existing_image_DCT'
 dict_data_types = {0 : "Huff ratios in %", 
                    1 : "Dict ratios in %", 
                    2 : "Metadata ratios in %", 
@@ -93,7 +94,7 @@ dict_data_types = {0 : "Huff ratios in %",
 #----------------------------------------------------------------------------#
 
 
-def plot_stats_random_images_DCT():
+def plot_stats_random_images_DCT(save_graph=False):
     """
     Affiche les stats associées aux images générées aléatoirement, et compressées
     en utilisant (en particulier) la DCT.
@@ -101,7 +102,7 @@ def plot_stats_random_images_DCT():
     plt.close('all')
     fig, axes = plt.subplots(1, 5, figsize=(16, 8))
     
-    for j, global_data in dict_data_DCT.items():
+    for j, global_data in dict_data_random_images.items():
         for macroblock_size in macroblock_sizes:
             couleur = colors[macroblock_size]
             data = global_data[macroblock_size]
@@ -114,113 +115,160 @@ def plot_stats_random_images_DCT():
         
         axes[j].legend(loc="upper right", fontsize=8)
     
-    fig.text(0.5, 0.05, "Axe Ox : Nombre de pixels dans l'image", fontsize=15, ha='center')
+    fig.text(0.5, 0.05, "Axe Ox : Nombre de pixels (largeur x hauteur) dans l'image", fontsize=15, ha='center')
     
-    fig.suptitle("Stats DCT - Images générées aléatoirement", fontsize=15)
+    fig.suptitle("Stats DCT - Images générées aléatoirement - Récapitulatif", fontsize=15)
     fig.canvas.set_window_title("Stats EVEEX")
+    
+    if save_graph:
+        plt.savefig("Stats DCT - Images générées aléatoirement - Récapitulatif.png", dpi=300, format="png")
     
     plt.show()
 
 
-############################# IMAGE PRÉ-EXISTANTE #############################
+############################ IMAGES PRÉ-EXISTANTES ############################
 
 
 """
-Image considérée ici : 'Sunset.jpg'
+Pour l'instant on ne travaille que sur un échantillon de 5 images en 480p
 """
 
 
-# pour l'instant on ne considère qu'une seule image ('Sunset.jpg')
-pic_name = "Sunset.jpg"
+dico_noms_images = {1 : "Autumn.png", 
+                    2 : "Bridge_BW.bmp", 
+                    3 : "Ferrari.jpg", 
+                    4 : "Lykan.jpg", 
+                    5 : "Sunset.jpg"}
+
 pic_size = (720, 480)
-macroblock_sizes_pic = [8, 16, 24, 48, 60]
+macroblock_sizes_pics = [8, 16, 24, 48, 60]
 
 
 # Clés : colonnes d'affichage des données (j)
 # Valeurs : couleurs des données affichées dans la colonne d'affichage associée 
-colors_pic = {0 : "r", 1 : "g", 2 : "b", 3 : "k", 4 : "m"}
+colors_pics = {0 : "r", 1 : "g", 2 : "b", 3 : "k", 4 : "m"}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des données encodées par l'algo de 
 # Huffman, par rapport à la taille originale de l'image (en bits)
-huff_ratios_pic = {8  : 9.02, 
-                   16 : 6.81, 
-                   24 : 7.26, 
-                   48 : 7.21, 
-                   60 : 7.51}
+huff_ratios_pics = {8  : [46.14, 10.53, 6.67, 13.85, 9.02], 
+                    16 : [45.58, 10.87, 5.41, 14.19, 6.81], 
+                    24 : [45.64, 10.96, 6.03, 14.39, 7.26], 
+                    48 : [46.79, 11.79, 6.86, 15.49, 7.21], 
+                    60 : [47.21, 12.35, 7.25, 16.01, 7.51]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des dictionnaires de Huffman encodés, par 
 # rapport à la taille originale de l'image (en bits)
-dict_ratios_pic = {8  : 6.79, 
-                   16 : 4.18, 
-                   24 : 3.37, 
-                   48 : 2.86, 
-                   60 : 2.84}
+dict_ratios_pics = {8  : [7.65, 2.11, 4.12, 4.66, 6.79], 
+                    16 : [4.80, 2.75, 3.39, 3.94, 4.18], 
+                    24 : [3.75, 2.51, 3.04, 3.43, 3.37], 
+                    48 : [3.11, 2.20, 2.62, 2.76, 2.86], 
+                    60 : [3.04, 2.15, 2.53, 2.63, 2.84]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des tailles des métadonnées, par rapport 
 # à la taille originale de l'image (en bits)
-metadata_ratios_pic = {8  : 4.38, 
-                       16 : 1.13, 
-                       24 : 0.52, 
-                       48 : 0.22, 
-                       60 : 0.20}
+metadata_ratios_pics = {8  : [4.39, 4.32, 4.35, 4.36, 4.38], 
+                        16 : [1.15, 1.11, 1.12, 1.12, 1.13], 
+                        24 : [1.02, 0.51, 0.52, 0.52, 0.52], 
+                        48 : [0.86, 0.29, 0.24, 0.35, 0.22], 
+                        60 : [0.85, 0.27, 0.21, 0.33, 0.20]}
 
 
 # Clés : tailles des macroblocs
-# Valeurs : taux de compression (en %) associées à l'image 'Sunset.jpg'
-comp_rates_pic = {8  : 20.18, 
-                  16 : 12.12, 
-                  24 : 11.15, 
-                  48 : 10.29, 
-                  60 : 10.54}
+# Valeurs : taux de compression (en %) associées à l'image considérée
+comp_rates_pics = {8  : [58.18, 16.96, 15.13, 22.86, 20.18], 
+                   16 : [51.53, 14.73,  9.91, 19.25, 12.12], 
+                   24 : [50.42, 13.99,  9.60, 18.34, 11.15], 
+                   48 : [50.76, 14.29,  9.71, 18.60, 10.29], 
+                   60 : [51.10, 14.78,  9.99, 18.97, 10.54]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : temps d'exécution (en secondes) de l'algorithme
-exec_times_pic = {8  : 143.472, 
-                  16 :  51.514, 
-                  24 :  35.132, 
-                  48 :  27.712, 
-                  60 :  27.692}
+exec_times_pics = {8  : [154.909, 109.437, 120.540, 125.815, 143.472], 
+                   16 : [ 59.082,  45.194,  47.805,  51.531,  51.514], 
+                   24 : [ 50.457,  32.405,  33.992,  36.525,  35.132], 
+                   48 : [ 46.332,  27.578,  27.745,  30.812,  27.712], 
+                   60 : [ 45.529,  27.130,  26.360,  30.546,  27.692]}
 
 
 # Clés : colonnes d'affichage des données (j)
-# Valeurs : données associées à l'image 'Sunset.jpg'
-dict_data_pic = {0 : huff_ratios_pic, 
-                 1 : dict_ratios_pic, 
-                 2 : metadata_ratios_pic, 
-                 3 : comp_rates_pic, 
-                 4 : exec_times_pic}
+# Valeurs : données associées à l'image considérée
+dict_data_pic = {0 : huff_ratios_pics, 
+                 1 : dict_ratios_pics, 
+                 2 : metadata_ratios_pics, 
+                 3 : comp_rates_pics, 
+                 4 : exec_times_pics}
 
 
 #----------------------------------------------------------------------------#
 
 
-def plot_stats_Sunset_DCT():
+def plot_stats_existing_image_DCT(numero_image, save_graph=False):
     """
-    Affiche les stats associées à l'image 'Sunset.jpg', et compressée en utilisant
+    Affiche les stats associées à l'image considérée, et compressée en utilisant
     (en particulier) la DCT.
     """
     fig, axes = plt.subplots(1, 5, figsize=(16, 8))
     
+    nom_image = dico_noms_images[numero_image]
+    
     for j, global_data in dict_data_pic.items():
-        data = list(global_data.values())
-        couleur = colors_pic[j]
+        data = [ratio_list[numero_image-1] for ratio_list in list(global_data.values())]
+        couleur = colors_pics[j]
         
-        axes[j].plot(macroblock_sizes_pic, data, color=couleur)
+        axes[j].plot(macroblock_sizes_pics, data, color=couleur)
         
         data_type = dict_data_types[j]
         axes[j].set_title(data_type + "\n", color='k', fontsize=10)
     
     fig.text(0.5, 0.05, "Axe Ox : Taille des côtés des macroblocs", fontsize=15, ha='center')
     
-    fig.suptitle(f"Stats DCT - Image pré-existante - {pic_name}, taille : {pic_size[0]}x{pic_size[1]}", fontsize=15)
+    fig.suptitle(f"Stats DCT - Image pré-existante - {nom_image}, taille : 720x480 (480p)", fontsize=15)
     fig.canvas.set_window_title("Stats EVEEX")
+    
+    if save_graph:
+        plt.savefig(f"Stats DCT - Image pré-existante - '{nom_image}'.png", dpi=300, format="png")
+    
+    plt.show()
+
+
+#----------------------------------------------------------------------------#
+
+
+def plot_stats_all_saved_images_DCT(save_graph=False):
+    """
+    Affiche les stats associées aux 5 images considérées, et compressées en utilisant
+    (en particulier) la DCT.
+    """
+    fig, axes = plt.subplots(1, 5, figsize=(16, 8))
+    
+    for j, global_data in dict_data_pic.items():
+        for numero_image in range(1, 6):
+            nom_image = dico_noms_images[numero_image]
+            
+            data = [ratio_list[numero_image-1] for ratio_list in list(global_data.values())]
+            couleur = colors_pics[numero_image-1]
+            
+            axes[j].plot(macroblock_sizes_pics, data, color=couleur, label=f"{nom_image}")
+            
+            data_type = dict_data_types[j]
+        
+        axes[j].set_title(data_type + "\n", color='k', fontsize=10)
+        axes[j].legend(loc="upper right", fontsize=8)
+    
+    fig.text(0.5, 0.05, "Axe Ox : Taille des côtés des macroblocs", fontsize=15, ha='center')
+    
+    fig.suptitle("Stats DCT - Images pré-existantes - Récapitulatif - Taille des images : 720x480 (480p)", fontsize=15)
+    fig.canvas.set_window_title("Stats EVEEX")
+    
+    if save_graph:
+        plt.savefig("Stats DCT - Images pré-existantes - Récapitulatif.png", dpi=300, format="png")
     
     plt.show()
 
@@ -229,21 +277,41 @@ def plot_stats_Sunset_DCT():
 
 
 if __name__ == "__main__":
-    plot_stats_random_images_DCT()
+    sauvegarder_graphe = False
     
-    plot_stats_Sunset_DCT()
+    plot_stats_random_images_DCT(save_graph=sauvegarder_graphe)
+    
+    #------------------------------------------------------------------------#
+    
+    # rappel des noms des images considérées
+    dico_noms_images = {1 : "Autumn.png", 
+                        2 : "Bridge_BW.bmp", 
+                        3 : "Ferrari.jpg", 
+                        4 : "Lykan.jpg", 
+                        5 : "Sunset.jpg"}
+    
+#    for numero_image in range(1, 6):
+#        plot_stats_existing_image_DCT(numero_image, save_graph=sauvegarder_graphe)
+    
+    plot_stats_all_saved_images_DCT(save_graph=sauvegarder_graphe)
+    
+    #------------------------------------------------------------------------#
     
     """
-    Conclusion :
+    Conclusions/constats :
     
-    Étant donné que la qualité de l'image RGB décodée ne semble pas être affectée 
-    par macroblock_size, on a tout intérêt à considérer un macroblock_size maximal 
-    afin d'optimiser les performances de l'algorithme. 
+    1) Les stats sur les images générées aléatoirement indiquent qu'il faudrait
+       choisir un macroblock_size maximal afin de minimiser le taux de compression
     
-    Parmi les valeurs standards de macroblock_size (ie 8, 16 et 32), on considère 
-    donc 16 et 32 comme des candidats potentiels.
+    2) En pratique, les stats sur les 5 images pré-existantes indiquent qu'il faudrait
+       choisir macroblock_size = 16 ou macroblock_size = 24 afin de minimiser
+       ce taux de compression
     
-    Pour du 480p (ie du 720x480), 32 étant une valeur illicite de macroblock_size
-    (car 32 ne divise pas 720), on considèrera donc macroblock_size = 16.
+    3) Comme 24 n'est pas une taille de macroblocs 'standard', on choisit donc (pour
+       des images 480p) macroblock_size = 16.
+    
+    4) Si on ne compte pas Autumn.png, qui a un taux de compression minimal autour
+       de 50%, les taux de compression minimaux des images sont compris entre 10%
+       et 20%.
     """
 
