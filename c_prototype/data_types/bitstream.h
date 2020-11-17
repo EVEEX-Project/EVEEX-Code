@@ -1,6 +1,9 @@
-//
-// Created by alexandre on 11/11/2020.
-//
+/*
+ * Data-type: BITSTREAM
+ * --------------------
+ * Lybrary that describes a Bitstream by its encoding dictionnary called
+ * here "symbols" and its data
+ */
 
 #ifndef C_PROTOTYPE_BITSTREAM_H
 #define C_PROTOTYPE_BITSTREAM_H

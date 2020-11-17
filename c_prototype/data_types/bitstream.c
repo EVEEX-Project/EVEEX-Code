@@ -7,6 +7,13 @@
 #include "dictionary.h"
 #include "bitstream.h"
 
+/*
+ * Function : Bitstream_create
+ * ---------------------------
+ * Creates an instance of a Bitstream and returns the pointer to that instance.
+ *
+ *  returns: new instance of Bitstream
+ */
 Bitstream *Bitstream_create() {
     Bitstream *stream = (Bitstream *) malloc(sizeof(Bitstream));
 
@@ -17,12 +24,30 @@ Bitstream *Bitstream_create() {
     return stream;
 }
 
+/*
+ * Function : Bitstream_free
+ * -------------------------
+ * Free the memory allocated to a specific instance of a Bitstream.
+ * Having such a function allow the program to not forget specific attributes to free.
+ *
+ *  bitstream: the Bitstream to free
+ */
 void Bitstream_free(Bitstream *bitstream) {
     free(bitstream->data);
     Dico_free(bitstream->symbols);
     free(bitstream);
 }
 
+/*
+ * Function : Bitstream_encodeData
+ * -------------------------------
+ * Encodes a plaintext using the encoding dictionary inside the Bitstream and returns the encoded data.
+ *
+ *  bitstream: the bitstream helping to encode
+ *  plaintext: the plain text to encode
+ *
+ *  returns: the encoded data corresponding to the plain text
+ */
 char *Bitstream_encodeData(Bitstream *bitstream, char *plaintext) {
     char *cipher_data = malloc(sizeof(char));
     cipher_data[0] = '\0'; // closing the string
@@ -54,6 +79,16 @@ char *Bitstream_encodeData(Bitstream *bitstream, char *plaintext) {
     return cipher_data;
 }
 
+/*
+ * Function: Bitstream_decodeData
+ * ------------------------------
+ * Decodes an encoded string using the encoding dictionary inside the Bitstream and returns the plain text data.
+ *
+ *  bitstream: the bitstream helping to decode
+ *  cipherData: the encoded text to decode
+ *
+ *  returns: the decoded data corresponding to the ciphered text
+ */
 char *Bitstream_decodeData(Bitstream *bitstream, char *cipherData) {
     Dictionary **reversedSymbols = Dico_create();
     Dico_getReversedDico(bitstream->symbols, reversedSymbols);
