@@ -24,5 +24,7 @@ void Dico_del(Dictionary **hashtab, char *key);
 void Dico_printInt(Dictionary **hashtab);
 void Dico_printString(Dictionary **hashtab);
 List **Dico_keys(Dictionary **hashtab);
+int Dico_keyInDico(Dictionary **hashtab, char *keyToTest);
+void Dico_getReversedDico(Dictionary **original, Dictionary **reversed);
 
 #endif //C_PROTOTYPE_DICTIONARY_H

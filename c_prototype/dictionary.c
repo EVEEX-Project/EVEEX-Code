@@ -19,7 +19,7 @@ void *Dico_get(Dictionary **hashtab, char *key)
 {
     Dictionary *ptr;
     for (ptr = *hashtab; ptr != NULL; ptr = ptr->next) {
-        //printf("Testing : %c & %s with res : %d\n", key, ptr->key, strcmp(ptr->key, key));
+        // printf("Testing : %c & %s with res : %d\n", key, ptr->key, strcmp(ptr->key, key));
         if (strcmp(ptr->key, key) == 0) {
             return ptr->value;
         }
@@ -65,7 +65,7 @@ void Dico_del(Dictionary **hashtab, char *key) {
 }
 
 Dictionary **Dico_create() {
-    return calloc(sizeof(Dictionary), 1);
+    return (Dictionary **) calloc(sizeof(Dictionary), 1);
 }
 
 void Dico_free(Dictionary **hashtab) {
@@ -110,4 +110,24 @@ List **Dico_keys(Dictionary **hashtab) {
         List_append(keysList, ptr->key);
     }
     return keysList;
+}
+
+int Dico_keyInDico(Dictionary **hashtab, char *keyToTest) {
+    Dictionary  *ptr;
+
+    for (ptr = *hashtab; ptr != NULL; ptr = ptr->next) {
+        // if we found the key
+        if (strcmp(ptr->key, keyToTest) == 0)
+            return 1;
+    }
+    // if we have'nt found the key
+    return 0;
+}
+
+void Dico_getReversedDico(Dictionary **original, Dictionary **reversed)
+{
+    Dictionary *ptr;
+    for (ptr = *original; ptr != NULL; ptr = ptr->next) {
+        Dico_set(reversed, ptr->value, ptr->key);
+    }
 }

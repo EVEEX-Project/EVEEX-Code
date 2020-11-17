@@ -1,4 +1,6 @@
 #include <stdio.h>
+
+#include "bitstream.h"
 #include "image.h"
 #include "dictionary.h"
 #include "list.h"
@@ -123,6 +125,30 @@ void nodes_test() {
     printf("\n\n");
 }
 
+void bitstream_test() {
+    printf("===============BITSTREAM TEST===============\n");
+
+    Bitstream *bitstream = Bitstream_create();
+
+    // setting the symbols dictionnary with sample data
+    Dico_set(bitstream->symbols, "a", "100");
+    Dico_set(bitstream->symbols, "b", "1011");
+    Dico_set(bitstream->symbols, "c", "11100");
+    printf("Bitstream dictionary : ");
+    Dico_printString(bitstream->symbols);
+
+    char *plain_text = "aabbcc";
+    printf("Initial plaintext : %s\n", plain_text);
+    bitstream->data = Bitstream_encodeData(bitstream, plain_text);
+    printf("Encoded data : %s\n", bitstream->data);
+    plain_text = Bitstream_decodeData(bitstream, bitstream->data);
+    printf("Decoded back data : %s\n", plain_text);
+
+    // freeing the stream at the end
+    Bitstream_free(bitstream);
+    printf("\n\n");
+}
+
 void huffman_test() {
     printf("===============HUFFMAN TEST===============\n");
 
@@ -139,6 +165,15 @@ void huffman_test() {
     Huffman_generateEncodingDict(encoding, racine, "");
     Dico_printString(encoding);
 
+    // Bitstream
+    Bitstream *bitstream = Bitstream_create();
+    Dico_free(bitstream->symbols);
+    bitstream->symbols = encoding;
+    char *cipher_text = Bitstream_encodeData(bitstream, phrase);
+    printf("Encoded string : %s\n", cipher_text);
+    char *plain_text = Bitstream_decodeData(bitstream, cipher_text);
+    printf("String decoded back : %s\n", plain_text);
+
     printf("\n\n");
 }
 
@@ -148,6 +183,7 @@ int main() {
     list_test();
     nodes_test();
     huffman_test();
+    bitstream_test();
 
     return 0;
 }
