@@ -89,6 +89,8 @@ char *Bitstream_decodeData(Bitstream *bitstream, char *cipherData) {
             buffer[0] = '\0';
         }
     }
+    // freeing the temporary dictionary
+    Dico_free(reversedSymbols);
 
     return plaintext_data;
 }

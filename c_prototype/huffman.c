@@ -98,7 +98,7 @@ Noeud *Huffman_generateTreeFromList(List **listeNoeud)
         // adding the node back into the list
         List_append(listeNoeud, n12);
 
-        printf("Merging : (%s: %d) + (%s: %d) => (%s: %d)\n", n1->valeur, n1->frequence, n2->valeur, n2->frequence, n12->valeur, n12->frequence);
+        //printf("Merging : (%s: %d) + (%s: %d) => (%s: %d)\n", n1->valeur, n1->frequence, n2->valeur, n2->frequence, n12->valeur, n12->frequence);
     }
 
     List *racine = *listeNoeud;
