@@ -44,7 +44,7 @@ void dictionary_test() {
     Dico_set(hashtab, "bar", &b);
     Dico_printInt(hashtab);
 
-    printf("La valeur du dico avec la clé %s est %d\n", "foo", *((int *) Dico_get(hashtab, "foo")));
+    printf("La value du dico avec la clé %s est %d\n", "foo", *((int *) Dico_get(hashtab, "foo")));
 
     Dico_del(hashtab, "foo");
     Dico_del(hashtab, "bar");
@@ -97,29 +97,29 @@ void nodes_test() {
     printf("Nodes list (%d elements) (value: frequency): ", List_size(liste_noeuds));
     List *ptr;
     for (ptr = *liste_noeuds; ptr != NULL; ptr = ptr->next) {
-        Noeud *n = ptr->element;
-        printf("(%s: %d) ", n->valeur, n->frequence);
+        Node *n = ptr->element;
+        printf("(%s: %d) ", n->value, n->frequency);
     }
     printf("\n");
 
-    Noeud *noeud_a = Noeud_createNoeud("a", 5);
-    Noeud *noeud_b = Noeud_createNoeud("b", 3);
-    Noeud_printNode(noeud_a);
-    Noeud_printNode(noeud_b);
-    Noeud *noeud_c = Noeud_mergeTwoNodes(noeud_a, noeud_b);
-    Noeud_printNode(noeud_c);
-    Noeud_printNode(Noeud_mergeTwoNodes(noeud_c, noeud_a));
+    Node *noeud_a = Node_create("a", 5);
+    Node *noeud_b = Node_create("b", 3);
+    Node_print(noeud_a);
+    Node_print(noeud_b);
+    Node *noeud_c = Node_mergeTwoNodes(noeud_a, noeud_b);
+    Node_print(noeud_c);
+    Node_print(Node_mergeTwoNodes(noeud_c, noeud_a));
 
-    Noeud *lowestFrequency = Huffman_getLowestFrequencySymbol(liste_noeuds);
-    printf("The symbol with the lowest frequency is: '%s' with a frequency of: %d\n", lowestFrequency->valeur, lowestFrequency->frequence);
+    Node *lowestFrequency = Huffman_getLowestFrequencySymbol(liste_noeuds);
+    printf("The symbol with the lowest frequency is: '%s' with a frequency of: %d\n", lowestFrequency->value, lowestFrequency->frequency);
     printf("# element before removing : %d\n", List_size(liste_noeuds));
     List_remove(liste_noeuds, lowestFrequency);
     printf("# element after removing : %d\n", List_size(liste_noeuds));
     List_append(liste_noeuds, lowestFrequency);
 
-    Noeud *racine = Huffman_generateTreeFromList(liste_noeuds);
+    Node *racine = Huffman_generateTreeFromList(liste_noeuds);
     printf("Racine : ");
-    Noeud_printNode(racine);
+    Node_print(racine);
     printf("Sentence length : %lu\n", strlen(phrase));
 
     printf("\n\n");
@@ -155,8 +155,8 @@ void huffman_test() {
     char *phrase = "le chic de l'ensta bretagne sur la compression video";
     Dictionary **symbols = Dico_create();
     List **liste_noeuds = Huffman_splitPhraseInNodes(phrase, symbols);
-    Noeud *racine = Huffman_generateTreeFromList(liste_noeuds);
-    Noeud_printNode(racine);
+    Node *racine = Huffman_generateTreeFromList(liste_noeuds);
+    Node_print(racine);
 
     printf("Printing the tree : \n");
     Huffman_printTree(racine);

@@ -8,21 +8,37 @@
 #include "data_types/list.h"
 #include "data_types/dictionary.h"
 
-typedef struct Noeud_struct {
-    int frequence;
-    void *valeur;
-    struct Noeud_struct *droite;
-    struct Noeud_struct *gauche;
-} Noeud;
+/*
+ * Structure: Image
+ * ---------------------
+ * Structure that describes a node in a tree with its value
+ * and frequency and it's link to children nodes on the left and
+ * right branches.
+ */
+typedef struct Node_struct {
+    int frequency;
+    void *value;
+    struct Node_struct *right;
+    struct Node_struct *left;
+} Node;
 
-Noeud *Noeud_createNoeud(void *valeur, int frequence);
-Noeud *Noeud_mergeTwoNodes(Noeud *noeud_a, Noeud *noeud_b);
-void Noeud_printNode(Noeud *noeud);
+/* Creation and deletion functions */
+Node *Node_create(void *value, int frequency);
+void Node_free(Node *node);
 
+/* Nodes operations */
+Node *Node_mergeTwoNodes(Node *nodeA, Node *nodeB);
+void Node_print(Node *node);
+
+/* Huffman misc functions */
+void Huffman_printTree(Node *root);
 List **Huffman_splitPhraseInNodes(char *phrase, Dictionary **symbols);
-Noeud *Huffman_getLowestFrequencySymbol(List **listeNoeud);
-Noeud *Huffman_generateTreeFromList(List **listeNoeud);
-void Huffman_printTree(Noeud *racine);
-void Huffman_generateEncodingDict(Dictionary **encoding, Noeud *racine, char *prefixe);
+Node *Huffman_getLowestFrequencySymbol(List **nodesList);
+
+/* Huffman generation functions */
+Node *Huffman_generateTreeFromList(List **nodesList);
+void Huffman_generateEncodingDict(Dictionary **encoding, Node *root, char *prefix);
+
+
 
 #endif //C_PROTOTYPE_HUFFMAN_H
