@@ -95,7 +95,7 @@ class MosaicImageGenerator(ImageGenerator):
     def __init__(self, size, bloc_size):
         super().__init__()
         self.img_data = np.zeros((size[0], size[1], 3))
-        Logger.get_instance().debug(f"Img size : {self.img_data.shape}")
+        Logger.get_instance().debug(f"Img size : {self.img_data.shape}\n")
         for i in range(0, size[0]//bloc_size[0]):
             for j in range(0, size[1]//bloc_size[1]):
                 color = (random(), random(), random())
