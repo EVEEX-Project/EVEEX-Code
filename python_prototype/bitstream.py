@@ -3,11 +3,13 @@
 from random import randint
 from huffman import Huffman
 from network_transmission import Server, Client
-from logger import Logger
+from logger import Logger, LogLevel
+from time import sleep
+import threading
 
 ###############################################################################
 
-# définition des variables globales (ie les différents types de messages à encoder)
+# définition des variables globales (ici : les différents types de messages à encoder)
 
 global HEADER_MSG
 HEADER_MSG = 0
@@ -290,8 +292,8 @@ class BitstreamGenerator:
     def decode_bitstream_RLE(bitstream):
         """
         Permet de décoder un bitstream associé une frame RLE avec seulement 
-        les méthodes statiques de la classe Huffman. Fonction très pratique au
-        moment du décodage global.
+        les méthodes statiques de la classe Huffman. Fonction essentielle au début
+        de la phase de décodage.
         Args:
             bitstream (string): bitstream complet associé à une frame, généré grâce 
                                 à la classe BitstreamGenerator
@@ -399,13 +401,14 @@ class BitstreamGenerator:
 ###############################################################################
 
 
-class BitstreamSender:
+class ThreadWriteInBitstreamBuffer(threading.Thread):
     """
-    Classe permettant de gérer l'envoi d'un bitstream via un réseau, d'un client
-    à un serveur.
+    Thread qui va permettre d'append le bitstream à la fin d'un buffer, paquet
+    par paquet.
     """
-    
-    def __init__(self, frame_id, img_size, macroblock_size, frame, client, bufsize):
+    def __init__(self, frame_id, img_size, macroblock_size, frame, bufsize):
+        threading.Thread.__init__(self)
+        
         self.bit_generator = BitstreamGenerator(frame_id, img_size, macroblock_size)
         
         # liste de listes de tuples
@@ -415,10 +418,6 @@ class BitstreamSender:
         
         # c'est aussi égal à (img_size[0] * img_size[1]) // macroblock_size**2
         self.total_num_of_macroblocks = len(self.frame)
-        
-        # comme le client est défini par rapport à un serveur prédéfini, on n'a
-        # pas besoin de créer une variable d'instance 'server'
-        self.client = client
         
         self.bufsize = bufsize
         
@@ -439,12 +438,214 @@ class BitstreamSender:
         # bufsize par définition)
         self.taille_paquet_elementaire_body = self.bufsize - self.taille_metadonnees_body
         
+        # initialisation du nombre de paquets qui seront envoyés du client au 
+        # serveur, et qui sont associés au dict (resp. au body)
+        self.nb_paquets_dict = None
+        self.nb_paquets_body = None
+        
         # encodage du dictionnaire de huffman associé à la frame **entière**
         self.huff = Huffman([tuple_RLE for macrobloc in self.frame for tuple_RLE in macrobloc])
         self.dict_huffman_encode = self.huff.dictToBin()
         
         # définit la taille des données compressées **utiles** du body
         self.taille_donnees_compressees_huffman = 0
+        
+        # buffer qui se remplit si jamais verrou_buffer_bitstream est déjà acquis
+        # par le thread principal
+        self.buffer_interne = ""
+    
+    
+    def add_header_to_buffer(self):
+        """
+        Permet d'ajouter le bitstream associé au header à la fin du buffer.
+        """
+        header_bitstream = self.bit_generator.construct_header()
+        
+        global bitstream_buffer
+        global verrou_bitstream_buffer
+        
+        if not(verrou_bitstream_buffer.locked()):
+            # ajout des données à la fin du buffer
+            verrou_bitstream_buffer.acquire() # opération bloquante par défaut
+            bitstream_buffer += header_bitstream
+            verrou_bitstream_buffer.release()
+        
+        else:
+            self.buffer_interne += header_bitstream
+    
+    
+    def add_dict_to_buffer(self):
+        """
+        Permet d'ajouter le bitstream associé au dict à la fin du buffer.
+        """
+        global bitstream_buffer
+        global verrou_bitstream_buffer
+        
+        # définition du nombre de paquets qui vont être générés à partir du dictionnaire
+        # de huffman encodé
+        len_dict_bitstream = len(self.dict_huffman_encode)
+        if len_dict_bitstream % self.taille_paquet_elementaire_dict == 0:
+            self.nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire_dict
+        else:
+            self.nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire_dict + 1
+        
+        # construction du dict, paquet par paquet
+        for num_paquet_dict in range(self.nb_paquets_dict):
+            indice_initial = num_paquet_dict * self.taille_paquet_elementaire_dict
+            
+            if num_paquet_dict != self.nb_paquets_dict - 1:
+                indice_final = indice_initial + self.taille_paquet_elementaire_dict
+                donnees_paquet = self.dict_huffman_encode[indice_initial : indice_final]
+            
+            else:
+                # dernier paquet
+                donnees_paquet = self.dict_huffman_encode[indice_initial : ]
+            
+            nouv_paquet_dict = self.bit_generator.construct_dict(donnees_paquet)
+            
+            #-----------------------------------------------------------------#
+            
+            if not(verrou_bitstream_buffer.locked()):
+                # ajout des données à la fin du buffer
+                verrou_bitstream_buffer.acquire() # opération bloquante par défaut
+                bitstream_buffer += self.buffer_interne + nouv_paquet_dict
+                verrou_bitstream_buffer.release()
+                
+                # ré-initialisation du buffer interne
+                self.buffer_interne = ""
+            
+            else:
+                self.buffer_interne += nouv_paquet_dict
+    
+    
+    def add_macrobloc_to_buffer(self, num_macrobloc, macrobloc_encode):
+        """
+        Permet d'ajouter le bitstream associé à un macrobloc encodé à la fin du 
+        buffer.
+        """
+        global bitstream_buffer
+        global verrou_bitstream_buffer
+        
+        # réinitialisation de l'index du paquet associé au macrobloc actuel
+        self.bit_generator.index_paquet_macrobloc = 0
+        
+        # définition du nombre de paquets qui vont être générés à partir du
+        # macrobloc encodé
+        len_macrobloc_encode = len(macrobloc_encode)
+        if len_macrobloc_encode % self.taille_paquet_elementaire_body == 0:
+            nb_paquets_macrobloc = len_macrobloc_encode // self.taille_paquet_elementaire_body
+        else:
+            nb_paquets_macrobloc = len_macrobloc_encode // self.taille_paquet_elementaire_body + 1
+        
+        self.nb_paquets_body += nb_paquets_macrobloc
+        
+        # construction du bitstream associé au macrobloc, paquet par paquet
+        for num_paquet_macrobloc in range(nb_paquets_macrobloc):
+            indice_initial = num_paquet_macrobloc * self.taille_paquet_elementaire_body
+            
+            if num_paquet_macrobloc != nb_paquets_macrobloc - 1:
+                indice_final = indice_initial + self.taille_paquet_elementaire_body
+                donnees_paquet = macrobloc_encode[indice_initial : indice_final]
+            
+            else:
+                # dernier paquet
+                donnees_paquet = macrobloc_encode[indice_initial : ]
+            
+            nouv_paquet_macrobloc = self.bit_generator.construct_body(num_macrobloc, donnees_paquet)
+            
+            #-----------------------------------------------------------------#
+            
+            if not(verrou_bitstream_buffer.locked()):
+                # ajout des données à la fin du buffer
+                verrou_bitstream_buffer.acquire() # opération bloquante par défaut
+                bitstream_buffer += self.buffer_interne + nouv_paquet_macrobloc
+                verrou_bitstream_buffer.release()
+                
+                # ré-initialisation du buffer interne
+                self.buffer_interne = ""
+            
+            else:
+                self.buffer_interne += nouv_paquet_macrobloc
+    
+    
+    def add_body_to_buffer(self):
+        """
+        Permet d'ajouter le bitstream associé au body à la fin du buffer.
+        """
+        self.nb_paquets_body = 0
+        
+        for num_macrobloc in range(self.total_num_of_macroblocks):
+            macrobloc = self.frame[num_macrobloc]
+            macrobloc_encode = self.huff.encode_phrase(phrase=macrobloc)
+            self.taille_donnees_compressees_huffman += len(macrobloc_encode)
+            self.add_macrobloc_to_buffer(num_macrobloc, macrobloc_encode)
+    
+    
+    def add_tail_to_buffer(self):
+        """
+        Permet d'ajouter le bitstream associé au tail à la fin du buffer.
+        """
+        tail_bitstream = self.bit_generator.construct_end_message()
+        
+        global bitstream_buffer
+        global verrou_bitstream_buffer
+        
+        # ajout des données à la fin du buffer
+        # ici, on ne teste pas si le verrou est verrouillé ou non, car on va dans
+        # tous les cas rajouter les dernières données au buffer du bitstream (comme
+        # il s'agit du dernier paquet que l'on va envoyer)
+        verrou_bitstream_buffer.acquire() # opération bloquante par défaut
+        bitstream_buffer += self.buffer_interne + tail_bitstream
+        verrou_bitstream_buffer.release()
+        
+        # ré-initialisation du buffer interne (pas obligatoire, car on ne 
+        # l'utilise plus)
+        self.buffer_interne = ""
+    
+    
+    def run(self):
+        """
+        Cette méthode définit le code qui va s'exécuter automatiquement dès
+        que l'instance de ThreadWriteInBitstreamBuffer en question aura été 
+        démarrée avec la méthode 'start' de threading.Thread.
+        
+        Méthode de synthèse.
+        Permet d'écrire toutes les composantes du bitstream dans le buffer.
+        """
+        self.add_header_to_buffer()
+        self.add_dict_to_buffer()
+        self.add_body_to_buffer()
+        self.add_tail_to_buffer()
+
+
+###############################################################################
+
+
+class BitstreamSender:
+    """
+    Classe permettant de gérer l'envoi d'un bitstream via un réseau, d'un client
+    à un serveur.
+    """
+    def __init__(self, frame_id, img_size, macroblock_size, frame, client, bufsize):
+        # comme le client est défini par rapport à un serveur prédéfini, on n'a
+        # pas besoin de créer une variable d'instance 'server'
+        self.client = client
+        
+        # concrètement, les métadonnées des paquets envoyés pour former le bitstream
+        # du dict font 50 "bits" (50 = 16 + 2 + 16 + 16)
+        self.taille_metadonnees_dict = 50
+        
+        # les métadonnées des paquets envoyés pour former le bitstream du body
+        # ont une taille de 66 "bits" (66 = 16 + 2 + 16 + 16 + 16)
+        self.taille_metadonnees_body = 66
+        
+        global bitstream_buffer
+        bitstream_buffer = ""
+        
+        global verrou_bitstream_buffer
+        verrou_bitstream_buffer = threading.Lock()
+        
+        self.th_WriteInBitstreamBuffer = ThreadWriteInBitstreamBuffer(frame_id, img_size, macroblock_size, frame, bufsize)
     
     
     @staticmethod
@@ -458,6 +659,8 @@ class BitstreamSender:
         """
         frame = []
         valeur_non_nulle_maximale = 30 # par exemple
+        
+        # pour une frame RLE associée à un seul macrobloc
         nb_tuples_RLE_max = macroblock_size**2 // 2
         
         for num_macrobloc in range(total_num_of_macroblocks):
@@ -492,120 +695,62 @@ class BitstreamSender:
         return(frame)
     
     
-    def send_header_bitstream(self):
+    def start_sending_messages(self):
         """
-        Permet d'envoyer le bitstream associé au header du client au serveur. 
+        Envoi du bitstream complet du client au serveur, paquet par paquet, à 
+        partir des données contenues dans buffer_bitstream (buffer qui est rempli
+        par un thread en parallèle).
         """
-        header_bitstream = self.bit_generator.construct_header()
+        self.th_WriteInBitstreamBuffer.start()
         
-        # envoi du paquet en 1 seule fois, car len(header_bitstream) = 48,
-        # et 48 <= 67 <= bufsize
-        self.client.send_data_to_server(header_bitstream)
-        self.client.wait_for_response()
-    
-    
-    def send_dict_bitstream(self):
-        """
-        Permet d'envoyer le bitstream associé au dict du client au serveur.
-        """
+        global bitstream_buffer
+        global verrou_bitstream_buffer
         
-        # définition du nombre de paquets qui vont être générés à partir du dictionnaire
-        # de huffman encodé
-        len_dict_bitstream = len(self.dict_huffman_encode)
-        if len_dict_bitstream % self.taille_paquet_elementaire_dict == 0:
-            nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire_dict
-        else:
-            nb_paquets_dict = len_dict_bitstream // self.taille_paquet_elementaire_dict + 1
-        
-        # construction du dict, paquet par paquet
-        for num_paquet_dict in range(nb_paquets_dict):
-            indice_initial = num_paquet_dict * self.taille_paquet_elementaire_dict
+        while True:
+            verrou_bitstream_buffer.acquire() # opération bloquante par défaut
             
-            if num_paquet_dict != nb_paquets_dict - 1:
-                indice_final = indice_initial + self.taille_paquet_elementaire_dict
-                donnees_paquet = self.dict_huffman_encode[indice_initial : indice_final]
+            str_type_msg = bitstream_buffer[16 : 18]
             
-            else:
-                # dernier paquet
-                donnees_paquet = self.dict_huffman_encode[indice_initial : ]
-            
-            nouv_paquet_dict = self.bit_generator.construct_dict(donnees_paquet)
-            
-            # envoi du paquet en 1 seule fois, car, par construction,
-            # len(nouv_paquet_dict) < bufsize 
-            self.client.send_data_to_server(nouv_paquet_dict)
-            self.client.wait_for_response()
-    
-    
-    def send_macrobloc_bitstream(self, num_macrobloc, macrobloc_encode):
-        """
-        Permet d'envoyer le bitstream associé à un macrobloc encodé du client 
-        au serveur.
-        """
-        
-        # réinitialisation de l'index du paquet associé au macrobloc actuel
-        self.bit_generator.index_paquet_macrobloc = 0
-        
-        # définition du nombre de paquets qui vont être générés à partir du
-        # macrobloc encodé
-        len_macrobloc_encode = len(macrobloc_encode)
-        if len_macrobloc_encode % self.taille_paquet_elementaire_body == 0:
-            nb_paquets_macrobloc = len_macrobloc_encode // self.taille_paquet_elementaire_body
-        else:
-            nb_paquets_macrobloc = len_macrobloc_encode // self.taille_paquet_elementaire_body + 1
-        
-        # construction du bitstream associé au macrobloc, paquet par paquet
-        for num_paquet_macrobloc in range(nb_paquets_macrobloc):
-            indice_initial = num_paquet_macrobloc * self.taille_paquet_elementaire_body
-            
-            if num_paquet_macrobloc != nb_paquets_macrobloc - 1:
-                indice_final = indice_initial + self.taille_paquet_elementaire_body
-                donnees_paquet = macrobloc_encode[indice_initial : indice_final]
+            if str_type_msg != "":
+                type_msg = int(str_type_msg, 2)
+                
+                if type_msg == HEADER_MSG:
+                    # taille constante
+                    data_size = 48
+                
+                elif type_msg == DICT_MSG:
+                    # extraction de la taille du paquet associé au dictionnaire de 
+                    # huffman encodé
+                    data_size = self.taille_metadonnees_dict + int(bitstream_buffer[34 : 50], 2)
+                
+                elif type_msg == BODY_MSG:
+                    # extraction de la taille du paquet associé au body (ie aux
+                    # différents macroblocs)
+                    data_size = self.taille_metadonnees_body + int(bitstream_buffer[50 : 66], 2)
+                
+                # ici, on a nécessairement type_msg = TAIL_MSG
+                else:
+                    # taille constante
+                    data_size = 18
+                
+                # extraction des données du buffer
+                data = bitstream_buffer[ : data_size]
+                
+                # suppression des données du buffer
+                bitstream_buffer = bitstream_buffer[data_size : ]
+                
+                verrou_bitstream_buffer.release()
+                
+                # envoi du paquet en 1 seule fois, car par construction on a
+                # len(data) = bufsize ou len(data) < bufsize
+                self.client.send_data_to_server(data)
+                self.client.wait_for_response()
+                
+                if type_msg == TAIL_MSG:
+                    break
             
             else:
-                # dernier paquet
-                donnees_paquet = macrobloc_encode[indice_initial : ]
-            
-            nouv_paquet_macrobloc = self.bit_generator.construct_body(num_macrobloc, donnees_paquet)
-            # envoi du paquet en 1 seule fois, car, par construction,
-            # len(nouv_paquet_macrobloc) = bufsize, ou bien 
-            # len(nouv_paquet_macrobloc) <= bufsize pour le tout dernier paquet
-            self.client.send_data_to_server(nouv_paquet_macrobloc)
-            self.client.wait_for_response()
-    
-    
-    def send_body_bitstream(self):
-        """
-        Permet d'envoyer le bitstream associé au body du client au serveur.
-        """
-        for num_macrobloc in range(self.total_num_of_macroblocks):
-            macrobloc = self.frame[num_macrobloc]
-            macrobloc_encode = self.huff.encode_phrase(phrase=macrobloc)
-            self.taille_donnees_compressees_huffman += len(macrobloc_encode)
-            self.send_macrobloc_bitstream(num_macrobloc, macrobloc_encode)
-    
-    
-    def send_tail_bitstream(self):
-        """
-        Permet d'envoyer le bitstream associé au tail du client au serveur.
-        """
-        tail_bitstream = self.bit_generator.construct_end_message()
-        
-        # envoi du paquet en 1 seule fois, car len(tail_bitstream) = 18,
-        # et 18 <= 67 <= bufsize
-        self.client.send_data_to_server(tail_bitstream)
-        self.client.wait_for_response()
-    
-    
-    def send_frame_RLE(self):
-        """
-        Méthode de synthèse.
-        Permet d'envoyer le bitstream total du client au serveur.
-        """
-        self.send_header_bitstream()
-        self.send_dict_bitstream()
-        self.send_body_bitstream()
-        self.send_tail_bitstream()
+                verrou_bitstream_buffer.release()
 
 
 ###############################################################################
@@ -614,6 +759,10 @@ class BitstreamSender:
 # Exemple concret
 
 if __name__ == "__main__":    
+    log = Logger.get_instance()
+    log.set_log_level(LogLevel.DEBUG)
+    #log.start_file_logging("log_bitstream.log")
+    
     # on définit une frame
     
     frame_id = randint(0, 65535) # 65535 = 2**16 - 1
@@ -634,11 +783,17 @@ if __name__ == "__main__":
     # le serveur (+ la frame générée et décodée + le bitstream total)
     affiche_messages = False
     
+    # On désactive les messages par défaut si on sait qu'il va y avoir beaucoup de
+    # données à afficher
+    if img_width * img_height > 10000:
+        affiche_messages = False
+    
     # génération aléatoire d'une frame RLE
     frame = BitstreamSender.generer_frame_RLE(macroblock_size, total_num_of_macroblocks)
-    log = Logger.get_instance()
+    
     if affiche_messages:
-        log.debug(f"\nFrame de référence (générée aléatoirement) :\n{frame}\n")
+        print("\n")
+        log.debug(f"Frame de référence (générée aléatoirement) :\n{frame}\n")
     
     #------------------------------------------------------------------------#
     
@@ -676,6 +831,8 @@ if __name__ == "__main__":
     HOST = 'localhost' # localhost ou bien adresse IP
     PORT = randint(5000, 15000)
     
+    print("\n")
+    
     serv = Server(HOST, PORT, bufsize, affiche_messages)
     cli = Client(serv)
     
@@ -699,7 +856,32 @@ if __name__ == "__main__":
     # envoi du bitstream de la frame RLE du client au serveur
     
     bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, frame, cli, bufsize)
-    bit_sender.send_frame_RLE()
+    bit_sender.start_sending_messages()
+    
+    # pour laisser le temps au message associé au dernier paquet réseau de se print 
+    # correctement
+    if affiche_messages:
+        sleep(0.1)
+    
+    else:
+        log.debug("Les messages entre le serveur et le client n'ont ici pas été affichés pour plus de lisibilité.\n\n")
+    
+    # on termine le thread d'écriture dans le buffer du bitstream
+    bit_sender.th_WriteInBitstreamBuffer.join()
+    log.debug("Thread d'écriture dans le buffer du bitstream supprimé.\n")
+    
+    # fermeture du socket créé, du côté serveur ET du côté client
+    # on termine également le thread d'écoute du serveur
+    cli.connexion.close()
+    serv.th_Listen.join()
+    serv.mySocket.close()
+    
+    # pour laisser le temps au message associé à la fermeture de la connexion du 
+    # client de se print correctement
+    sleep(0.1)
+    
+    log.debug("Thread d'écoute du serveur supprimé.")
+    log.debug("Serveur supprimé.\n\n")
     
     #------------------------------------------------------------------------#
     
@@ -708,56 +890,50 @@ if __name__ == "__main__":
     
     #------------------------------------------------------------------------#
     
-    # prints de synthèse
+    # prints de synthèse / débuggage
     
     if affiche_messages:
-        log.debug(f"\nBitstream total reçu par le serveur (associé à la frame) :\n{received_data}\n")
-        log.debug(f"\nDécodage du bitstream de la frame :\n{frame_decodee}\n")
-    
-    if not(affiche_messages):
-        print("\n")
-        log.debug("\nLes messages entre le serveur et le client n'ont ici pas été affichés pour plus de lisibilité.\n\n\n")
+        log.debug(f"Bitstream total reçu par le serveur (associé à la frame) :\n{received_data}\n\n")
+        log.debug(f"Décodage du bitstream de la frame :\n{frame_decodee}\n\n")
     
     # test de cohérence
     bool_test = (frame == frame_decodee)
-    log.debug(f"\nFrame décodée == frame de référence : {bool_test}\n")
+    log.debug(f"Frame décodée == frame de référence : {str(bool_test).upper()}\n\n")
     
     # à titre informatif
-    log.debug("\nINFOS UTILES / SYNTHÈSE :\n")
-    log.debug(f"\nImage size : (width, height) = {img_size}")
-    log.debug(f"\nMacroblock size : {macroblock_size}x{macroblock_size}")
-    log.debug(f"\nNombre total de macroblocs : {total_num_of_macroblocks}")
-    log.debug(f"\nBufsize (ici : puissance de 2 aléatoire) : {bufsize}\n")
+    log.debug("INFOS UTILES / SYNTHÈSE :\n")
+    log.debug(f"Image size : (width, height) = {img_size}")
+    log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
+    log.debug(f"Nombre total de macroblocs : {total_num_of_macroblocks}")
+    log.debug(f"Bufsize (ici : puissance de 2 aléatoire) : {bufsize}\n")
     
     # taille des parties principales du bitstream comparées à sa taille totale
-    # Remarque : len(received_data) = len(bit_sender.bit_generator.bitstream)
-    pourcentage_dict_bitstream = round(100 * bit_sender.bit_generator.len_dict_bitstream / len(received_data), 2)
-    pourcentage_body_bitstream = round(100 * bit_sender.bit_generator.len_body_bitstream / len(received_data), 2)
+    # Remarque : len(received_data) = len(bit_sender.th_WriteInBitstreamBuffer.bit_generator.bitstream)
+    len_dict_bitstream = bit_sender.th_WriteInBitstreamBuffer.bit_generator.len_dict_bitstream
+    len_body_bitstream = bit_sender.th_WriteInBitstreamBuffer.bit_generator.len_body_bitstream
+    len_received_data = len(received_data)
+    pourcentage_dict_bitstream = round(100 * len_dict_bitstream / len_received_data, 2)
+    pourcentage_body_bitstream = round(100 * len_body_bitstream / len_received_data, 2)
     
-    # taille des différentes composantes du bitstream (en octets / nombre de '0' et de '1')
-    log.debug(f"\nTaille du bitstream total : {len(received_data)}")
-    log.debug("\nTaille du header : 48 (taille constante)")
-    log.debug(f"\nTaille de dict_bitstream : {bit_sender.bit_generator.len_dict_bitstream} ({pourcentage_dict_bitstream}%)")
-    log.debug(f"\nTaille de body_bitstream : {bit_sender.bit_generator.len_body_bitstream} ({pourcentage_body_bitstream}%)")
-    log.debug("\nTaille du tail : 18 (taille constante)\n")
+    # taille des différentes composantes du bitstream (en octets / "bits" / nombre de '0' et de '1')
+    log.debug(f"Taille du bitstream total : {len_received_data} \"bits\"")
+    log.debug("Taille du header : 48 (taille constante)")
+    log.debug(f"Taille de dict_bitstream : {len_dict_bitstream} ({pourcentage_dict_bitstream:.2f}%)")
+    log.debug(f"Taille de body_bitstream : {len_body_bitstream} ({pourcentage_body_bitstream:.2f}%)")
+    log.debug("Taille du tail : 18 (taille constante)\n")
     
-    # taux de compression
+    # taux de compression (il n'a pas de réel sens physique ici, mais c'est toujours
+    # intéressant de le calculer)
     taille_originale_en_bits = 8 * 3 * img_width * img_height
     taux_compression = round(100 * len(received_data) / taille_originale_en_bits, 2)
-    log.debug(f"\nTaux de compression : {taux_compression}%\n")
+    log.debug(f"Taux de compression : {taux_compression:.2f}%\n")
     
     #------------------------------------------------------------------------#
     
     # test pour encode_frame_RLE
     bitstream_genere = BitstreamGenerator.encode_frame_RLE(frame_id, img_size, macroblock_size, frame, bufsize)
-    bool_coherence = (bitstream_genere == bit_sender.bit_generator.bitstream)
-    log.debug(f"[Test d'une fonction-outil]\nBitstream généré par encode_frame_RLE == received_data : {bool_coherence}\n")
+    bool_coherence = (bitstream_genere == bit_sender.th_WriteInBitstreamBuffer.bit_generator.bitstream)
+    log.debug(f"[Test d'une fonction-outil] Bitstream généré par encode_frame_RLE == received_data : {str(bool_coherence).upper()}\n")
     
-    #------------------------------------------------------------------------#
-    
-    # pour éviter d'avoir les messages de déconnexion des clients qui n'ont pas
-    # été déconnectés des serveurs précédemment associés au même hôte
-    # et puis, de toute façon, à ce stade, on n'a plus besoin du client (ni du
-    # serveur)
-    cli.connexion.close()
+    #log.stop_file_logging()
 
