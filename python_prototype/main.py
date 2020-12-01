@@ -28,7 +28,7 @@ log.set_log_level(LogLevel.DEBUG)
 #log.start_file_logging("log.log")
 
 print("\n")
-log.debug("DCT classique\n\n")
+log.debug("Algorithme de compression utilisant la DCT classique\n\n")
 
 
 # # # -------------------------IMAGE GENERATION-------------------------- # # #
@@ -53,7 +53,7 @@ dico_noms_images = {1 : "Autumn.png",
                     4 : "Lykan.jpg", 
                     5 : "Sunset.jpg"}
 
-numero_image = 5 # ∈ [1, 5]
+numero_image = 4 # ∈ [1, 5]
 nom_image = dico_noms_images[numero_image]
 
 path_image = getcwd() + "\\assets\\" + nom_image
@@ -127,15 +127,26 @@ img_visu = ImageVisualizer()
 enc = Encoder()
 
 
-print("\n\nEncodage - Image RGB :\n")
+t_debut_premier_affichage = time()
+print("\nEncodage - Image RGB :\n")
 img_visu.show_image_with_matplotlib(image_rgb)
 print("\n\n")
+t_fin_premier_affichage = time()
+duree_premier_affichage = round(t_fin_premier_affichage - t_debut_premier_affichage, 3)
+
+# 'extraction' ou 'génération' de la frame RGB, selon la méthode choisie
+t_fin_extraction_frame_RGB = time()
+duree_extraction_frame_RGB = round(t_fin_extraction_frame_RGB - t_debut_algo - duree_premier_affichage, 3)
 
 # frame RGB --> frame YUV
-image_yuv = enc.RGB_to_YUV(image_rgb)
+image_yuv = enc.RGB_to_YUV(np.array(image_rgb, dtype=float))
+t_fin_conversion_RGB_YUV = time()
+duree_conversion_RGB_YUV = round(t_fin_conversion_RGB_YUV - t_fin_extraction_frame_RGB, 3)
 
 # frame YUV --> frame RLE
 rle_data = enc.decompose_frame_en_macroblocs_via_DCT(image_yuv, img_size, macroblock_size, DEFAULT_QUANTIZATION_THRESHOLD, A)
+t_fin_conversion_YUV_RLE = time()
+duree_conversion_YUV_RLE = round(t_fin_conversion_YUV_RLE - t_fin_conversion_RGB_YUV, 3)
 
 
 # # # -------------------------SENDING DATA OVER NETWORK-------------------------- # # #
@@ -170,9 +181,39 @@ serv.listen_for_packets(cli, callback=on_received_data)
 
 frame_id = randint(0, 65535) # 65535 = 2**16 - 1
 
-# frame RLE --> bitstream
+t_fin_initialisation_reseau = time()
+duree_initialisation_reseau = round(t_fin_initialisation_reseau - t_fin_conversion_YUV_RLE, 3)
+
+# frame RLE --> bitstream --> réseau
 bit_sender = BitstreamSender(frame_id, img_size, macroblock_size, rle_data, cli, bufsize)
-bit_sender.send_frame_RLE()
+bit_sender.start_sending_messages()
+t_fin_conversion_RLE_bitstream_et_passage_reseau = time()
+duree_conversion_RLE_bitstream_et_passage_reseau = round(t_fin_conversion_RLE_bitstream_et_passage_reseau - t_fin_initialisation_reseau, 3)
+
+# pour laisser le temps au message associé au dernier paquet réseau de se print 
+# correctement
+if affiche_messages:
+    sleep(0.1)
+
+else:
+    log.debug("Les messages entre le client et le serveur n'ont ici pas été affichés pour plus de lisibilité.\n\n")
+
+# on termine le thread d'écriture dans le buffer du bitstream
+bit_sender.th_WriteInBitstreamBuffer.join()
+log.debug("Thread d'écriture dans le buffer du bitstream supprimé.\n")
+
+# fermeture du socket créé, du côté serveur ET du côté client
+# on termine également le thread d'écoute du serveur
+cli.connexion.close()
+serv.th_Listen.join()
+serv.mySocket.close()
+
+# pour laisser le temps au message associé à la fermeture de la connexion du 
+# client de se print correctement
+sleep(0.1)
+
+log.debug("Thread d'écoute du serveur supprimé.")
+log.debug("Serveur supprimé.\n\n")
 
 
 # # # -------------------------DATA DECODING TO IMAGE-------------------------- # # #
@@ -180,23 +221,22 @@ bit_sender.send_frame_RLE()
 
 dec = Decoder()
 
-# bitstream --> frame RLE
+# bitstream (données reçues) --> frame RLE
 dec_rle_data = dec.decode_bitstream_RLE(received_data)
+t_fin_conversion_bitstream_recu_RLE = time()
+duree_conversion_bitstream_recu_RLE = round(t_fin_conversion_bitstream_recu_RLE - t_fin_conversion_RLE_bitstream_et_passage_reseau, 3)
 
-sleep(0.01)
-
-if not(affiche_messages):
-    print("\n")
-    log.debug("\nLes messages entre le client et le serveur n'ont ici pas été affichés pour plus de lisibilité.")
-
-print("\n\n")
-log.debug(f"\nTransmission réseau réussie : {rle_data == dec_rle_data}\n")
+log.debug(f"Transmission réseau réussie : {str(rle_data == dec_rle_data).upper()}\n")
 
 # frame RLE --> frame YUV
 dec_yuv_data = dec.recompose_frame_via_DCT(dec_rle_data, img_size, macroblock_size, A)
+t_fin_conversion_RLE_YUV = time()
+duree_conversion_RLE_YUV = round(t_fin_conversion_RLE_YUV - t_fin_conversion_bitstream_recu_RLE, 3)
 
 # frame YUV --> frame RGB
 dec_rgb_data = dec.YUV_to_RGB(dec_yuv_data)
+t_fin_conversion_YUV_RGB = time()
+duree_conversion_YUV_RGB = round(t_fin_conversion_YUV_RGB - t_fin_conversion_RLE_YUV, 3)
 
 
 # Vérification des valeurs de la frame RGB décodée (on devrait les avoir entre
@@ -221,15 +261,20 @@ for k in range(3):
 
 
 dec_rgb_data = np.round(dec_rgb_data).astype(dtype=np.uint8)
+t_fin_correction_frame_RGB_decodee = time()
+duree_correction_frame_RGB_decodee = round(t_fin_correction_frame_RGB_decodee - t_fin_conversion_YUV_RGB, 3)
 
+t_debut_deuxieme_affichage_et_sauvegarde = time()
 print("\n\nDécodage - Image RGB :\n")
 img_visu.show_image_with_matplotlib(dec_rgb_data)
 
 #print("\n\n")
 #img_visu.save_image_to_disk(dec_rgb_data, "decoded_image.png")
+t_fin_deuxieme_affichage_et_sauvegarde = time()
+duree_deuxieme_affichage_et_sauvegarde = round(t_fin_deuxieme_affichage_et_sauvegarde - t_debut_deuxieme_affichage_et_sauvegarde, 3)
 
 t_fin_algo = time()
-duree_algo = round(t_fin_algo - t_debut_algo, 3)
+duree_algo = round(t_fin_algo - t_debut_algo - duree_premier_affichage - duree_deuxieme_affichage_et_sauvegarde, 3)
 
 
 # # # ----------------------------STATISTICS------------------------------ # # #
@@ -237,28 +282,57 @@ duree_algo = round(t_fin_algo - t_debut_algo, 3)
 
 taille_originale_en_bits = 8 * 3 * img_width * img_height
 
-taille_donnees_compressees_huffman = bit_sender.taille_donnees_compressees_huffman
-taille_dico_encode_huffman = len(bit_sender.dict_huffman_encode)
-taille_bitstream_total = len(received_data) # = len(bit_sender.bit_generator.bitstream)
+taille_donnees_compressees_huffman = bit_sender.th_WriteInBitstreamBuffer.taille_donnees_compressees_huffman
+taille_dico_encode_huffman = len(bit_sender.th_WriteInBitstreamBuffer.dict_huffman_encode)
+taille_bitstream_total = len(received_data) # = len(bit_sender.th_WriteInBitstreamBuffer.bit_generator.bitstream)
 
 # on considère que le header et le tail font partie des métadonnees du bitstream
 taille_metadonnees = taille_bitstream_total - taille_donnees_compressees_huffman - taille_dico_encode_huffman
 
+# calcul des taux de tailles de données
 taux_donnees_huffman = round(100 * taille_donnees_compressees_huffman / taille_originale_en_bits, 2)
 taux_dico_huffman = round(100 * taille_dico_encode_huffman / taille_originale_en_bits, 2)
-taux_bitstream_total = round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
 taux_metadonnees = round(100 * taille_metadonnees / taille_originale_en_bits, 2)
+taux_bitstream_total = round(100 * taille_bitstream_total / taille_originale_en_bits, 2)
+
+expression_standard_taux_compression = round(taille_originale_en_bits / taille_bitstream_total, 2)
+
+
+# calcul des taux de durées d'exécution
+taux_extraction_frame_RGB = round(100 * duree_extraction_frame_RGB / duree_algo, 2)
+taux_conversion_RGB_YUV = round(100 * duree_conversion_RGB_YUV / duree_algo, 2)
+taux_conversion_YUV_RLE = round(100 * duree_conversion_YUV_RLE / duree_algo, 2)
+taux_initialisation_reseau = round(100 * duree_initialisation_reseau / duree_algo, 2)
+taux_conversion_RLE_bitstream_et_passage_reseau = round(100 * duree_conversion_RLE_bitstream_et_passage_reseau / duree_algo, 2)
+taux_conversion_bitstream_recu_RLE = round(100 * duree_conversion_bitstream_recu_RLE / duree_algo, 2)
+taux_conversion_RLE_YUV = round(100 * duree_conversion_RLE_YUV / duree_algo, 2)
+taux_conversion_YUV_RGB = round(100 * duree_conversion_YUV_RGB / duree_algo, 2)
+taux_correction_frame_RGB_decodee = round(100 * duree_correction_frame_RGB_decodee / duree_algo, 2)
+
 
 print("\n\n")
-log.debug(f"\nTailles relatives par rapport à la taille originale de l'image (en bits) :\n")
+log.debug(f"Tailles relatives par rapport à la taille originale de l'image (en bits) :\n")
 
-log.debug(f"\nDonnées encodées par l'algo de Huffman : {taux_donnees_huffman}%")
-log.debug(f"\nDictionnaire de Huffman encodé : {taux_dico_huffman}%")
-log.debug(f"\nMétadonnées du bitstream : {taux_metadonnees}%")
-log.debug(f"\nBitstream total : {taux_bitstream_total}% --> taux de compression\n")
-
-log.debug(f"\nTemps d'exécution de tout l'algorithme : {duree_algo} s\n")
+log.debug(f"Données encodées par l'algo de Huffman : {taux_donnees_huffman:.2f}%")
+log.debug(f"Dictionnaire de Huffman encodé : {taux_dico_huffman:.2f}%")
+log.debug(f"Métadonnées du bitstream : {taux_metadonnees:.2f}%\n")
+log.debug(f"Bitstream total : {taux_bitstream_total:.2f}% --> taux de compression \"{expression_standard_taux_compression:.2f} : 1\"\n")
 
 
-cli.connexion.close()
+print("\n")
+log.debug("Durée de chacune des étapes de l'algorithme :\n")
+
+log.debug(f"Extraction/génération de la frame RGB : {duree_extraction_frame_RGB:.3f} s ({taux_extraction_frame_RGB:.2f}%)")
+log.debug(f"Conversion de la frame RGB en frame YUV : {duree_conversion_RGB_YUV:.3f} s ({taux_conversion_RGB_YUV:.2f}%)")
+log.debug(f"Conversion de la frame YUV en frame RLE : {duree_conversion_YUV_RLE:.3f} s ({taux_conversion_YUV_RLE:.2f}%)")
+log.debug(f"Initialisation des paramètres réseau : {duree_initialisation_reseau:.3f} s ({taux_initialisation_reseau:.2f}%)")
+log.debug(f"Conversion de la frame RLE en bitstream + passage réseau : {duree_conversion_RLE_bitstream_et_passage_reseau:.3f} s ({taux_conversion_RLE_bitstream_et_passage_reseau:.2f}%)")
+log.debug(f"Conversion du bitstream reçu en frame RLE : {duree_conversion_bitstream_recu_RLE:.3f} s ({taux_conversion_bitstream_recu_RLE:.2f}%)")
+log.debug(f"Conversion de la frame RLE en frame YUV : {duree_conversion_RLE_YUV:.3f} s ({taux_conversion_RLE_YUV:.2f}%)")
+log.debug(f"Conversion de la frame YUV en frame RGB : {duree_conversion_YUV_RGB:.3f} s ({taux_conversion_YUV_RGB:.2f}%)")
+log.debug(f"Correction de la frame RGB décodée : {duree_correction_frame_RGB_decodee:.3f} s ({taux_correction_frame_RGB_decodee:.2f}%)\n")
+
+log.debug(f"Temps d'exécution de tout l'algorithme : {duree_algo} s\n")
+
+#log.stop_file_logging()
 
