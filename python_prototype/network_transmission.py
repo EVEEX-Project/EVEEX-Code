@@ -32,10 +32,6 @@ class ThreadListen(threading.Thread):
         """
         type_msg = int(msgClient[16 : 18], 2)
         
-        # 'dict_types_msg' est une variable globale créée au moment de l'instanciation
-        # de la classe Server
-        desc_type_msg = dict_types_msg[type_msg]
-        
         # dict
         if type_msg == 1:
             index_paquet_dict = int(msgClient[18 : 34], 2)
@@ -49,7 +45,12 @@ class ThreadListen(threading.Thread):
         
         # header et tail (ie type_msg = 0 ou 3)
         else:
-            desc_paquet = desc_type_msg
+            if type_msg == 0:
+                desc_paquet = "header"
+            
+            else:
+                # ici, on a nécessairement type_msg = 3
+                desc_paquet = "tail"
         
         return(desc_paquet)
     
@@ -64,13 +65,13 @@ class ThreadListen(threading.Thread):
         while True:
             # établissement de la connexion
             connexion, adresse = self.socket_server.accept()
-            Server.safe_print(f"\nServeur> Client connecté, adresse IP {adresse[0]}, port {adresse[1]}.\n\n")
+            Server.safe_print(f"Serveur> Client connecté, adresse IP {adresse[0]}, port {adresse[1]}.\n\n")
             
             # dialogue avec le client            
             msgClient = connexion.recv(self.bufsize)
             msgClient = msgClient.decode("utf8")
             while True:     
-                # au cas où
+                # si le client se déconnecte
                 if msgClient.upper() == "FIN" or msgClient == "":
                     break
                 
@@ -85,7 +86,7 @@ class ThreadListen(threading.Thread):
                         msgServeur = f"Données bien reçues : {desc_paquet}"
                         
                         if self.affiche_messages:
-                            Server.safe_print(f"\nServeur> {msgServeur}")
+                            Server.safe_print(f"Serveur> {msgServeur}")
                         msgServeur = msgServeur.encode("utf8")
                         connexion.send(msgServeur)
                         
@@ -98,15 +99,20 @@ class ThreadListen(threading.Thread):
                         # au moment de l'instanciation de la classe Server
                         # --> Même remarque pour tous les autres 'sleep(temps_pause_envoi)' 
                         # du code
-                        sleep(temps_pause_apres_envoi)
+                        if self.affiche_messages:
+                            sleep(temps_pause_apres_envoi)
                 
                 except:
                     # si msgClient[0] n'existe pas (ou si c'est mal défini), 
                     # on passe simplement à la suite
                     pass
             
-            connexion.close()    # on ferme la connexion côté serveur
-            Server.safe_print("\nServeur> Client déconnecté.")
+            connexion.close() # on ferme la connexion côté serveur
+            Server.safe_print("Serveur> Client déconnecté.")
+            
+            # il n'y a qu'un seul client, donc s'il se déconnecte, on n'a plus
+            # besoin de ce thread
+            break
 
 
 #############################################################################
@@ -124,21 +130,23 @@ class Server:
         self.affiche_messages = affiche_messages
         
         global verrou
-        verrou = threading.RLock()
+        verrou = threading.Lock()
         
         self.mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.mySocket.bind((self.HOST, self.PORT))
         except socket.error:
-            self.safe_print("\nServeur> La liaison du socket à l'adresse choisie a échoué.")
+            self.safe_print("Serveur> La liaison du socket à l'adresse choisie a échoué.")
             sys.exit()
-        self.safe_print("\nServeur> Serveur prêt, en attente de requêtes ...")
+        self.safe_print("Serveur> Serveur prêt, en attente de requêtes ...\n")
         
+        # cette variable globale ne sera utile QUE si l'on affiche les messages
+        # entre le client et le serveur
         global temps_pause_apres_envoi
         temps_pause_apres_envoi = 0.01 # en secondes
         
-        global dict_types_msg
-        dict_types_msg = {0 : "header", 1 : "dict", 2 : "body", 3 : "tail"}
+        # désigne le thread d'écoute du serveur
+        self.th_Listen = None
     
     
     @staticmethod
@@ -152,11 +160,9 @@ class Server:
         """
         # 'verrou' est une variable globale qui sera créée au moment de
         # l'instanciation de la classe Server
-        try:
-            verrou.acquire()
-            Logger.get_instance().debug(texte)
-        finally:
-            verrou.release()
+        verrou.acquire()
+        Logger.get_instance().debug(texte)
+        verrou.release()
     
     
     def listen_for_packets(self, client, callback):
@@ -169,8 +175,8 @@ class Server:
             client: client qui va interagir avec le serveur
             callback: fonction à appeler dès que le serveur reçoit des données
         """
-        th_Listen = ThreadListen(self.mySocket, callback, self.bufsize, self.affiche_messages)
-        th_Listen.start()
+        self.th_Listen = ThreadListen(self.mySocket, callback, self.bufsize, self.affiche_messages)
+        self.th_Listen.start()
         
         client.connect_to_server()
 
@@ -184,7 +190,7 @@ class Client:
     Args:
         server: serveur auquel le client veut se connecter
     """
-    def __init__(self, server):        
+    def __init__(self, server):    
         self.HOST = server.HOST        
         self.PORT = server.PORT
         self.bufsize = server.bufsize
@@ -202,9 +208,9 @@ class Client:
         try:
             self.connexion.connect((self.HOST, self.PORT))
         except socket.error:
-            Server.safe_print("\nClient> La connexion a échoué.")
+            Server.safe_print("Client> La connexion a échoué.")
             sys.exit()
-        Server.safe_print("\nClient> Connexion établie avec le serveur.")
+        Server.safe_print("Client> Connexion établie avec le serveur.")
     
     
     def send_data_to_server(self, data):
@@ -219,14 +225,16 @@ class Client:
             msg_filler = "filler"
             msg_filler = msg_filler.encode("utf8")
             self.connexion.send(msg_filler)
-            sleep(temps_pause_apres_envoi)
+            if self.affiche_messages:
+                sleep(temps_pause_apres_envoi)
             self.premier_message_envoye = False
         
         if self.affiche_messages:
-            Server.safe_print(f"\nClient> {data}")
+            Server.safe_print(f"Client> {data}")
         data = data.encode("utf8")
         self.connexion.send(data)
-        sleep(temps_pause_apres_envoi)
+        if self.affiche_messages:
+            sleep(temps_pause_apres_envoi)
     
     
     def wait_for_response(self):
@@ -247,7 +255,7 @@ class Client:
                     if msgServeur[ : 19] == "Données bien reçues":
                         desc_paquet = msgServeur[22 : ]
                         if self.affiche_messages:
-                            Server.safe_print(f"\nClient> Réponse du serveur reçue : {desc_paquet}\n\n")
+                            Server.safe_print(f"Client> Réponse du serveur reçue : {desc_paquet}\n\n")
                         break
                 except:
                     pass
