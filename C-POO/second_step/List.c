@@ -53,7 +53,7 @@ static void extend(struct List *self)	// one more element
     ++self->count;
 }
 
-static struct Object *List_addFirst(void *_self, const struct Object *element) {
+static struct Object *List_addFirst(struct List *_self, const struct Object *element) {
     struct List *self = _self;
 
     if (!self->count)
@@ -65,7 +65,7 @@ static struct Object *List_addFirst(void *_self, const struct Object *element) {
     return (void *) element;
 }
 
-static struct Object *List_addLast(void *_self, const struct Object *element) {
+static struct Object *List_addLast(struct List *_self, const struct Object *element) {
     struct List *self = _self;
 
     if (!self->count)
@@ -77,19 +77,19 @@ static struct Object *List_addLast(void *_self, const struct Object *element) {
     return (void *) element;
 }
 
-static unsigned List_count(const void *_self) {
+static unsigned List_count(const struct List *_self) {
     const struct List *self = _self;
     return self->count;
 }
 
-static struct Object *List_lookAt(const void *_self, unsigned n) {
+static struct Object *List_lookAt(const struct List *_self, unsigned n) {
     const struct List *self = _self;
 
     return (void *) (n >= self->count ? 0 :
                      self->buf[(self->begin + n) % self->dim]);
 }
 
-static struct Object *List_takeFirst(void *_self) {
+static struct Object *List_takeFirst(struct List *_self) {
     struct List *self = _self;
 
     if (! self->count)
@@ -100,7 +100,7 @@ static struct Object *List_takeFirst(void *_self) {
     return (void *) self->buf[self->begin++];
 }
 
-static struct Object *List_takeLast(void *_self) {
+static struct Object *List_takeLast(struct List *_self) {
     struct List *self = _self;
 
     if (!self->count)
@@ -113,45 +113,51 @@ static struct Object *List_takeLast(void *_self) {
 
 /* added methods */
 struct Object *addFirst(void *_self, const struct Object *element) {
-    const struct ListClass *class = classOf(_self);
+    struct List *self = cast(List, _self);
+    const struct ListClass *class = classOf(self);
 
     assert(class->addFirst);
-    return class->addFirst(_self, element);
+    return class->addFirst(self, element);
 }
 
 struct Object *addLast(void *_self, const struct Object *element) {
-    const struct ListClass *class = classOf(_self);
+    struct List *self = cast(List, _self);
+    const struct ListClass *class = classOf(self);
 
     assert(class->addLast);
-    return class->addLast(_self, element);
+    return class->addLast(self, element);
 }
 
 unsigned count(const void *_self) {
-    const struct ListClass *class = classOf(_self);
+    struct List *self = cast(List, _self);
+    const struct ListClass *class = classOf(self);
 
     assert(class->count);
-    return class->count(_self);
+    return class->count(self);
 }
 
 struct Object *lookAt(const void *_self, unsigned n) {
-    const struct ListClass *class = classOf(_self);
+    struct List *self = cast(List, _self);
+    const struct ListClass *class = classOf(self);
 
     assert(class->lookAt);
-    return class->lookAt(_self, n);
+    return class->lookAt(self, n);
 }
 
 struct Object *takeFirst(void *_self) {
-    const struct ListClass *class = classOf(_self);
+    struct List *self = cast(List, _self);
+    const struct ListClass *class = classOf(self);
 
     assert(class->takeFirst);
-    return class->takeFirst(_self);
+    return class->takeFirst(self);
 }
 
 struct Object *takeLast(void *_self) {
-    const struct ListClass *class = classOf(_self);
+    struct List *self = cast(List, _self);
+    const struct ListClass *class = classOf(self);
 
     assert(class->takeLast);
-    return class->takeLast(_self);
+    return class->takeLast(self);
 }
 
 

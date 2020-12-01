@@ -168,18 +168,24 @@ void *super_dtor (const void *_class, void *_self) {
     return superclass->dtor(_self); // on appelle le destructeur de la superclasse
 }
 
-int differ (const void * _self, const void * b) {	/* Comparaison */
+int differ (const void *_self, const void *b) {	/* Comparaison */
+    int result;
     const struct Class * class = classOf(_self);
 
     assert(class->differ);
-    return class->differ(_self, b); // on les compare
+    cast(Object, b);
+
+    result = class->differ(_self, b);
+    return result;
 }
 
 int super_differ (const void *_class, const void *_self, const void *b)
-{	const struct Class *superclass = super(_class);
+{
+    const struct Class *superclass = super(_class);
+    cast(Object, b);
+    assert(superclass->differ);
 
-    assert(_self && superclass->differ);
-    return superclass->differ(_self, b); // on appelle le comparateur de la super classe
+    return superclass->differ(_self, b);
 }
 
 int puto (const void *_self, FILE *fp) {
@@ -220,7 +226,7 @@ int isOf(const void *_self, const struct Class *class) {
     return 0;
 }
 
-void *cast(const void *_self, const struct Class *class) {
+void *cast(const struct Class *class, const void *_self) {
     assert(isOf(_self, class));
     return (void *) _self;
 }

@@ -22,7 +22,7 @@ int puto (const void *self, FILE *fp);
 
 int isA(const void *self, const struct Class *class);
 int isOf(const void *self, const struct Class *class);
-void *cast(const void *self, const struct Class *class);
+void *cast(const struct Class *class, const void *self);
 
 extern const void * Class;						/* new(Class, "name", super, size
 															sel, meth, ... 0); */
