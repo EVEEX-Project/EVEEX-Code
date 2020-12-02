@@ -37,39 +37,39 @@ colors = {8 : "r", 16 : "g", 32 : "b"}
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des données encodées par l'algo de 
 # Huffman, par rapport à la taille originale de l'image (en bits)
-huff_ratios_random_images = {8  : [28.06, 32.06, 32.66, 33.62, 33.98], 
-                             16 : [38.50, 43.23, 45.51, 45.61, 45.88], 
+huff_ratios_random_images = {8  : [28.06, 32.06, 32.66, 33.62, 33.98],
+                             16 : [38.50, 43.23, 45.51, 45.61, 45.88],
                              32 : [46.98, 46.85, 48.65, 49.41, 49.45]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des dictionnaires de Huffman encodés, par 
 # rapport à la taille originale de l'image (en bits)
-dict_ratios_random_images = {8  : [101.72, 66.96, 37.81, 18.30, 7.49], 
-                             16 : [125.91, 70.53, 34.14, 14.27, 6.14], 
+dict_ratios_random_images = {8  : [101.72, 66.96, 37.81, 18.30, 7.49],
+                             16 : [125.91, 70.53, 34.14, 14.27, 6.14],
                              32 : [122.79, 65.62, 31.16, 13.13, 5.10]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des tailles des métadonnées, par rapport 
 # à la taille originale de l'image (en bits)
-metadata_ratios_random_images = {8  : [5.99, 5.23, 4.78, 4.53, 4.39], 
-                                 16 : [2.97, 2.06, 1.52, 1.26, 1.15], 
+metadata_ratios_random_images = {8  : [5.99, 5.23, 4.78, 4.53, 4.39],
+                                 16 : [2.97, 2.06, 1.52, 1.26, 1.15],
                                  32 : [2.70, 1.69, 1.28, 1.12, 1.03]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : taux de compression (en %) associés aux images générées aléatoirement
-comp_rates_random_images = {8  : [135.77, 104.25, 75.25, 56.45, 45.87], 
-                            16 : [167.38, 115.83, 81.17, 61.14, 53.17], 
+comp_rates_random_images = {8  : [135.77, 104.25, 75.25, 56.45, 45.87],
+                            16 : [167.38, 115.83, 81.17, 61.14, 53.17],
                             32 : [172.47, 114.16, 81.09, 63.66, 55.57]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : temps d'exécution (en secondes) de l'algorithme
-exec_times_random_images = {8  : [0.875, 2.281, 8.178, 29.929, 107.432], 
-                            16 : [0.755, 1.704, 4.678, 14.210,  47.391], 
-                            32 : [0.765, 1.500, 4.215, 12.879,  41.067]}
+exec_times_random_images = {8  : [0.391, 0.735, 3.303, 11.451, 57.513],
+                            16 : [0.266, 0.734, 2.479,  7.597, 28.735],
+                            32 : [0.297, 0.750, 2.287,  6.431, 22.962]}
 
 
 # Clés : colonnes d'affichage des données (j)
@@ -152,49 +152,49 @@ colors_pics = {0 : "r", 1 : "g", 2 : "b", 3 : "k", 4 : "m"}
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des données encodées par l'algo de 
 # Huffman, par rapport à la taille originale de l'image (en bits)
-huff_ratios_pics = {8  : [46.14, 10.53, 6.67, 13.85, 9.02], 
-                    16 : [45.58, 10.87, 5.41, 14.19, 6.81], 
-                    24 : [45.64, 10.96, 6.03, 14.39, 7.26], 
-                    48 : [46.79, 11.79, 6.86, 15.49, 7.21], 
+huff_ratios_pics = {8  : [46.14, 10.53, 6.67, 13.85, 9.02],
+                    16 : [45.58, 10.87, 5.41, 14.19, 6.81],
+                    24 : [45.64, 10.96, 6.03, 14.39, 7.26],
+                    48 : [46.79, 11.79, 6.86, 15.49, 7.21],
                     60 : [47.21, 12.35, 7.25, 16.01, 7.51]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des dictionnaires de Huffman encodés, par 
 # rapport à la taille originale de l'image (en bits)
-dict_ratios_pics = {8  : [7.65, 2.11, 4.12, 4.66, 6.79], 
-                    16 : [4.80, 2.75, 3.39, 3.94, 4.18], 
-                    24 : [3.75, 2.51, 3.04, 3.43, 3.37], 
-                    48 : [3.11, 2.20, 2.62, 2.76, 2.86], 
+dict_ratios_pics = {8  : [7.65, 2.11, 4.12, 4.66, 6.79],
+                    16 : [4.80, 2.75, 3.39, 3.94, 4.18],
+                    24 : [3.75, 2.51, 3.04, 3.43, 3.37],
+                    48 : [3.11, 2.20, 2.62, 2.76, 2.86],
                     60 : [3.04, 2.15, 2.53, 2.63, 2.84]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : tailles relatives (en %) des tailles des métadonnées, par rapport 
 # à la taille originale de l'image (en bits)
-metadata_ratios_pics = {8  : [4.39, 4.32, 4.35, 4.36, 4.38], 
-                        16 : [1.15, 1.11, 1.12, 1.12, 1.13], 
-                        24 : [1.02, 0.51, 0.52, 0.52, 0.52], 
-                        48 : [0.86, 0.29, 0.24, 0.35, 0.22], 
+metadata_ratios_pics = {8  : [4.39, 4.32, 4.35, 4.36, 4.38],
+                        16 : [1.15, 1.11, 1.12, 1.12, 1.13],
+                        24 : [1.02, 0.51, 0.52, 0.52, 0.52],
+                        48 : [0.86, 0.29, 0.24, 0.35, 0.22],
                         60 : [0.85, 0.27, 0.21, 0.33, 0.20]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : taux de compression (en %) associées à l'image considérée
-comp_rates_pics = {8  : [58.18, 16.96, 15.13, 22.86, 20.18], 
-                   16 : [51.53, 14.73,  9.91, 19.25, 12.12], 
-                   24 : [50.42, 13.99,  9.60, 18.34, 11.15], 
-                   48 : [50.76, 14.29,  9.71, 18.60, 10.29], 
+comp_rates_pics = {8  : [58.18, 16.96, 15.13, 22.86, 20.18],
+                   16 : [51.53, 14.73,  9.91, 19.25, 12.12],
+                   24 : [50.42, 13.99,  9.60, 18.34, 11.15],
+                   48 : [50.76, 14.29,  9.71, 18.60, 10.29],
                    60 : [51.10, 14.78,  9.99, 18.97, 10.54]}
 
 
 # Clés : tailles des macroblocs
 # Valeurs : temps d'exécution (en secondes) de l'algorithme
-exec_times_pics = {8  : [154.909, 109.437, 120.540, 125.815, 143.472], 
-                   16 : [ 59.082,  45.194,  47.805,  51.531,  51.514], 
-                   24 : [ 50.457,  32.405,  33.992,  36.525,  35.132], 
-                   48 : [ 46.332,  27.578,  27.745,  30.812,  27.712], 
-                   60 : [ 45.529,  27.130,  26.360,  30.546,  27.692]}
+exec_times_pics = {8  : [87.779, 20.345, 30.631, 40.857, 57.405],
+                   16 : [34.290, 15.302, 16.838, 23.100, 20.877],
+                   24 : [27.478, 14.270, 14.479, 20.437, 16.274],
+                   48 : [25.744, 13.088, 13.442, 17.520, 14.643],
+                   60 : [25.484, 13.266, 13.686, 15.411, 14.460]}
 
 
 # Clés : colonnes d'affichage des données (j)
