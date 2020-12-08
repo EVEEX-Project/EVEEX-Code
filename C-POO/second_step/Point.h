@@ -3,13 +3,11 @@
 
 #include "Object.h"
 
-extern const void *Point;			/* new(Point, x, y); */
+extern const void * const Point(void);			/* new(Point, x, y); */
 
 void draw (const void *self);
 void move (void *point, int dx, int dy);
 
-extern const void *PointClass;		/* adds draw */
-
-void initPoint(void);
+extern const void * const PointClass(void);		/* adds draw */
 
 #endif

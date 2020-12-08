@@ -5,11 +5,11 @@
 #include "Object.h"
 #include "Point.h"
 #include "List.h"
+#include "Dictionary.h"
 
 int main() {
     printf("/* -------- TEST POINT -------- */\n");
-    initPoint();
-    void *pA = new(Point, 0, 0);
+    void *pA = new(Point(), 0, 0);
 
     puto(pA, stdout);
     draw(pA);
@@ -20,11 +20,10 @@ int main() {
     delete(pA);
 
     printf("\n/* -------- TEST LIST -------- */\n");
-    initList();
-    void *list = new(List);
+    void *list = new(List());
 
-    void *pB = new(Point, 1, 1);
-    void *pC = new(Point, 2, 9);
+    void *pB = new(Point(), 1, 1);
+    void *pC = new(Point(), 2, 9);
 
     addLast(list, pB);
     addLast(list, pC);
@@ -37,5 +36,27 @@ int main() {
     delete(pB);
     delete(pC);
     delete(list);
+
+    printf("\n/* -------- TEST DICO -------- */\n");
+
+    void *dict = new(Dictionary());
+
+    void *pD = new(Point(), 1, 5);
+    void *pE = new(Point(), 5, 2);
+
+    set(dict, "D", pD);
+    set(dict, "E", pE);
+    set(dict, "D2", pD);
+
+    void *pD2 = get(dict, "D");
+    if (!differ(pD, pD2)) {
+        puts("pD == pD2");
+    }
+    printf("Nb éléments dans le dico : %d\n", size(dict));
+
+    delete(pD);
+    delete(pE);
+    delete(dict);
+
     return 0;
 }

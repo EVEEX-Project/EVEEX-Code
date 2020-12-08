@@ -11,10 +11,15 @@
 
 /* LIST */
 static void *List_ctor (void *_self, va_list *app) {
-    struct List *self = super_ctor(List, _self, app);
+    struct List *self = super_ctor(List(), _self, app);
 
-    if (! (self->dim = va_arg(*app, unsigned)))
+    self->dim = va_arg(*app, int);
+    // Garbage detection
+    if (self->dim > 1024 * 16) {
+        printf("No size given, default to min..\n");
         self->dim = MIN;
+    } else printf("Found a size : %u\n", self->dim);
+
     self->buf = malloc(self->dim * sizeof * self->buf);
     assert(self->buf);
     
@@ -23,7 +28,7 @@ static void *List_ctor (void *_self, va_list *app) {
 
 static void *List_dtor(struct List *self) {
     free(self->buf), self->buf = 0;
-    return super_dtor(List, self);
+    return super_dtor(List(), self);
 }
 
 static void *add1(struct List *self, const void *element)
@@ -111,9 +116,22 @@ static struct Object *List_takeLast(struct List *_self) {
     return (void *) self->buf[--self->end];
 }
 
+static unsigned List_indexOf(const struct List *_self, const struct Object *element) {
+    const struct List *self = _self;
+
+    // iteration over the elements
+    for (unsigned i = 0; i < self->count; i++) {
+        // if it's the same object
+        if (!differ(lookAt(self, i), element))
+            return i;
+    }
+    // not found
+    return -1;
+}
+
 /* added methods */
 struct Object *addFirst(void *_self, const struct Object *element) {
-    struct List *self = cast(List, _self);
+    struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
 
     assert(class->addFirst);
@@ -121,7 +139,7 @@ struct Object *addFirst(void *_self, const struct Object *element) {
 }
 
 struct Object *addLast(void *_self, const struct Object *element) {
-    struct List *self = cast(List, _self);
+    struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
 
     assert(class->addLast);
@@ -129,7 +147,7 @@ struct Object *addLast(void *_self, const struct Object *element) {
 }
 
 unsigned count(const void *_self) {
-    struct List *self = cast(List, _self);
+    struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
 
     assert(class->count);
@@ -137,7 +155,7 @@ unsigned count(const void *_self) {
 }
 
 struct Object *lookAt(const void *_self, unsigned n) {
-    struct List *self = cast(List, _self);
+    struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
 
     assert(class->lookAt);
@@ -145,7 +163,7 @@ struct Object *lookAt(const void *_self, unsigned n) {
 }
 
 struct Object *takeFirst(void *_self) {
-    struct List *self = cast(List, _self);
+    struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
 
     assert(class->takeFirst);
@@ -153,18 +171,25 @@ struct Object *takeFirst(void *_self) {
 }
 
 struct Object *takeLast(void *_self) {
-    struct List *self = cast(List, _self);
+    struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
 
     assert(class->takeLast);
     return class->takeLast(self);
 }
 
+unsigned indexOf(const void *_self, const struct Object *element) {
+    struct List *self = cast(List(), _self);
+    const struct ListClass *class = classOf(self);
+
+    assert(class->indexOf);
+    return class->indexOf(self, element);
+}
 
 /* ListClass */
 static void * ListClass_ctor (void *_self, va_list *app) {
     struct ListClass * self
-            = super_ctor(ListClass, _self, app);
+            = super_ctor(ListClass(), _self, app);
     typedef void (*voidf) ();
     voidf selector;
 #ifdef va_copy
@@ -198,24 +223,25 @@ static void * ListClass_ctor (void *_self, va_list *app) {
 }
 
 /* Initialisation */
-const void *ListClass, *List;
+static const void *_ListClass, *_List;
 
-void initList(void)
-{
-    if (!ListClass)
-        ListClass = new(Class, "ListClass",
-                         Class, sizeof(struct ListClass),
-                         ctor, ListClass_ctor,
-                         0);
-    if (!List)
-        List = new(ListClass, "List",
-                    Object, sizeof(struct List),
-                    ctor, List_ctor,
-                    addFirst, List_addFirst,
-                    addLast, List_addLast,
-                    count, List_count,
-                    lookAt, List_lookAt,
-                    takeFirst, List_takeFirst,
-                    takeLast, List_takeLast,
-                    0);
+const void * const ListClass(void) {
+    return _ListClass ? _ListClass :  (_ListClass = new(Class(), "ListClass",
+            Class(), sizeof(struct ListClass),
+            ctor, ListClass_ctor,
+            (void *) 0));
+}
+
+const void * const List(void) {
+    return _List ? _List : (_List = new(ListClass(), "List",
+            Object(), sizeof(struct List),
+            ctor, List_ctor,
+            addFirst, List_addFirst,
+            addLast, List_addLast,
+            count, List_count,
+            lookAt, List_lookAt,
+            takeFirst, List_takeFirst,
+            takeLast, List_takeLast,
+            indexOf, List_indexOf,
+           (void *) 0));
 }

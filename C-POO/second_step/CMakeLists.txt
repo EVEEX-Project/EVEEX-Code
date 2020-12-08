@@ -7,4 +7,6 @@ add_executable(SECOND_STEP
         Object.c
         Point.c
         List.c
+        DictionaryItem.c
+        Dictionary.c
         main.c)

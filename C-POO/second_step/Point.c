@@ -5,7 +5,7 @@
 
 /* Point */
 static void *Point_ctor (void *_self, va_list *app) {
-    struct Point *self = super_ctor(Point, _self, app);
+    struct Point *self = super_ctor(Point(), _self, app);
 
     self->x = va_arg(*app, int); // On récupère les arguments dynamiques
     self->y = va_arg(*app, int);
@@ -45,7 +45,7 @@ void move (void *_self, int dx, int dy)
 /* PointClass */
 static void * PointClass_ctor (void * _self, va_list * app) {
     struct PointClass * self
-            = super_ctor(PointClass, _self, app);
+            = super_ctor(PointClass(), _self, app);
     typedef void (*voidf) ();
     voidf selector;
 #ifdef va_copy
@@ -68,20 +68,19 @@ static void * PointClass_ctor (void * _self, va_list * app) {
 }
 
 /* Initialisation */
-const void * PointClass, * Point;
+static const void *_Point, *_PointClass;
 
-void initPoint(void)
-{
-    if (!PointClass)
-        PointClass = new(Class, "PointClass",
-                         Class, sizeof(struct PointClass),
-                         ctor, PointClass_ctor,
-                         0);
-    if (!Point)
-        Point = new(PointClass, "Point",
-                    Object, sizeof(struct Point),
-                    ctor, Point_ctor,
-                    draw, Point_draw,
-                    puto, Point_puto,
-                    0);
+const void *const PointClass(void) {
+    return _PointClass ? _PointClass : (_PointClass = new(Class(), "PointClass",
+            Class(), sizeof(struct PointClass),
+            ctor, PointClass_ctor,
+            (void *) 0));
+}
+
+const void *const Point(void) {
+    return _Point ? _Point : (_Point = new(PointClass(), "Point",
+           Object(), sizeof(struct Point),
+           ctor, Point_ctor,
+           draw, Point_draw,
+           (void *) 0));
 }

@@ -101,19 +101,39 @@ const void *super (const void *_self)								/* Récupérer la super classe */
  * INITIALISATION
  */
 
-static const struct Class object[] = {
-        { { object + 1 },
-                "Object", object, sizeof(struct Object),
+static const struct Class _Object;
+static const struct Class _Class;
+
+/*static const struct Class objects[] = {
+        { { objects + 1 },
+                "Object", objects, sizeof(struct Object),
                 Object_ctor, Object_dtor, Object_differ, Object_puto
         },
-        { { object + 1 },
-                "Class", object, sizeof(struct Class),
+        { { objects + 1 },
+                "Class", objects, sizeof(struct Class),
                 Class_ctor, Class_dtor, Object_differ, Object_puto
         }
+};*/
+
+static const struct Class _Object = {
+        { &_Class },
+        "Object", &_Object, sizeof(struct Object),
+        Object_ctor, Object_dtor,Object_differ, Object_puto
 };
 
-const void *Object = object;
-const void *Class = object + 1;
+static const struct Class _Class = {
+        { &_Class },
+        "Class", &_Object, sizeof(struct Class),
+        Class_ctor, Class_dtor, Object_differ, Object_puto
+};
+
+const void * const Object(void) {
+    return &_Object;
+}
+
+const void * const Class(void) {
+    return &_Class;
+}
 
 /*
  * SELECTORS AND OBJECT MANAGEMENT
@@ -173,7 +193,7 @@ int differ (const void *_self, const void *b) {	/* Comparaison */
     const struct Class * class = classOf(_self);
 
     assert(class->differ);
-    cast(Object, b);
+    cast(Object(), b);
 
     result = class->differ(_self, b);
     return result;
@@ -182,7 +202,7 @@ int differ (const void *_self, const void *b) {	/* Comparaison */
 int super_differ (const void *_class, const void *_self, const void *b)
 {
     const struct Class *superclass = super(_class);
-    cast(Object, b);
+    cast(Object(), b);
     assert(superclass->differ);
 
     return superclass->differ(_self, b);
@@ -213,9 +233,9 @@ int isA(const void *_self, const struct Class *class) {
 int isOf(const void *_self, const struct Class *class) {
     if (_self) {
         const struct Class *myClass = classOf(_self);
-        if (class != Object) {
+        if (class != Object()) {
             while (myClass != class) {
-                if (myClass != Object) {
+                if (myClass != Object()) {
                     myClass = super(myClass);
                 } else
                     return 0;

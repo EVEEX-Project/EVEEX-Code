@@ -7,7 +7,7 @@
 
 #include "Object.r"
 
-extern const void * Object;						/* new(Object); */
+extern const void * const Object(void);						/* new(Object); */
 
 void *new (const void *class, ...);
 void delete (void * self);
@@ -24,7 +24,7 @@ int isA(const void *self, const struct Class *class);
 int isOf(const void *self, const struct Class *class);
 void *cast(const struct Class *class, const void *self);
 
-extern const void * Class;						/* new(Class, "name", super, size
+extern const void * const Class(void);						/* new(Class, "name", super, size
 															sel, meth, ... 0); */
 
 const void * super (const void * self);			/* Superclasse de la classe */

@@ -21,6 +21,7 @@ struct ListClass {
     struct Object *(*lookAt) (const void *self, unsigned n);
     struct Object *(*takeFirst) (const void *self);
     struct Object *(*takeLast) (const void *self);
+    unsigned (*indexOf) (const void *self, const struct Object *element);
 };
 
 #endif
