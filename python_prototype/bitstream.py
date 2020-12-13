@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from random import randint
-from huffman import Huffman
-from network_transmission import Server, Client
-from logger import Logger, LogLevel
-from time import sleep
 import threading
+from random import randint
+from time import time, sleep
+
+from logger import Logger, LogLevel
+from network_transmission import Server, Client
+from huffman import Huffman
 
 ###############################################################################
 
@@ -443,8 +444,12 @@ class ThreadWriteInBitstreamBuffer(threading.Thread):
         self.nb_paquets_dict = None
         self.nb_paquets_body = None
         
-        # encodage du dictionnaire de huffman associé à la frame **entière**
+        # génération puis encodage du dictionnaire de huffman associé à la 
+        # frame **entière**
+        t_debut_generation_dico_huffman = time()
         self.huff = Huffman([tuple_RLE for macrobloc in self.frame for tuple_RLE in macrobloc])
+        t_fin_generation_dico_huffman = time()
+        self.duree_generation_dico_huffman = t_fin_generation_dico_huffman - t_debut_generation_dico_huffman
         self.dict_huffman_encode = self.huff.dictToBin()
         
         # définit la taille des données compressées **utiles** du body
