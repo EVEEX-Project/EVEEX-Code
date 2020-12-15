@@ -208,7 +208,7 @@ int super_differ (const void *_class, const void *_self, const void *b)
     return superclass->differ(_self, b);
 }
 
-int puto (const void *_self, FILE *fp) {
+int puto(const void *_self, FILE *fp) {
     const struct Class *class = classOf(_self); // on récupère la classe de l'objet
 
     assert(class->puto);
