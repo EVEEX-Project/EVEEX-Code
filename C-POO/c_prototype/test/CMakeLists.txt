@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
-configure_file(assets/image_res.jpg assets/image_res.jpg COPYONLY)
+configure_file(assets/image_res_low.jpg assets/image_res_low.jpg COPYONLY)
+configure_file(assets/image_res_high.jpg assets/image_res_high.jpg COPYONLY)
 
 add_executable(point_testing
         ../types/Object.c
