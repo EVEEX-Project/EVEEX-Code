@@ -156,7 +156,7 @@ void *new (const void *_class, ...)	{							/* Nouvelle instance de classe */
 
 void delete (void * _self) {
     if (_self)
-        free(dtor(_self));	// on appelle le destructeur puis on libère la référence
+        free(dtor(_self)), _self = NULL;	// on appelle le destructeur puis on libère la référence
 }
 
 void *ctor (void *_self, va_list * app) {

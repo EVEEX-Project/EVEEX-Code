@@ -32,7 +32,7 @@ static void *Image_ctor (void *_self, va_list *app) {
     int channels = va_arg(*app, int);
     char init_with_zeros = va_arg(*app, int);
 
-    size_t size = width * height * channels;
+    size_t size = width * height * channels * sizeof(uint8_t);
 
     // if we set the initialisation with zeros
     if(init_with_zeros == 1) {
@@ -68,11 +68,13 @@ static void *Image_dtor (void *_self) {
         if(self->allocationType == STB_ALLOCATED) {
             // then we unload the image
             stbi_image_free(self->data);
+            self->data = NULL;
         } else {
             // else we only free the data
             free(self->data);
         }
-        // then it's just a matter of resetting everything
+
+        //resetting the data
         self->data = NULL;
         self->width = 0;
         self->height = 0;
@@ -151,14 +153,10 @@ static const struct Image *Image_toSepia(const void *_self) {
         exit(EXIT_FAILURE);
     }
 
-    // setting the correct number of channels
-    int channels = self->channels == 4 ? 2 : 1;
     // creating the destination image
-    void *_copy = new(Image(), self->width, self->height, channels, 0);
+    void *_copy = new(Image(), self->width, self->height, self->channels, 0);
     const struct Image *copy = _copy;
 
-    // values of each RGB pixel
-    uint8_t p0, p1, p2;
     // iteration over the pixels of the image
     for(uint8_t *p = self->data, *pg = copy->data; p != self->data + self->size; p += self->channels, pg += copy->channels) {
         *pg       = (uint8_t)fmin(0.393 * *p + 0.769 * *(p + 1) + 0.189 * *(p + 2), 255.0);         // red
@@ -186,18 +184,21 @@ static void Image_puto(const void * _self, FILE * fp) {
 
 /* Méthode statique */
 const struct Image *loadImg(const char *file_name) {
-    struct Image *self = new(Image(), 0, 0, 0, 0);
 
-    self->data = stbi_load(file_name, &self->width, &self->height, &self->channels, 0);
+    int width, height, channels;
+    uint8_t *data = stbi_load(file_name, &width, &height, &channels, 0);
 
     // if the data is null there was a problem during the loading
-    if(self->data == NULL) {
+    if(data == NULL) {
         perror("Error while loading image ...");
         exit(EXIT_FAILURE);
     }
 
+    struct Image *self = new(Image(), width, height, channels, 0);
+
     // else we load the rest of the infos
-    self->size = self->width * self->height * self->channels;
+    free(self->data);
+    self->data = data;
     self->allocationType = STB_ALLOCATED;
 
     return self;

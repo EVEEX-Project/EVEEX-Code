@@ -29,6 +29,10 @@ static void *Dictionary_ctor (void *_self, va_list *app) {
 }
 
 static void *Dictionary_dtor(struct Dictionary *self) {
+    while (count(self->items) != 0) {
+        void *objToFree = takeLast((void *) self->items);
+        free(objToFree);
+    }
     delete((void *) self->items);
     return super_dtor(Dictionary(), self);
 }

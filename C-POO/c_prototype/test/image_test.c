@@ -3,7 +3,7 @@
 
 #include "../types/Object.h"
 #include "../types/Image.h"
-
+#include "../types/Image.r"
 
 int main() {
     printf("===============IMAGE TEST===============\n");
@@ -13,7 +13,7 @@ int main() {
     double time_taken;
 
     t = clock();
-    img = (struct Image *) loadImg("assets/image_res_high.jpg");
+    img = (struct Image *) loadImg("assets/image_res_low.jpg");
     t = clock() - t;
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     printf("Image loaded in %.2fms: ", time_taken * 1000);
@@ -33,9 +33,9 @@ int main() {
     time_taken = ((double)t) / CLOCKS_PER_SEC;
     printf("Saving sepia img to disk in %.2fms\n", time_taken * 1000);
 
-    delete(img);
     delete(gray);
     delete(sepia);
+    delete(img);
 
     exit(EXIT_SUCCESS);
 }

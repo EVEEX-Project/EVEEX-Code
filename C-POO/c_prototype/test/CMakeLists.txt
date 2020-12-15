@@ -33,9 +33,15 @@ add_executable(image_testing
         image_test.c)
 target_link_libraries(image_testing m)
 
+add_executable(bitstream_testing
+        ../types/Object.c
+        ../types/Bitstream.c
+        bitstream_test.c)
+
 add_test(NAME PointTest COMMAND point_testing)
 add_test(NAME ListTest COMMAND list_testing)
 add_test(NAME DictionaryTest COMMAND dico_testing)
 add_test(NAME PixelTest COMMAND pixel_testing)
 add_test(NAME ImageTest COMMAND image_testing)
+add_test(NAME BitstreamTest COMMAND bitstream_testing)
 

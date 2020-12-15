@@ -236,6 +236,7 @@ const void * const List(void) {
     return _List ? _List : (_List = new(ListClass(), "List",
             Object(), sizeof(struct List),
             ctor, List_ctor,
+            dtor, List_dtor,
             addFirst, List_addFirst,
             addLast, List_addLast,
             count, List_count,

@@ -1,3 +1,7 @@
+#ifndef IMAGE_R
+#define IMAGE_R
+
+#include <stdint.h>
 #include "Object.r"
 
 enum allocation_type {
@@ -20,3 +24,5 @@ struct ImageClass {
 	const struct Image *(*toGray) (const void *self);
     const struct Image *(*toSepia) (const void *self);
 };
+
+#endif

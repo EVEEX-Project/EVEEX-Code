@@ -1,3 +1,6 @@
+#ifndef PIXEL_R
+#define PIXEL_R
+
 #include "Object.r"
 
 struct RGBPixel {
@@ -14,3 +17,5 @@ struct PixelClass {
     const struct Class _;
     void (*draw) (const void *self);
 };
+
+#endif
