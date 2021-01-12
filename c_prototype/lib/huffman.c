@@ -82,3 +82,12 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
     return listeNoeuds;
 }
 
+struct Node *getLowestFrequencySymbol(struct List *nodeList) {
+    struct Node *min = cast(Node(), lookAt(nodeList, 0));
+    for (unsigned i = 1; i < count(nodeList); i++) {
+        struct Node *current = cast(Node(), lookAt(nodeList, i));
+        if (current->frequency < min->frequency)
+            min = current;
+    }
+    return min;
+}

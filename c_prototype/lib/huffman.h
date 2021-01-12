@@ -7,5 +7,6 @@
 
 struct Node *mergeTwoNodes(struct Node *a, struct Node *b);
 struct List *splitPhraseInNodes(const char *phrase, void *_symbols);
+struct Node *getLowestFrequencySymbol(struct List *nodeList);
 
 #endif

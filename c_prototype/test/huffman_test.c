@@ -27,5 +27,9 @@ int main() {
         printf("-- Fréquence : %lu, Value : %s\n", freq, sym);
     }
 
+    struct Node *mini = cast(Node(), getLowestFrequencySymbol(listeNoeuds));
+    char *symMin = (char *) ((struct Native *) lookAt(mini->value, 0))->value;
+    printf("Lowest node : %s with freq : %lu\n", symMin, mini->frequency);
+
     return 0;
 }
