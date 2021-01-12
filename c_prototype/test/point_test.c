@@ -1,7 +1,5 @@
-
-#include <stdlib.h>
-#include "types/Object.h"
-#include "types/Point.h"
+#include "../types/Object.h"
+#include "../types/Point.h"
 
 int main() {
     printf("/* -------- TEST POINT -------- */\n");
@@ -15,5 +13,5 @@ int main() {
 
     delete(pA);
 
-    exit(EXIT_SUCCESS);
+    return 0;
 }
