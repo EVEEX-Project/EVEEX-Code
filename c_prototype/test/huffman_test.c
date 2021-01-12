@@ -4,6 +4,9 @@
 #include "../types/Dictionary.h"
 
 #include "../lib/huffman.h"
+#include "../types/Native.h"
+#include "../types/Node.r"
+#include "../types/Native.r"
 
 int main() {
     printf("\n/* -------- TEST Huffman -------- */\n");
@@ -14,5 +17,15 @@ int main() {
 
     struct List *listeNoeuds = splitPhraseInNodes(phrase, symbols);
     printf("Nb éléments dans liste : %d\n", count(listeNoeuds));
+
+    for (unsigned i = 0; i < count(listeNoeuds); i++) {
+        struct Node *item = cast(Node(), lookAt(listeNoeuds, i));
+        struct List *valList = cast(List(), item->value);
+        struct Native *val = cast(Native(), lookAt(valList, 0));
+        char *sym = (char *) val->value;
+        unsigned long freq = item->frequency;
+        printf("-- Fréquence : %lu, Value : %s\n", freq, sym);
+    }
+
     return 0;
 }

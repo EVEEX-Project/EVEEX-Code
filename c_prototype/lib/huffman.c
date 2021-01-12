@@ -51,7 +51,7 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
         item = (struct DictionaryItem *) get(symbols, key);
         // the first time seeing that key
         if (item == NULL) {
-            int *freq_init = calloc(sizeof(int), 1);
+            unsigned long *freq_init = calloc(sizeof(unsigned long), 1);
             *freq_init = 1;
             struct Native *freq = new(Native(), freq_init);
             item = new(DictionaryItem(), key, freq);
@@ -59,8 +59,8 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
         // key already registered
         else {
             struct Native *freq = cast(Native(), item->value);
-            int* val = (int *) freq->value;
-            *(val)++;
+            unsigned long* val = (unsigned long *) freq->value;
+            (*val)++;
         }
         set(symbols, key, (const struct Object *) item);
     }
@@ -75,7 +75,7 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
         struct List *newValue = new(List());
         addLast(newValue, (const struct Object *) dicKey);
 
-        struct Node *n = new(Node(), (int *) dicFreq->value, newValue);
+        struct Node *n = new(Node(), *((unsigned long *) dicFreq->value), newValue);
         addLast(listeNoeuds, (const struct Object *) n);
     }
 
