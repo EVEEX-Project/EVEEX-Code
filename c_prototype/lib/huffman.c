@@ -91,3 +91,11 @@ struct Node *getLowestFrequencySymbol(struct List *nodeList) {
     }
     return min;
 }
+
+struct Node *generateTreeFromList(struct List *nodeList) {
+    struct Node *n1, *n2, *n12;
+    while (count(nodeList) > 1) {
+        n1 = getLowestFrequencySymbol(nodeList);
+
+    }
+}
