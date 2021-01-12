@@ -8,7 +8,7 @@
 int main() {
     printf("\n/* -------- TEST Huffman -------- */\n");
 
-    char *phrase = "phrase à tester ...";
+    char *phrase = "phrase a tester ...";
 
     struct Dictionary *symbols = new(Dictionary());
 

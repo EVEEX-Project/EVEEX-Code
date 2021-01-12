@@ -9,14 +9,14 @@ int main() {
 
     void *dict = new(Dictionary());
 
-    void *pD = new(Point(), 1, 5);
-    void *pE = new(Point(), 5, 2);
+    struct Point *pD = new(Point(), 1, 5);
+    struct Point *pE = new(Point(), 5, 2);
 
-    set(dict, "D", pD);
-    set(dict, "E", pE);
-    set(dict, "D2", pD);
+    set(dict, "D", (void *) pD);
+    set(dict, "E", (void *) pE);
+    set(dict, "D2", (void *) pD);
 
-    void *pD2 = get(dict, "D");
+    struct Point *pD2 = (struct Point *) get(dict, "D");
     if (!differ(pD, pD2)) {
         puts("pD == pD2");
     }

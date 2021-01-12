@@ -16,9 +16,9 @@ static void *List_ctor (void *_self, va_list *app) {
     self->dim = va_arg(*app, int);
     // Garbage detection
     if (self->dim > 1024 * 16) {
-        printf("No size given, default to min..\n");
+        // printf("No size given, default to min..\n");
         self->dim = MIN;
-    } else printf("Found a size : %u\n", self->dim);
+    } // else printf("Found a size : %u\n", self->dim);
 
     self->buf = malloc(self->dim * sizeof * self->buf);
     assert(self->buf);

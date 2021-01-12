@@ -63,4 +63,3 @@ add_test(NAME ImageTest COMMAND image_testing)
 add_test(NAME BitstreamTest COMMAND bitstream_testing)
 add_test(NAME NodeTest COMMAND node_testing)
 add_test(NAME HuffmanTest COMMAND huffman_testing)
-

@@ -12,7 +12,10 @@
 static void *DictionaryItem_ctor (void *_self, va_list *app) {
     struct DictionaryItem *self = super_ctor(DictionaryItem(), _self, app);
 
-    self->key = va_arg(*app, char *);
+    char *key = va_arg(*app, char *);
+    assert(key);
+    self->key = malloc(sizeof(*key));
+    strcpy((char *) self->key, key);
     assert(self->key);
     self->value = va_arg(*app, struct Object *);
     assert(self->value);
