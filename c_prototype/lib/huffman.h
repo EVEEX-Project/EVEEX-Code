@@ -1,8 +1,11 @@
-//
-// Created by alexandre on 12/01/2021.
-//
+#ifndef HUFFMAN_H
+#define HUFFMAN_H
 
-#ifndef C_PROTOTYPE_HUFFMAN_H
-#define C_PROTOTYPE_HUFFMAN_H
+#include "../types/Object.h"
+#include "../types/Node.h"
+#include "../types/List.h"
 
-#endif //C_PROTOTYPE_HUFFMAN_H
+struct Node *mergeTwoNodes(struct Node *a, struct Node *b);
+struct List *splitPhraseInNodes(const char *phrase, void *_symbols);
+
+#endif

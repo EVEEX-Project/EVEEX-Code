@@ -15,8 +15,10 @@ add_executable(C_PROTOTYPE
         types/List.c
         types/DictionaryItem.c
         types/Dictionary.c
+        types/Node.c
+        types/Native.c
         lib/encoder.c
         lib/decoder.c
         lib/huffman.c
 
-        main.c )
+        main.c)

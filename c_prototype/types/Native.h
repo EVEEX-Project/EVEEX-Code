@@ -1,8 +1,9 @@
-//
-// Created by alexandre on 12/01/2021.
-//
+#ifndef NATIVE_H
+#define NATIVE_H
 
-#ifndef C_PROTOTYPE_NATIVE_H
-#define C_PROTOTYPE_NATIVE_H
+#include "Object.h"
 
-#endif //C_PROTOTYPE_NATIVE_H
+extern const void * const Native(void);
+extern const void * const NativeClass(void);
+
+#endif

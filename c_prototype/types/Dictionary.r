@@ -15,6 +15,7 @@ struct DictionaryClass {
     struct Object *(*set) (const void *self, const char *key, const struct Object *value);
     unsigned (*size) (const void *self);
     struct Object *(*get) (const void *self, const char *key);
+    struct List *(*getKeys) (const void *self);
 };
 
 #endif

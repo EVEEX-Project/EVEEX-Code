@@ -8,6 +8,7 @@
 #include "List.h"
 #include "DictionaryItem.r"
 #include "DictionaryItem.h"
+#include "Native.h"
 
 #ifndef	MIN
 #define	MIN	32		// minimal buffer dimension
@@ -85,6 +86,19 @@ static struct Object *Dictionary_get(const struct Dictionary *_self, const char 
     return NULL;
 }
 
+static struct List *Dictionary_getKeys(const struct Dictionary *_self) {
+    const struct Dictionary *self = _self;
+
+    struct List *keys = new(List());
+
+    for (unsigned i = 0; i < size(self); i++) {
+        struct DictionaryItem *item = cast(DictionaryItem(), lookAt(self->items, i));
+        addLast(keys, new(Native(), item->key));
+    }
+
+    return keys;
+}
+
 /* added methods */
 struct Object *set(void *_self, const char *key, const struct Object *value) {
     struct Dictionary *self = cast(Dictionary(), _self);
@@ -110,6 +124,14 @@ unsigned size(const void *_self) {
     return class->size(self);
 }
 
+struct List *getKeys(const void *_self) {
+    struct Dictionary *self = cast(Dictionary(), _self);
+    const struct DictionaryClass *class = classOf(self);
+
+    assert(class->getKeys);
+    return class->getKeys(self);
+}
+
 /* DictionaryClass */
 static void * DictionaryClass_ctor (void *_self, va_list *app) {
     struct DictionaryClass * self
@@ -132,6 +154,8 @@ static void * DictionaryClass_ctor (void *_self, va_list *app) {
             *(voidf *) &self->set = method;
         else if (selector == (voidf) size)
             *(voidf *) &self->size = method;
+        else if (selector == (voidf) getKeys)
+            *(voidf *) &self->getKeys = method;
     }
 #ifdef va_copy
     va_end(ap);
@@ -158,5 +182,6 @@ const void * const Dictionary(void) {
           set, Dictionary_set,
           get, Dictionary_get,
           size, Dictionary_size,
+          getKeys, Dictionary_getKeys,
           (void *) 0));
 }
