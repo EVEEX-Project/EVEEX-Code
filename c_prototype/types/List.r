@@ -22,6 +22,7 @@ struct ListClass {
     struct Object *(*takeFirst) (const void *self);
     struct Object *(*takeLast) (const void *self);
     unsigned (*indexOf) (const void *self, const struct Object *element);
+    struct Object *(*removeItem) (void *self, const struct Object *element);
 };
 
 #endif

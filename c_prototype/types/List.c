@@ -129,6 +129,37 @@ static unsigned List_indexOf(const struct List *_self, const struct Object *elem
     return -1;
 }
 
+static struct Object *List_removeItem(struct List *_self, const struct Object *element) {
+    struct List *self = _self;
+
+    struct List *tmp = new(List());
+    unsigned index = indexOf(self, element);
+    if (index == -1) return NULL;
+
+    struct Object *item;
+    struct Object *toReturn;
+    if (index < self->count) {
+        while (differ(item = takeFirst(self), element))
+            addFirst(tmp, item);
+        toReturn = item;
+        while (count(tmp) > 0) {
+            item = takeFirst(tmp);
+            addFirst(self, item);
+        }
+    }
+    else {
+        while (differ(item = takeLast(self), element))
+            addLast(tmp, item);
+        toReturn = item;
+        while (count(tmp) > 0) {
+            item = takeLast(tmp);
+            addLast(self, item);
+        }
+    }
+
+    return toReturn;
+}
+
 /* added methods */
 struct Object *addFirst(void *_self, const struct Object *element) {
     struct List *self = cast(List(), _self);
@@ -178,6 +209,14 @@ struct Object *takeLast(void *_self) {
     return class->takeLast(self);
 }
 
+struct Object *removeItem(void *_self, const struct Object *element) {
+    struct List *self = cast(List(), _self);
+    const struct ListClass *class = classOf(self);
+
+    assert(class->removeItem);
+    return class->removeItem(self, element);
+}
+
 unsigned indexOf(const void *_self, const struct Object *element) {
     struct List *self = cast(List(), _self);
     const struct ListClass *class = classOf(self);
@@ -214,6 +253,10 @@ static void * ListClass_ctor (void *_self, va_list *app) {
             *(voidf *) &self->takeFirst = method;
         else if (selector == (voidf) takeLast)
             *(voidf *) &self->takeLast = method;
+        else if (selector == (voidf) indexOf)
+            *(voidf *) &self->indexOf = method;
+        else if (selector == (voidf) removeItem)
+            *(voidf *) &self->removeItem = method;
     }
 #ifdef va_copy
     va_end(ap);
@@ -244,5 +287,6 @@ const void * const List(void) {
             takeFirst, List_takeFirst,
             takeLast, List_takeLast,
             indexOf, List_indexOf,
+            removeItem, List_removeItem,
            (void *) 0));
 }

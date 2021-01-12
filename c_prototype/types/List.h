@@ -11,6 +11,7 @@ unsigned count(const void *self);
 struct Object *lookAt(const void *self, unsigned n);
 struct Object *takeFirst(void *self);
 struct Object *takeLast(void *self);
+struct Object *removeItem(void *self, const struct Object *element);
 unsigned indexOf(const void *self, const struct Object *element);
 
 extern const void * const ListClass(void);		/* adds draw */

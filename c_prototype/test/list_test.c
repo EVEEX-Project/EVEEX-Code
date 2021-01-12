@@ -30,6 +30,20 @@ int main() {
     printf("Affichage du premier élément : ");
     puto(lookAt(list, 0), stdout);
 
+    struct Point *removed = (struct Point *) removeItem(list, pB);
+    if (removed == NULL) {
+        perror("Can't remove element from list");
+        exit(EXIT_FAILURE);
+    }
+    if (differ(removed, pB)) {
+        perror("Removed wrong element");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Nb éléments dans liste apres remove : %d\n", count(list));
+    printf("Affichage de l'élément retiré : ");
+    puto(removed, stdout);
+
     delete(pB);
     delete(pC);
     delete(list);
