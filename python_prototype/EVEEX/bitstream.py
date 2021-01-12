@@ -4,9 +4,9 @@ import threading
 from random import randint
 from time import time, sleep
 
-from logger import Logger, LogLevel
-from network_transmission import Server, Client
-from huffman import Huffman
+
+from EVEEX.network_transmission import Server, Client
+from EVEEX.huffman import Huffman
 
 ###############################################################################
 
@@ -763,7 +763,8 @@ class BitstreamSender:
 
 # Exemple concret
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
+    from logger import Logger, LogLevel
     log = Logger.get_instance()
     log.set_log_level(LogLevel.DEBUG)
     #log.start_file_logging("log_bitstream.log")

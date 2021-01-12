@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-from logger import Logger
+from EVEEX.logger import Logger
 
 
 class ImageVisualizer:
