@@ -8,6 +8,9 @@ from pathlib import Path
 from bitstream import BitstreamGenerator, BitstreamSender
 from image_generator import ImageGenerator, BlankImageGenerator, MosaicImageGenerator, FromJSONImageGenerator
 from image_visualizer import ImageVisualizer
+from video_to_frame import vid2frames, frames2vid
+import logger
+import time
 
 from PIL import Image
 DEFAULT_QUANTIZATION_THRESHOLD = 10
@@ -29,13 +32,13 @@ img_height = 480
 img_size = (img_width, img_height)
 
 if len(sys.argv) < 2:
-    print("""Voici comment utiliser ce programme:  
+    print("""Here is how to use the program:  
           
-          Liste des actions: \n 
+          List des actions: \n 
           
-              -e img filename: encoder l'image 'img' à l'emplacement 'filename'
+              -e img/mp4 filename: encode the image or video 'img/mp4' into a bitstream to the textfile 'filename'
               
-              -d filename img: decode le bitstream 'filename' en l'image 'img'
+              -d filename img: decode the bitstream 'filename' to the image 'img'
               
               -bi sizeX sizeY filename: create a blank image of size (sizeX x sizeY) in the file 'filename'
               
@@ -62,41 +65,73 @@ if action.lower() == "-e":
     ### Vérifie que le fichier existe
 
     path = Path(sys.argv[2])
-
     if not path.exists():
         print("Error: file doesn't exist")
         sys.exit(1)
 
     # -----------Encoder-----------#
+    start = time.time()
 
-    nom_image = path
+    if path.name[-4:]=='.mp4':
 
-    image = Image.open(nom_image)
-    image_intermediaire = image.getdata()
+        nom_video = path.name
+        frame_id = 0
+        frames= vid2frames(nom_video)
+        img_size = (frames[0].shape[0],frames[0].shape[1])
+        for frame in frames:
+            image_rgb = np.array(frame)
 
-    image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
+            frame_id += 1
+            # le bufsize doit impérativement être >= 67 (en pratique : OK)
+            bufsize = 4096
 
-    frame_id = 0
+            enc = Encoder()
 
-    # le bufsize doit impérativement être >= 67 (en pratique : OK)
-    bufsize = 4096
+            # frame RGB --> frame YUV
+            image_yuv = enc.RGB_to_YUV(image_rgb)
 
-    enc = Encoder()
+            # frame YUV --> frame RLE
+            rle_data = enc.decompose_frame_en_macroblocs_via_DCT(image_yuv, img_size, macroblock_size,
+                                                                 DEFAULT_QUANTIZATION_THRESHOLD, A)
 
-    # frame RGB --> frame YUV
-    image_yuv = enc.RGB_to_YUV(image_rgb)
+            # frame RLE --> bitstream
+            bitstream_genere = BitstreamGenerator.encode_frame_RLE(frame_id, img_size, macroblock_size, rle_data, bufsize)
+            fichier = open(sys.argv[3], "a")
+            fichier.write(bitstream_genere)
+            fichier.close()
 
-    # frame YUV --> frame RLE
-    rle_data = enc.decompose_frame_en_macroblocs_via_DCT(image_yuv, img_size, macroblock_size, DEFAULT_QUANTIZATION_THRESHOLD, A)
+    else:
+        nom_image = path
 
-    # frame RLE --> bitstream
-    bitstream_genere = BitstreamGenerator.encode_frame_RLE(frame_id, img_size, macroblock_size, rle_data, bufsize)
+        image = Image.open(nom_image)
+        image_intermediaire = image.getdata()
 
+        image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
 
-    fichier = open(sys.argv[3], "w")
-    fichier.write(bitstream_genere)
-    fichier.close()
+        frame_id = 0
 
+        # le bufsize doit impérativement être >= 67 (en pratique : OK)
+        bufsize = 4096
+
+        enc = Encoder()
+
+        # frame RGB --> frame YUV
+        image_yuv = enc.RGB_to_YUV(image_rgb)
+
+        # frame YUV --> frame RLE
+        rle_data = enc.decompose_frame_en_macroblocs_via_DCT(image_yuv, img_size, macroblock_size, DEFAULT_QUANTIZATION_THRESHOLD, A)
+
+        # frame RLE --> bitstream
+        bitstream_genere = BitstreamGenerator.encode_frame_RLE(frame_id, img_size, macroblock_size, rle_data, bufsize)
+
+        fichier = open(sys.argv[3], "w")
+        fichier.write(bitstream_genere)
+        fichier.close()
+    end = time.time()
+    duration = end - start
+    print('Number of frames = ' + str(frame_id+1))
+    print('Total duration = ' + str(duration))
+    print('FPS = ' + str((frame_id+1)/duration))
     print('The operation is succesful')
 
     sys.exit(1)
