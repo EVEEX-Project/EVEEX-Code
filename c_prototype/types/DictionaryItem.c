@@ -14,20 +14,27 @@ static void *DictionaryItem_ctor (void *_self, va_list *app) {
 
     char *key = va_arg(*app, char *);
     assert(key);
-    self->key = malloc(sizeof(*key));
+    self->key = malloc(strlen(key) + 1);
     strcpy((char *) self->key, key);
     assert(self->key);
-    self->value = va_arg(*app, struct Object *);
+    self->value = clone(va_arg(*app, struct Object *));
     assert(self->value);
 
     return self;
 }
 
 static void *DictionaryItem_dtor(struct DictionaryItem *self) {
-    delete((void *) self->value);
     free((void *) self->key);
+    self->key = NULL;
+
+    delete((void *) self->value);
 
     return super_dtor(DictionaryItem(), self);
+}
+
+static void *DictionaryItem_clone(const void *_self) {
+    const struct DictionaryItem *self = _self;
+    return new(DictionaryItem(), self->key, self->value);
 }
 
 /* Initialisation */
@@ -38,5 +45,6 @@ const void * const DictionaryItem(void) {
           Object(), sizeof(struct DictionaryItem),
           ctor, DictionaryItem_ctor,
           dtor, DictionaryItem_dtor,
+          clone, DictionaryItem_clone,
           (void *) 0));
 }

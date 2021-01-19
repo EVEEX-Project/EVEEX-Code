@@ -16,6 +16,7 @@ struct Class {
     void * (* dtor) (void * self);
     int (* differ) (const void * self, const void * b);
     int (* puto) (const void * self, FILE * fp);
+    void * (* clone) (const void * self);
 };
 
 void * super_ctor (const void * class, void * self, va_list * app);

@@ -14,6 +14,9 @@ struct Object *takeLast(void *self);
 struct Object *removeItem(void *self, const struct Object *element);
 unsigned indexOf(const void *self, const struct Object *element);
 
+struct List *copyList(const void *self);
+void deleteChildren(const void *self);
+
 extern const void * const ListClass(void);		/* adds draw */
 
 #endif

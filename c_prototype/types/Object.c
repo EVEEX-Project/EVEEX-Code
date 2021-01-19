@@ -28,6 +28,14 @@ static int Object_puto (const void * _self, FILE * fp) {			/* Afficheur ? */
     return fprintf(fp, "%s at %p\n", class->name, _self);
 }
 
+static void * Object_clone (const void * _self) {			/* Constructeur */
+    const struct Object *self = _self;
+    struct Object *cloneObj = new(Object());
+    cloneObj->class = self->class;
+
+    return cloneObj;
+}
+
 const void * classOf (const void * _self) {							/* Retourne la classe de l'objet */
     const struct Object * self = _self;
     assert(self && self->class);
@@ -75,6 +83,8 @@ static void *Class_ctor (void *_self, va_list *app) {			/* Constructeur */
                 * (voidf *) & self -> differ = method;
             else if (selector == (voidf) puto)
                 * (voidf *) & self -> puto = method;
+            else if (selector == (voidf) clone)
+                * (voidf *) & self -> clone = method;
         }
 #ifdef va_copy
         va_end(ap);
@@ -118,13 +128,13 @@ static const struct Class _Class;
 static const struct Class _Object = {
         { &_Class },
         "Object", &_Object, sizeof(struct Object),
-        Object_ctor, Object_dtor,Object_differ, Object_puto
+        Object_ctor, Object_dtor, Object_differ, Object_puto, Object_clone
 };
 
 static const struct Class _Class = {
         { &_Class },
         "Class", &_Object, sizeof(struct Class),
-        Class_ctor, Class_dtor, Object_differ, Object_puto
+        Class_ctor, Class_dtor, Object_differ, Object_puto, Object_clone
 };
 
 const void * const Object(void) {
@@ -155,8 +165,10 @@ void *new (const void *_class, ...)	{							/* Nouvelle instance de classe */
 }
 
 void delete (void * _self) {
-    if (_self)
-        free(dtor(_self)), _self = NULL;	// on appelle le destructeur puis on libère la référence
+    if (_self) {
+        free(dtor(_self));
+        _self = NULL;    // on appelle le destructeur puis on libère la référence
+    }
 }
 
 void *ctor (void *_self, va_list * app) {
@@ -164,6 +176,13 @@ void *ctor (void *_self, va_list * app) {
 
     assert(class->ctor);	// on vérifie que l'objet possède un constructeur
     return class->ctor(_self, app); // on appelle son constructeur
+}
+
+void *clone (const void *_self) {
+    const struct Class *class = classOf(_self);
+
+    assert(class->clone);
+    return class->clone(_self);
 }
 
 void *super_ctor (const void *_class,

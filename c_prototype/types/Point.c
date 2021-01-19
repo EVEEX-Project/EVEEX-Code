@@ -22,6 +22,11 @@ static void Point_puto(const void * _self, FILE * fp) {
     printf("Point (x, y): (%d, %d)\n", self->x, self->y);
 }
 
+static void *Point_clone(const void *_self) {
+    const struct Point *self = _self;
+    return new(Point(), self->x, self->y);
+}
+
 void draw (const void *_self) {
     const struct PointClass *class = classOf(_self);
 
@@ -82,5 +87,6 @@ const void *const Point(void) {
            Object(), sizeof(struct Point),
            ctor, Point_ctor,
            draw, Point_draw,
+           clone, Point_clone,
            (void *) 0));
 }

@@ -35,8 +35,8 @@ struct Node *mergeTwoNodes(struct Node *a, struct Node *b) {
     return newNode;
 }
 
-struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
-    struct Dictionary *symbols = _symbols;
+struct List *splitPhraseInNodes(const char *phrase) {
+    struct Dictionary *symbols = new(Dictionary());
     struct List *listeNoeuds = new(List());
 
     // Calculation of the frequencies
@@ -51,6 +51,7 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
         item = (struct DictionaryItem *) get(symbols, key);
         // the first time seeing that key
         if (item == NULL) {
+            // printf("New key : %s\n", key);
             unsigned long *freq_init = calloc(sizeof(unsigned long), 1);
             *freq_init = 1;
             struct Native *freq = new(Native(), freq_init);
@@ -58,6 +59,7 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
         }
         // key already registered
         else {
+            // printf("Already known : %s\n", key);
             struct Native *freq = cast(Native(), item->value);
             unsigned long* val = (unsigned long *) freq->value;
             (*val)++;
@@ -71,13 +73,24 @@ struct List *splitPhraseInNodes(const char *phrase, void *_symbols) {
     for (unsigned i = 0; i < count(dicoKeys); i++) {
         const struct Native *dicKey = cast(Native(), lookAt(dicoKeys, i));
         const struct DictionaryItem *dicItem = cast(DictionaryItem(), get(symbols, (char *) dicKey->value));
-        const struct Native *dicFreq = cast(Native(), dicItem->value);
+        unsigned long dicFreq = *((unsigned long *) ((struct Native *) cast(Native(), dicItem->value))->value);
         struct List *newValue = new(List());
-        addLast(newValue, (const struct Object *) dicKey);
 
-        struct Node *n = new(Node(), *((unsigned long *) dicFreq->value), newValue);
-        addLast(listeNoeuds, (const struct Object *) n);
+        char *copyKey = calloc(strlen(dicKey->value), 1);
+        strcpy(copyKey, dicKey->value);
+        addLast(newValue, new(Native(), copyKey));
+
+        addLast(listeNoeuds, new(Node(), dicFreq, newValue));
+
+        struct Node *last = cast(Node(), lookAt(listeNoeuds, count(listeNoeuds) - 1));
+        struct Native *val = cast(Native(), lookAt(last->value, 0));
     }
+
+    struct Node *last = cast(Node(), lookAt(listeNoeuds, count(listeNoeuds) - 1));
+    struct Native *val = cast(Native(), lookAt(last->value, 0));
+
+    delete(dicoKeys);
+    delete(symbols);
 
     return listeNoeuds;
 }
@@ -95,20 +108,24 @@ struct Node *getLowestFrequencySymbol(struct List *nodeList) {
 struct Node *generateTreeFromList(struct List *nodeList) {
     struct Node *n1, *n2, *n12;
     struct Object *removed;
-    while (count(nodeList) > 1) {
-        n1 = getLowestFrequencySymbol(nodeList);
-        removed = removeItem(nodeList, (const struct Object *) n1);
+    struct List *list = copyList(nodeList);
+    while (count(list) > 1) {
+        n1 = getLowestFrequencySymbol(list);
+        removed = removeItem(list, (const struct Object *) n1);
         assert(removed);
-        n2 = getLowestFrequencySymbol(nodeList);
-        removed = removeItem(nodeList, (const struct Object *) n2);
+        n2 = getLowestFrequencySymbol(list);
+        removed = removeItem(list, (const struct Object *) n2);
         assert(removed);
 
         // merging the two nodes
         n12 = mergeTwoNodes(n1, n2);
+        addLast(list, (const struct Object *) n12);
         addLast(nodeList, (const struct Object *) n12);
     }
 
-    struct Node *racine = cast(Node(), lookAt(nodeList, 0));
+    struct Node *racine = cast(Node(), lookAt(list, 0));
+    delete(list);
+
     return racine;
 }
 
@@ -180,12 +197,13 @@ void printHuffmanTree(struct Node *root) {
     // getting the tree in the string
     _print_t(root, 0, 0, 0, s);
 
+    int empty, c;
     // printing the string to the screen
     for (int i = 0; i < 20; i++) {
-        int empty = 1;
-        int c = 0;
+        empty = 1;
+        c = 0;
         // checking if a row is empty
-        while (s[i][c] != '\0' && c < 255) {
+        while (c < 255 && s[i][c] != '\0') {
             if (s[i][c] != ' ') {
                 empty = 0;
                 break;
@@ -206,10 +224,8 @@ void printHuffmanTree(struct Node *root) {
 void generateEncodingDict(struct Dictionary *encoding, struct Node *root, char *prefix) {
     // if there is no children we add the symbol to the dictionary
     if (root->left == NULL && root->right == NULL) {
-        // getting the current prefix
-        char *newPrefix = strdup(prefix);
         // updating its entry in the dictionary
-        set(encoding, newPrefix, root->value);
+        set(encoding, prefix, root->value);
         return;
     }
 
@@ -232,4 +248,12 @@ void generateEncodingDict(struct Dictionary *encoding, struct Node *root, char *
         // continue with the creation of the encoding dictionary
         generateEncodingDict(encoding, root->right, newPrefix);
     }
+}
+
+void freeNodeTree(struct Node *root) {
+    if (root->left)
+        freeNodeTree(root->left);
+    if (root->right)
+        freeNodeTree(root->right);
+    delete(root);
 }

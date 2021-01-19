@@ -4,6 +4,7 @@
 
 #include "List.r"
 #include "List.h"
+#include "Node.h"
 
 #ifndef	MIN
 #define	MIN	32		// minimal buffer dimension
@@ -27,8 +28,19 @@ static void *List_ctor (void *_self, va_list *app) {
 }
 
 static void *List_dtor(struct List *self) {
-    free(self->buf), self->buf = 0;
+    free(self->buf);
+    self->buf = NULL;
     return super_dtor(List(), self);
+}
+
+static void *List_clone(const void *_self) {
+    const struct List *self = _self;
+    struct List *cloneObj = new(List(), self->count);
+
+    for (int i = 0; i < count(self); i++) {
+        addLast(cloneObj, clone(lookAt(self, i)));
+    }
+    return cloneObj;
 }
 
 static void *add1(struct List *self, const void *element)
@@ -225,6 +237,29 @@ unsigned indexOf(const void *_self, const struct Object *element) {
     return class->indexOf(self, element);
 }
 
+/* Static methods */
+void deleteChildren(const void *_self) {
+    const struct List *self = _self;
+    for (unsigned i = 0; i < count(self); i++) {
+        struct Object *toRemove = takeLast((void *) self);
+        delete(toRemove);
+    }
+}
+
+struct List *copyList(const void *_self) {
+    const struct List *self = _self;
+
+    struct List *cp = new(List());
+    for (unsigned i = 0; i < count(self); i++) {
+        struct Object *item = lookAt(self, i);
+        /*if (isA(item, Node()))
+            item = (struct Object *) copyNode(cast(Node(), item));*/
+        addLast(cp, item);
+    }
+
+    return cp;
+}
+
 /* ListClass */
 static void * ListClass_ctor (void *_self, va_list *app) {
     struct ListClass * self
@@ -280,6 +315,7 @@ const void * const List(void) {
             Object(), sizeof(struct List),
             ctor, List_ctor,
             dtor, List_dtor,
+            clone, List_clone,
             addFirst, List_addFirst,
             addLast, List_addLast,
             count, List_count,

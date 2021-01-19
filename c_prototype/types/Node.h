@@ -6,4 +6,6 @@
 extern const void * const Node(void);
 extern const void * const NodeClass(void);
 
+struct Node *copyNode(const void *self);
+
 #endif

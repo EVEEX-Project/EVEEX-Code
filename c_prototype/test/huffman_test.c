@@ -15,17 +15,15 @@ int main() {
     char *phrase = "phrase a tester ...";
     printf("Sentence to test : '%s' with a length of : %lu\n", phrase, strlen(phrase));
 
-    struct Dictionary *symbols = new(Dictionary());
-
-    struct List *listeNoeuds = splitPhraseInNodes(phrase, symbols);
+    struct List *listeNoeuds = splitPhraseInNodes(phrase);
     printf("Nb éléments dans liste : %d\n", count(listeNoeuds));
 
     for (unsigned i = 0; i < count(listeNoeuds); i++) {
-        struct Node *item = cast(Node(), lookAt(listeNoeuds, i));
-        struct List *valList = cast(List(), item->value);
+        struct Node *noeud = cast(Node(), lookAt(listeNoeuds, i));
+        struct List *valList = cast(List(), noeud->value);
         struct Native *val = cast(Native(), lookAt(valList, 0));
         char *sym = (char *) val->value;
-        unsigned long freq = item->frequency;
+        unsigned long freq = noeud->frequency;
         printf("-- Fréquence : %lu, Value : %s\n", freq, sym);
     }
 
@@ -55,6 +53,11 @@ int main() {
         struct Native *val = cast(Native(), lookAt(cast(List(), get(encodingDict, key)), 0));
         printf("%s --> %s\n", key, (char *) val->value);
     }
+
+    freeNodeTree(racine);
+    delete(encodingKeys);
+    delete(encodingDict);
+    delete(listeNoeuds);
 
     return 0;
 }

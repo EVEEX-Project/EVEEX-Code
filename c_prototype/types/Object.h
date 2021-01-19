@@ -10,6 +10,7 @@
 extern const void * const Object(void);						/* new(Object); */
 
 void *new (const void *class, ...);
+void *clone (const void *self);
 void delete (void * self);
 
 const void *classOf (const void *self);

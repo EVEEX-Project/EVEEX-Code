@@ -20,6 +20,8 @@ static void *Native_ctor (void *_self, va_list *app) {
 /* Destructeur */
 static void *Native_dtor (void *_self) {
     struct Native *self = cast(Native(), _self);
+    free((void *) self->value);
+    self->value = NULL;
 
     return self;
 }
@@ -27,6 +29,12 @@ static void *Native_dtor (void *_self) {
 static void Native_puto(void *_self, FILE *fp) {
     struct Native *self = cast(Native(), _self);
     puto(self->value, fp);
+}
+
+static void *Native_clone(const void *_self) {
+    const struct Native *self = _self;
+
+    return new(Native(), self->value);
 }
 
 /**************************************************************************/
@@ -80,5 +88,6 @@ const void *const Native(void) {
                                 ctor, Native_ctor,		// contructeur de classe
                                 dtor, Native_dtor,		// méthodes de classe (obligatoire)
                                 puto, Native_puto,
+                                clone, Native_clone,
                                 (void *) 0));
 }

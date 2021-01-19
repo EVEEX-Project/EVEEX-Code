@@ -48,6 +48,16 @@ static void YUVPixel_puto(const void * _self, FILE * fp) {
     fprintf(fp, "YUVPixel (y, cb, cr): (%d, %d, %d)\n", self->y, self->cb, self->cr);
 }
 
+static void *RGBPixel_clone(const void *_self) {
+    const struct RGBPixel *self = _self;
+    return new(RGBPixel(), self->r, self->g, self->b);
+}
+
+static void *YUVPixel_clone(const void *_self) {
+    const struct YUVPixel *self = _self;
+    return new(YUVPixel(), self->y, self->cb, self->cr);
+}
+
 /**************************************************************************/
 /*							MÉTACLASSE PIXELCLASS						  */
 /**************************************************************************/
@@ -99,6 +109,7 @@ const void *const RGBPixel(void) {
                                   ctor, RGBPixel_ctor,		// contructeur de classe
                                   dtor, RGBPixel_dtor,
                                   puto, RGBPixel_puto,
+                                  clone, RGBPixel_clone,
                                   (void *) 0));
 }
 
@@ -110,5 +121,6 @@ const void *const YUVPixel(void) {
                                         ctor, YUVPixel_ctor,		// contructeur de classe
                                         dtor, YUVPixel_dtor,
                                         puto, YUVPixel_puto,
+                                        clone, YUVPixel_clone,
                                         (void *) 0));
 }

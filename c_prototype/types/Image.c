@@ -72,6 +72,7 @@ static void *Image_dtor (void *_self) {
         } else {
             // else we only free the data
             free(self->data);
+            self->data = NULL;
         }
 
         //resetting the data

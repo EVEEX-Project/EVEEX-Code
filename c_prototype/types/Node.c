@@ -13,7 +13,7 @@ static void *Node_ctor (void *_self, va_list *app) {
 
     // On récupère les arguments dynamiques
     self->frequency = va_arg(*app, unsigned long);
-    self->value = va_arg(*app, struct Object *);
+    self->value = clone(va_arg(*app, struct Object *));
     self->left = NULL;
     self->right = NULL;
 
@@ -23,6 +23,11 @@ static void *Node_ctor (void *_self, va_list *app) {
 /* Destructeur */
 static void *Node_dtor (void *_self) {
     struct Node *self = cast(Node(), _self);
+    self->left = NULL;
+    self->right = NULL;
+
+    if (self->value)
+        delete(self->value);
 
     return self;
 }
@@ -31,6 +36,18 @@ static void Node_puto(void *_self, FILE *fp) {
     struct Node *self = cast(Node(), _self);
     fprintf(fp, "Node: frequency=%ld, value=", self->frequency);
     puto(self->value, fp);
+}
+
+static void *Node_clone(const void *_self) {
+    const struct Node *self = _self;
+    return new(Node(), self->frequency, self->value);
+}
+
+/* Méthodes statiques */
+struct Node *copyNode(const void *_self) {
+    const struct Node *self = _self;
+
+    return new(Node(), self->frequency, self->value);
 }
 
 /**************************************************************************/
@@ -84,5 +101,6 @@ const void *const Node(void) {
                                           ctor, Node_ctor,		// contructeur de classe
                                           dtor, Node_dtor,		// méthodes de classe (obligatoire)
                                           puto, Node_puto,
+                                          clone, Node_clone,
                                           (void *) 0));
 }
