@@ -28,6 +28,7 @@ static void *List_ctor (void *_self, va_list *app) {
 }
 
 static void *List_dtor(struct List *self) {
+    deleteChildren(self);
     free(self->buf);
     self->buf = NULL;
     return super_dtor(List(), self);
@@ -241,8 +242,7 @@ unsigned indexOf(const void *_self, const struct Object *element) {
 void deleteChildren(const void *_self) {
     const struct List *self = _self;
     for (unsigned i = 0; i < count(self); i++) {
-        struct Object *toRemove = takeLast((void *) self);
-        delete(toRemove);
+        delete(takeLast((void *) self));
     }
 }
 

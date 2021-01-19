@@ -32,8 +32,8 @@ int main() {
     printf("Lowest node : %s with freq : %lu\n", symMin, mini->frequency);
 
     struct Node *racine = generateTreeFromList(listeNoeuds);
-    char *symRacine = (char *) ((struct Native *) lookAt(racine->value, 0))->value;
-    printf("Root node : %s with freq : %lu\n", symRacine, racine->frequency);
+    printf("Root node : ");
+    puto(racine, stdout);
 
     if (racine->frequency != strlen(phrase)) {
         perror("Bad frequency addition");
@@ -54,7 +54,7 @@ int main() {
         printf("%s --> %s\n", key, (char *) val->value);
     }
 
-    freeNodeTree(racine);
+    delete(racine);
     delete(encodingKeys);
     delete(encodingDict);
     delete(listeNoeuds);

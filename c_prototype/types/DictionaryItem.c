@@ -24,10 +24,12 @@ static void *DictionaryItem_ctor (void *_self, va_list *app) {
 }
 
 static void *DictionaryItem_dtor(struct DictionaryItem *self) {
-    free((void *) self->key);
-    self->key = NULL;
+    if (self->key) {
+        free((void *) self->key);
+        self->key = NULL;
 
-    delete((void *) self->value);
+        delete((void *) self->value);
+    }
 
     return super_dtor(DictionaryItem(), self);
 }

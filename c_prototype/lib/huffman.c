@@ -54,7 +54,7 @@ struct List *splitPhraseInNodes(const char *phrase) {
             // printf("New key : %s\n", key);
             unsigned long *freq_init = calloc(sizeof(unsigned long), 1);
             *freq_init = 1;
-            struct Native *freq = new(Native(), freq_init);
+            struct Native *freq = new(Native(), freq_init, sizeof(unsigned long));
             item = new(DictionaryItem(), key, freq);
         }
         // key already registered
@@ -76,9 +76,9 @@ struct List *splitPhraseInNodes(const char *phrase) {
         unsigned long dicFreq = *((unsigned long *) ((struct Native *) cast(Native(), dicItem->value))->value);
         struct List *newValue = new(List());
 
-        char *copyKey = calloc(strlen(dicKey->value), 1);
+        char *copyKey = calloc(strlen(dicKey->value) + 1, 1);
         strcpy(copyKey, dicKey->value);
-        addLast(newValue, new(Native(), copyKey));
+        addLast(newValue, new(Native(), copyKey, strlen(dicKey->value) + 1));
 
         addLast(listeNoeuds, new(Node(), dicFreq, newValue));
 
@@ -108,22 +108,25 @@ struct Node *getLowestFrequencySymbol(struct List *nodeList) {
 struct Node *generateTreeFromList(struct List *nodeList) {
     struct Node *n1, *n2, *n12;
     struct Object *removed;
-    struct List *list = copyList(nodeList);
+    struct List *list = clone(nodeList);
     while (count(list) > 1) {
         n1 = getLowestFrequencySymbol(list);
         removed = removeItem(list, (const struct Object *) n1);
+        puto(removed, stdout);
         assert(removed);
         n2 = getLowestFrequencySymbol(list);
         removed = removeItem(list, (const struct Object *) n2);
+        puto(removed, stdout);
         assert(removed);
 
         // merging the two nodes
         n12 = mergeTwoNodes(n1, n2);
+        puto(n12, stdout);
         addLast(list, (const struct Object *) n12);
-        addLast(nodeList, (const struct Object *) n12);
+        //addLast(nodeList, (const struct Object *) n12);
     }
 
-    struct Node *racine = cast(Node(), lookAt(list, 0));
+    struct Node *racine = clone(cast(Node(), lookAt(list, 0)));
     delete(list);
 
     return racine;

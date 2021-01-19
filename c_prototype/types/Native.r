@@ -6,6 +6,7 @@
 struct Native {
     const struct Object _;
     const void *value;
+    size_t size;
 };
 
 struct NativeClass {

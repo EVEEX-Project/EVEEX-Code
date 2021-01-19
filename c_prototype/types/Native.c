@@ -1,4 +1,5 @@
 #include <malloc.h>
+#include <memory.h>
 
 #include "Native.h"
 #include "Native.r"
@@ -13,6 +14,7 @@ static void *Native_ctor (void *_self, va_list *app) {
 
     // On récupère les arguments dynamiques
     self->value = va_arg(*app, void *);
+    self->size = va_arg(*app, size_t);
 
     return self;
 }
@@ -20,8 +22,10 @@ static void *Native_ctor (void *_self, va_list *app) {
 /* Destructeur */
 static void *Native_dtor (void *_self) {
     struct Native *self = cast(Native(), _self);
-    free((void *) self->value);
-    self->value = NULL;
+    if (self->value) {
+        free((void *) self->value);
+        self->value = NULL;
+    }
 
     return self;
 }
@@ -34,7 +38,9 @@ static void Native_puto(void *_self, FILE *fp) {
 static void *Native_clone(const void *_self) {
     const struct Native *self = _self;
 
-    return new(Native(), self->value);
+    void *copy = malloc(self->size);
+    memcpy(copy, self->value, self->size);
+    return new(Native(), copy, self->size);
 }
 
 /**************************************************************************/

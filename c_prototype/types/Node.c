@@ -1,7 +1,11 @@
 #include <malloc.h>
+#include <string.h>
 
 #include "Node.r"
 #include "Node.h"
+#include "List.h"
+#include "Native.h"
+#include "Native.r"
 
 /**************************************************************************/
 /*							  CLASSE NODE   							  */
@@ -32,15 +36,46 @@ static void *Node_dtor (void *_self) {
     return self;
 }
 
+static char* getNodeValue(void *_self) {
+    struct Node *self = cast(Node(), _self);
+
+    char *res = malloc(count(self->value) * sizeof(char) * 2);
+    for (int i = 0; i < count(self->value); i++) {
+        struct Native *value = cast(Native(), lookAt(self->value, i));
+        res[2*i] = *((char *) value->value);
+        res[2*i+1] = ',';
+    }
+    res[count(self->value)*2-1] = '\0';
+    return res;
+}
+
 static void Node_puto(void *_self, FILE *fp) {
     struct Node *self = cast(Node(), _self);
-    fprintf(fp, "Node: frequency=%ld, value=", self->frequency);
-    puto(self->value, fp);
+    char *value = getNodeValue(self);
+    fprintf(fp, "Node: frequency=%ld, value=%s\n", self->frequency, value);
+    free(value);
 }
 
 static void *Node_clone(const void *_self) {
     const struct Node *self = _self;
-    return new(Node(), self->frequency, self->value);
+    struct Node *cloneObj;
+
+    // si on est au bout d'une branche
+    if (!self->right && !self->left) {
+        struct Native *val = cast(Native(), lookAt(self->value, 0));
+        char *newSym = malloc(strlen(val->value) + 1);
+        strcpy(newSym, val->value);
+        struct List *newVal = new(List());
+        addLast(newVal, new(Native(), newSym, strlen(val->value) + 1));
+        cloneObj = new(Node(), self->frequency, newVal);
+    } else {
+        cloneObj = new(Node(), self->frequency, self->value);
+        if (self->right)
+            cloneObj->right = clone(self->right);
+        if (self->left)
+            cloneObj->left = clone(self->left);
+    }
+    return cloneObj;
 }
 
 /* Méthodes statiques */

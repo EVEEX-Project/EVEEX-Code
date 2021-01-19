@@ -30,10 +30,10 @@ static void *Dictionary_ctor (void *_self, va_list *app) {
 }
 
 static void *Dictionary_dtor(struct Dictionary *self) {
-    while (count(self->items) != 0) {
+    /*while (count(self->items) != 0) {
         void *objToFree = takeLast((void *) self->items);
         delete(objToFree);
-    }
+    }*/
     delete((void *) self->items);
     return super_dtor(Dictionary(), self);
 }
@@ -93,7 +93,9 @@ static struct List *Dictionary_getKeys(const struct Dictionary *_self) {
 
     for (unsigned i = 0; i < size(self); i++) {
         struct DictionaryItem *item = cast(DictionaryItem(), lookAt(self->items, i));
-        addLast(keys, new(Native(), item->key));
+        char *newKey = malloc(strlen(item->key) + 1);
+        strcpy(newKey, item->key);
+        addLast(keys, new(Native(), newKey, strlen(item->key) + 1));
     }
 
     return keys;
