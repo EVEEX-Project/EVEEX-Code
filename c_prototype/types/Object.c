@@ -16,6 +16,8 @@ static void * Object_ctor (void * _self, va_list * app) {			/* Constructeur */
 }
 
 static void * Object_dtor (void * _self) {							/* Destructeur */
+    const struct Class *classe = classOf(_self);
+    // printf("Object destructor return self : %s\n----\n", classe->name);
     return _self;
 }
 
@@ -165,6 +167,8 @@ void *new (const void *_class, ...)	{							/* Nouvelle instance de classe */
 }
 
 void delete (void * _self) {
+    const struct Class *classe = classOf(_self);
+    // printf("------\nStarting freeing data : %s\n", classe->name);
     if (_self) {
         free(dtor(_self));
         _self = NULL;    // on appelle le destructeur puis on libère la référence
@@ -256,8 +260,9 @@ int isOf(const void *_self, const struct Class *class) {
             while (myClass != class) {
                 if (myClass != Object()) {
                     myClass = super(myClass);
-                } else
+                } else {
                     return 0;
+                }
             }
         }
         return 1;

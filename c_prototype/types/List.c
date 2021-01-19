@@ -170,6 +170,8 @@ static struct Object *List_removeItem(struct List *_self, const struct Object *e
         }
     }
 
+    delete(tmp);
+
     return toReturn;
 }
 
@@ -241,9 +243,8 @@ unsigned indexOf(const void *_self, const struct Object *element) {
 /* Static methods */
 void deleteChildren(const void *_self) {
     const struct List *self = _self;
-    for (unsigned i = 0; i < count(self); i++) {
+    while (count(self) > 0)
         delete(takeLast((void *) self));
-    }
 }
 
 struct List *copyList(const void *_self) {

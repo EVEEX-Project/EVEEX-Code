@@ -29,6 +29,7 @@ int main() {
 
     delete(pD);
     delete(pE);
+    printf("\n\nDestroying dict\n");
     delete(dict);
 
     return 0;

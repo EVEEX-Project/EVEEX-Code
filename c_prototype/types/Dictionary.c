@@ -30,10 +30,6 @@ static void *Dictionary_ctor (void *_self, va_list *app) {
 }
 
 static void *Dictionary_dtor(struct Dictionary *self) {
-    /*while (count(self->items) != 0) {
-        void *objToFree = takeLast((void *) self->items);
-        delete(objToFree);
-    }*/
     delete((void *) self->items);
     return super_dtor(Dictionary(), self);
 }
@@ -60,7 +56,13 @@ static struct Object *Dictionary_set(struct Dictionary *_self, const char *key, 
     // else there is already an entry
     else {
         struct DictionaryItem *existingItem = cast(DictionaryItem(), lookAt(self->items, found));
-        existingItem->value = value;
+        // if this is not the same pointer value
+        if (existingItem->value != value) {
+            printf("There is an entry but different value\n");
+            // deleting the old one
+            delete((void *) existingItem->value);
+            existingItem->value = value;
+        }
         return (void *) existingItem;
     }
 }

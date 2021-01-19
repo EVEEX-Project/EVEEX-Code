@@ -12,6 +12,15 @@ static void *Point_ctor (void *_self, va_list *app) {
     return self;
 }
 
+static int Point_differ(const void *_self, const void *_other) {
+    const struct Point *self = cast(Point(), _self);
+
+    if (classOf(self) != classOf(_other)) return 1;
+
+    const struct Point *otherObj = cast(Point(), _other);
+    return !(self->x == otherObj->x && self->y == otherObj->y);
+}
+
 static void Point_draw (const void *_self) {
     const struct Point *self = _self;
     printf("\".\" at %d,%d\n", self->x, self->y);
@@ -88,5 +97,6 @@ const void *const Point(void) {
            ctor, Point_ctor,
            draw, Point_draw,
            clone, Point_clone,
+           differ, Point_differ,
            (void *) 0));
 }

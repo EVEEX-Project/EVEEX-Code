@@ -20,17 +20,19 @@ struct Node *mergeTwoNodes(struct Node *a, struct Node *b) {
 
     // Adding every element to the new value
     for (int i = 0; i < listA->count; i++)
-        addLast(newValue, lookAt(listA, i));
+        addLast(newValue, clone(lookAt(listA, i)));
     for (int i = 0; i < listB->count; i++)
-        addLast(newValue, lookAt(listB, i));
+        addLast(newValue, clone(lookAt(listB, i)));
 
     // Calculation of the new frequency
     unsigned long newFreq = a->frequency + b->frequency;
 
     
     struct Node *newNode = new(Node(), newFreq, newValue);
-    newNode->left = a;
-    newNode->right = b;
+    newNode->left = clone(a);
+    newNode->right = clone(b);
+
+    delete(newValue);
 
     return newNode;
 }
@@ -40,7 +42,7 @@ struct List *splitPhraseInNodes(const char *phrase) {
     struct List *listeNoeuds = new(List());
 
     // Calculation of the frequencies
-    struct DictionaryItem *item;
+    struct Native *frequency;
     char key[2];
     key[1] = '\0';
     // for each symbol in the phrase
@@ -48,23 +50,22 @@ struct List *splitPhraseInNodes(const char *phrase) {
         // getting the key
         key[0] = phrase[i];
         // and its frequency
-        item = (struct DictionaryItem *) get(symbols, key);
+        frequency = (struct Native *) get(symbols, key);
         // the first time seeing that key
-        if (item == NULL) {
+        if (frequency == NULL) {
             // printf("New key : %s\n", key);
             unsigned long *freq_init = calloc(sizeof(unsigned long), 1);
             *freq_init = 1;
-            struct Native *freq = new(Native(), freq_init, sizeof(unsigned long));
-            item = new(DictionaryItem(), key, freq);
+            frequency = new(Native(), freq_init, sizeof(unsigned long));
+            set(symbols, key, (const struct Object *) frequency);
+            delete(frequency);
         }
         // key already registered
         else {
-            // printf("Already known : %s\n", key);
-            struct Native *freq = cast(Native(), item->value);
-            unsigned long* val = (unsigned long *) freq->value;
+            printf("Already known : %s\n", key);
+            unsigned long* val = (unsigned long *) frequency->value;
             (*val)++;
         }
-        set(symbols, key, (const struct Object *) item);
     }
 
     // Adding the nodes to the list
@@ -72,13 +73,14 @@ struct List *splitPhraseInNodes(const char *phrase) {
     // for each symbol in the dictionary
     for (unsigned i = 0; i < count(dicoKeys); i++) {
         const struct Native *dicKey = cast(Native(), lookAt(dicoKeys, i));
-        const struct DictionaryItem *dicItem = cast(DictionaryItem(), get(symbols, (char *) dicKey->value));
-        unsigned long dicFreq = *((unsigned long *) ((struct Native *) cast(Native(), dicItem->value))->value);
+        const struct Native *dicItem = cast(Native(), get(symbols, (char *) dicKey->value));
+        unsigned long dicFreq = *((unsigned long *) dicItem->value);
         struct List *newValue = new(List());
 
         addLast(newValue, clone(dicKey));
-
         addLast(listeNoeuds, new(Node(), dicFreq, newValue));
+
+        delete(newValue);
     }
 
     delete(dicoKeys);
@@ -101,25 +103,26 @@ struct Node *generateTreeFromList(struct List *nodeList) {
     struct Node *n1, *n2, *n12;
     struct Object *removed;
     struct List *list = clone(nodeList);
+    struct List *garbage = new(List());
     while (count(list) > 1) {
         n1 = getLowestFrequencySymbol(list);
         removed = removeItem(list, (const struct Object *) n1);
-        puto(removed, stdout);
+        addLast(garbage, removed);
         assert(removed);
         n2 = getLowestFrequencySymbol(list);
         removed = removeItem(list, (const struct Object *) n2);
-        puto(removed, stdout);
+        addLast(garbage, removed);
         assert(removed);
 
         // merging the two nodes
         n12 = mergeTwoNodes(n1, n2);
-        puto(n12, stdout);
         addLast(list, (const struct Object *) n12);
         //addLast(nodeList, (const struct Object *) n12);
     }
 
     struct Node *racine = clone(cast(Node(), lookAt(list, 0)));
     delete(list);
+    delete(garbage);
 
     return racine;
 }

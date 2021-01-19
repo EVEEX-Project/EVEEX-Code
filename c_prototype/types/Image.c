@@ -84,7 +84,7 @@ static void *Image_dtor (void *_self) {
     }
 
     // then we free the structure
-    return self;
+    return super_dtor(Image(), self);
 }
 
 /* Méthode de classe */

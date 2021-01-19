@@ -23,11 +23,23 @@ static void *DictionaryItem_ctor (void *_self, va_list *app) {
     return self;
 }
 
+static int DictionaryItem_differ (const void *_self, const void *_other) {
+    const struct DictionaryItem *self = cast(DictionaryItem(), _self);
+
+    if (classOf(self) != classOf(_other)) return 1;
+
+    const struct DictionaryItem *otherObj = cast(DictionaryItem(), _other);
+    if (strcmp(otherObj->key, self->key) != 0) return 1;
+
+    return differ(self->value, otherObj->value);
+}
+
 static void *DictionaryItem_dtor(struct DictionaryItem *self) {
     if (self->key) {
         free((void *) self->key);
         self->key = NULL;
-
+    }
+    if (self->value) {
         delete((void *) self->value);
     }
 
@@ -48,5 +60,6 @@ const void * const DictionaryItem(void) {
           ctor, DictionaryItem_ctor,
           dtor, DictionaryItem_dtor,
           clone, DictionaryItem_clone,
+          differ, DictionaryItem_differ,
           (void *) 0));
 }

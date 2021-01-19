@@ -42,6 +42,8 @@ add_executable(bitstream_testing
 add_executable(node_testing
         ../types/Object.c
         ../types/Point.c
+        ../types/List.c
+        ../types/Native.c
         ../types/Node.c
         node_test.c)
 

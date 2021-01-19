@@ -27,31 +27,42 @@ static void *Node_ctor (void *_self, va_list *app) {
 /* Destructeur */
 static void *Node_dtor (void *_self) {
     struct Node *self = cast(Node(), _self);
-    self->left = NULL;
-    self->right = NULL;
+
+    if (self->right)
+        delete(self->right);
+    if (self->left)
+        delete(self->left);
 
     if (self->value)
         delete(self->value);
+    self->frequency = 0;
 
-    return self;
+    return super_dtor(Node(), self);
 }
 
-static char* getNodeValue(void *_self) {
+static char* getNodeValue(void *_self, FILE *fp) {
     struct Node *self = cast(Node(), _self);
+    char *res;
 
-    char *res = malloc(count(self->value) * sizeof(char) * 2);
-    for (int i = 0; i < count(self->value); i++) {
-        struct Native *value = cast(Native(), lookAt(self->value, i));
-        res[2*i] = *((char *) value->value);
-        res[2*i+1] = ',';
+    if (isOf(List(), (void *) self->value)) {
+        res = malloc(count(self->value) * sizeof(char) * 2);
+        for (int i = 0; i < count(self->value); i++) {
+            struct Native *value = cast(Native(), lookAt(self->value, i));
+            res[2 * i] = *((char *) value->value);
+            res[2 * i + 1] = ',';
+        }
+        res[count(self->value) * 2 - 1] = '\0';
+        return res;
+    } else {
+        res = calloc(sizeof(char), 1);
+        puto(self->value, fp);
+        return res;
     }
-    res[count(self->value)*2-1] = '\0';
-    return res;
 }
 
 static void Node_puto(void *_self, FILE *fp) {
     struct Node *self = cast(Node(), _self);
-    char *value = getNodeValue(self);
+    char *value = getNodeValue(self, fp);
     fprintf(fp, "Node: frequency=%ld, value=%s\n", self->frequency, value);
     free(value);
 }
@@ -60,10 +71,12 @@ static void *Node_clone(const void *_self) {
     const struct Node *self = _self;
     struct Node *cloneObj = new(Node(), self->frequency, self->value);
 
-    if (self->right)
+    if (self->right) {
         cloneObj->right = clone(self->right);
-    if (self->left)
+    }
+    if (self->left) {
         cloneObj->left = clone(self->left);
+    }
 
     return cloneObj;
 }

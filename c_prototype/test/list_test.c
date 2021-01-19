@@ -11,8 +11,8 @@ int main() {
     void *pB = new(Point(), 1, 1);
     void *pC = new(Point(), 2, 9);
 
-    addLast(list, pB);
-    addLast(list, pC);
+    addLast(list, clone(pB));
+    addLast(list, clone(pC));
 
     printf("Nb éléments dans liste : %d\n", count(list));
 

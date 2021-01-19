@@ -29,12 +29,12 @@ static void *YUVPixel_ctor (void *_self, va_list *app) {
 /* Destructeur */
 static void *RGBPixel_dtor (void *_self) {
     struct RGBPixel *self = cast(RGBPixel(), _self);
-    return self;
+    return super_dtor(RGBPixel(), self);
 }
 
 static void *YUVPixel_dtor (void *_self) {
     struct YUVPixel *self = cast(YUVPixel(), _self);
-    return self;
+    return super_dtor(YUVPixel(), self);
 }
 
 /* Override d'une méthode de classe parente */

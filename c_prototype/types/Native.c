@@ -27,7 +27,7 @@ static void *Native_dtor (void *_self) {
         self->value = NULL;
     }
 
-    return self;
+    return super_dtor(Native(), self);
 }
 
 static void Native_puto(void *_self, FILE *fp) {
@@ -41,6 +41,17 @@ static void *Native_clone(const void *_self) {
     void *copy = malloc(self->size);
     memcpy(copy, self->value, self->size);
     return new(Native(), copy, self->size);
+}
+
+static int Native_differ (const void *_self, const void *_other) {
+    const struct Native *self = cast(Native(), _self);
+
+    if (classOf(self) != classOf(_other)) return 1;
+
+    const struct Native *otherObj = cast(Native(), _other);
+    if (self->size != otherObj->size) return 1;
+
+    return memcmp(self->value, otherObj->value, self->size) == 0;
 }
 
 /**************************************************************************/
@@ -95,5 +106,6 @@ const void *const Native(void) {
                                 dtor, Native_dtor,		// méthodes de classe (obligatoire)
                                 puto, Native_puto,
                                 clone, Native_clone,
+                                differ, Native_differ,
                                 (void *) 0));
 }

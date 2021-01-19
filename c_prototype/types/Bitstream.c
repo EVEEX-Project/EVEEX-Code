@@ -27,7 +27,7 @@ static void *Bitstream_dtor (void *_self) {
     // freeing the buffer
     //free(self->data);
     // returning a reference to the structure to be freed
-    return self;
+    return super_dtor(Bitstream(), self);
 }
 
 static void Bitstream_puto(void *_self, FILE *fp) {

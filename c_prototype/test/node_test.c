@@ -13,7 +13,7 @@ int main() {
 
     puto(noeud, stdout);
 
-    noeud->right = sousnoeud;
+    noeud->right = clone(sousnoeud);
     puto(sousnoeud, stdout);
 
     delete(noeud);
