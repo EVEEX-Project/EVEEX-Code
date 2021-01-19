@@ -76,18 +76,10 @@ struct List *splitPhraseInNodes(const char *phrase) {
         unsigned long dicFreq = *((unsigned long *) ((struct Native *) cast(Native(), dicItem->value))->value);
         struct List *newValue = new(List());
 
-        char *copyKey = calloc(strlen(dicKey->value) + 1, 1);
-        strcpy(copyKey, dicKey->value);
-        addLast(newValue, new(Native(), copyKey, strlen(dicKey->value) + 1));
+        addLast(newValue, clone(dicKey));
 
         addLast(listeNoeuds, new(Node(), dicFreq, newValue));
-
-        struct Node *last = cast(Node(), lookAt(listeNoeuds, count(listeNoeuds) - 1));
-        struct Native *val = cast(Native(), lookAt(last->value, 0));
     }
-
-    struct Node *last = cast(Node(), lookAt(listeNoeuds, count(listeNoeuds) - 1));
-    struct Native *val = cast(Native(), lookAt(last->value, 0));
 
     delete(dicoKeys);
     delete(symbols);

@@ -58,23 +58,13 @@ static void Node_puto(void *_self, FILE *fp) {
 
 static void *Node_clone(const void *_self) {
     const struct Node *self = _self;
-    struct Node *cloneObj;
+    struct Node *cloneObj = new(Node(), self->frequency, self->value);
 
-    // si on est au bout d'une branche
-    if (!self->right && !self->left) {
-        struct Native *val = cast(Native(), lookAt(self->value, 0));
-        char *newSym = malloc(strlen(val->value) + 1);
-        strcpy(newSym, val->value);
-        struct List *newVal = new(List());
-        addLast(newVal, new(Native(), newSym, strlen(val->value) + 1));
-        cloneObj = new(Node(), self->frequency, newVal);
-    } else {
-        cloneObj = new(Node(), self->frequency, self->value);
-        if (self->right)
-            cloneObj->right = clone(self->right);
-        if (self->left)
-            cloneObj->left = clone(self->left);
-    }
+    if (self->right)
+        cloneObj->right = clone(self->right);
+    if (self->left)
+        cloneObj->left = clone(self->left);
+
     return cloneObj;
 }
 
