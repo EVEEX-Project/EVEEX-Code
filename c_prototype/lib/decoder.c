@@ -1,46 +1,46 @@
-//
-// Created by alexandre on 12/01/2021.
-//
-
 #include <math.h>
+#include <stdlib.h>
 
 #include "../lib/decoder.h"
+#include "../types/Image.h"
+#include "../types/Image.r"
 
-void IDCT(float Coeff_DCT[N][N], int reconstructed_matrix[N][N])
+void IDCT(double *coeffs, void *_macrobloc, int channel)
 {
-    int u=0, v=0;
-    int x=0, y=0;
-    float au=0, av=0;
-    //Intermediate matrix to work with real numbers
-    float f[N][N]={0};
+    struct Image *macrobloc = cast(Image(), _macrobloc);
 
-    for(y=0;y<=N-1;y++)
-    {
-        for(x=0;x<=N-1;x++)
-        {
-            for(v=0;v<=N-1;v++)
-            {
-                for(u=0;u<=N-1;u++)
-                {
-                    if(u==0){
-                        au=1/sqrt(2);
-                    }
-                    else {
-                        au=1;
-                    }
+    // intermediate
+    double *tmp = calloc(sizeof(double), macrobloc->width * macrobloc->height);
 
-                    if(v==0){
-                        av=1/sqrt(2);
-                    }
-                    else{
-                        av=1;
-                    }
-                    f[y][x]+=Coeff_DCT[v][u]*au*av*cos(((x+0.5)*M_PI*u)/N)*cos(((y+0.5)*M_PI*v)/N);
-                }
-            }
-            f[y][x]*=0.25;
-            //conversion of real integers
-            reconstructed_matrix[y][x]=floor(f[y][x]+0.5);
+    unsigned idx, line, col;
+    double m_line, m_col;
+    for (uint8_t *p = macrobloc->data; p != macrobloc->data + macrobloc->size; p += macrobloc->channels) {
+        idx = (p - macrobloc->data) / macrobloc->channels;
+        line = idx / macrobloc->width;
+        col = idx - (line * macrobloc->width);
+
+        // double sum
+        unsigned s_idx, s_line, s_col;
+        for (uint8_t *sp = macrobloc->data; sp != macrobloc->data + macrobloc->size; sp += macrobloc->channels) {
+            s_idx = (p - macrobloc->data) / macrobloc->channels;
+            s_line = s_idx / macrobloc->width;
+            s_col = idx - (s_line * macrobloc->width);
+
+            double coef = cos((s_col * M_PI * (col + 0.5)) / macrobloc->width) * cos((s_line * M_PI * (line + 0.5)) / macrobloc->height);
+            *(tmp + idx) += *(coeffs + s_idx) * coef;
+
+            // orthogonal factors
+            if (col == 0) m_col = 1 / sqrt(2);
+            else m_col = 1;
+
+            if (line == 0) m_line = 1 / sqrt(2);
+            else m_line = 1;
+
+            *(p + channel) += *(coeffs + idx) * m_col * m_line * coef;
         }
+        *(tmp + idx) *= 0.25;
+        *(p + channel) = floor(*(tmp + idx) + 0.5);
     }
+
+    free(tmp);
 }

@@ -5,8 +5,6 @@
 #ifndef C_PROTOTYPE_DECODER_H
 #define C_PROTOTYPE_DECODER_H
 
-#define N 16
-
-const void *IDCT(float Coeff_DCT[N][N], int reconstructed_matrix[N][N]);
+void IDCT(double *coeffs, void *macrobloc, int channel);
 
 #endif //C_PROTOTYPE_DECODER_H
