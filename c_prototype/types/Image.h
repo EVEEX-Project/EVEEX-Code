@@ -12,6 +12,4 @@ void saveImg(const void *self, const char *fileName);
 const struct Image *toGray(const void *self);
 const struct Image *toSepia(const void *self);
 
-const struct List *splitInMacroblocs(const void *self, int size);
-
 #endif

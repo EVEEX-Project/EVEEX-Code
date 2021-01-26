@@ -180,65 +180,6 @@ static void Image_puto(const void * _self, FILE * fp) {
     fprintf(fp, "Image: (height, width): (%d, %d), Channels: %d\n", self->height, self->width, self->channels);
 }
 
-const struct List *splitInMacroblocs(const void *_self, int size) {
-    const struct Image *self = cast(Image(), _self);
-
-    // check for a valid image
-    if(self->allocationType == NO_ALLOCATION || self->channels < 3) {
-        perror("The input image must have at least 3 channels.");
-        exit(EXIT_FAILURE);
-    }
-
-    // Checking if picture size if compatible
-    assert(self->width % size == 0);
-    assert(self->height % size == 0);
-
-    // number of blocks
-    long widthMB = self->width / size;
-    long heightMB = self->height / size;
-
-    // Populating the macroblocs list
-    struct List* macroblocs = new(List(), widthMB * heightMB);
-    for (int k = 0; k < widthMB * heightMB ; k++) {
-        struct Image *block = new(Image(), size, size, self->channels, 1);
-        addLast(macroblocs, (void *) block);
-        //puto(block, stdout);
-    }
-    printf("Created %u blocks\n", count(macroblocs));
-
-    // Iterating over the pixels
-    struct Image *mBlock;
-    for (uint8_t *p = self->data; p != self->data + self->size; p += self->channels) {
-        unsigned idx = (p - self->data) / self->channels;
-        unsigned line = idx / self->width;
-        unsigned col = idx - (line * self->width);
-        unsigned blockId = col / size + (line / size) * widthMB;
-
-        // switching to the correct macroblock
-        if (col % size == 0) {
-            mBlock = cast(Image(), lookAt(macroblocs, blockId));
-        }
-
-
-        // getting coordinates on the macrobloc
-        unsigned mbLine = line - (blockId / widthMB) * size;
-        unsigned mbCol = col - (blockId % widthMB) * size;
-        unsigned mbIdx = mbLine * size + mbCol;
-
-        uint8_t *c_p = mBlock->data + (mbIdx * self->channels);
-        *(c_p) = *p;
-        *(c_p + 1) = *(p+1);
-        *(c_p + 2) = *(p+2);
-        // if there was transparency
-        if(self->channels == 4) {
-            // update the transparency pixel
-            *(c_p + 3) = *(p+3);
-        }
-    }
-
-    return macroblocs;
-}
-
 /**************************************************************************/
 /*							MÉTACLASSE IMAGECLASS						  */
 /**************************************************************************/
