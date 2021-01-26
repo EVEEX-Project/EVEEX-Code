@@ -5,6 +5,6 @@
 #ifndef C_PROTOTYPE_DECODER_H
 #define C_PROTOTYPE_DECODER_H
 
-void IDCT(double *coeffs, void *macrobloc, int channel);
+void IDCT(const double *coeffs, void *macrobloc, int channel);
 
 #endif //C_PROTOTYPE_DECODER_H

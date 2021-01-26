@@ -5,7 +5,7 @@
 #include "../types/Image.h"
 #include "../types/Image.r"
 
-void IDCT(double *coeffs, void *_macrobloc, int channel)
+void IDCT(const double *coeffs, void *_macrobloc, int channel)
 {
     struct Image *macrobloc = cast(Image(), _macrobloc);
 
