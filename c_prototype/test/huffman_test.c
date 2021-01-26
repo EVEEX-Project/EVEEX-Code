@@ -12,7 +12,7 @@
 int main() {
     printf("\n/* -------- TEST Huffman -------- */\n");
 
-    char *phrase = "phrase a tester ...";
+    char *phrase = "le chic a l'ensta breton";
     printf("Sentence to test : '%s' with a length of : %lu\n", phrase, strlen(phrase));
 
     struct List *listeNoeuds = splitPhraseInNodes(phrase);

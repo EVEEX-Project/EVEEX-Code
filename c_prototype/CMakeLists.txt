@@ -9,6 +9,9 @@ enable_testing()
 # Loading CMakeLists.txt from the test folder
 add_subdirectory (${PROJECT_SOURCE_DIR}/test)
 
+# Copying image file
+configure_file(assets/image_res.png assets/image_res.png COPYONLY)
+
 add_executable(C_PROTOTYPE
         types/Object.c
         types/Point.c
@@ -17,8 +20,11 @@ add_executable(C_PROTOTYPE
         types/Dictionary.c
         types/Node.c
         types/Native.c
+        types/Image.c
         lib/encoder.c
         lib/decoder.c
         lib/huffman.c
 
         main.c)
+
+target_link_libraries(C_PROTOTYPE m)
