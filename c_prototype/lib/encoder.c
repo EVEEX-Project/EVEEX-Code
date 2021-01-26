@@ -145,3 +145,19 @@ struct List *zigzagLinearisation(const void *_macroBloc) {
 
     return res;
 }
+
+void quantization(void *_zigzagList) {
+    struct List *zigzagList = cast(List(), _zigzagList);
+}
+
+struct List *runLevel(const void *_quantizedList) {
+    const struct List *quantizedList = cast(List(), _quantizedList);
+
+    struct List *pairs = new(List());
+
+    // exemple
+    int pair[2] = {4, 15};
+    addLast(pairs, new(Native(), pair, sizeof(int) * 2));
+
+    return pairs;
+}
