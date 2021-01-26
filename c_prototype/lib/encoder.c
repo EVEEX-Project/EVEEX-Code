@@ -10,6 +10,7 @@
 #include "huffman.h"
 #include "../types/Image.h"
 #include "../types/Image.r"
+#include "../types/Native.h"
 
 const struct Image *toYUVImage(const void *_self) {
     const struct Image *self = cast(Image(), _self);
@@ -138,7 +139,8 @@ struct List *zigzagLinearisation(const void *_macroBloc) {
 
     // while we are not at the end of the bloc
     while (i < macroBloc->height && j < macroBloc->width) {
-
+        // code
+        addLast(res, new(Native(), 15, sizeof(unsigned)));
     }
 
     return res;
