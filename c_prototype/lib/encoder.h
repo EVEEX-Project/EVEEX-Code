@@ -13,7 +13,7 @@ double *DCT(const void *macrobloc, int channel);
 const struct Image *toYUVImage(const void *self);
 const struct List *splitInMacroblocs(const void *self, int size);
 struct List *zigzagLinearisation(const void *macroBloc);
-void quantization(void *zigzagList);
+void quantization(void *zigzagList, double threshold);
 struct List *runLevel(const void *quantizedList);
 
 #endif //C_PROTOTYPE_ENCODER_H

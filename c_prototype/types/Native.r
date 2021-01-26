@@ -5,7 +5,7 @@
 
 struct Native {
     const struct Object _;
-    const void *value;
+    void *value;
     size_t size;
 };
 

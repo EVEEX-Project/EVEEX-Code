@@ -11,6 +11,7 @@
 #include "../types/Image.h"
 #include "../types/Image.r"
 #include "../types/Native.h"
+#include "../types/Native.r"
 
 const struct Image *toYUVImage(const void *_self) {
     const struct Image *self = cast(Image(), _self);
@@ -146,8 +147,15 @@ struct List *zigzagLinearisation(const void *_macroBloc) {
     return res;
 }
 
-void quantization(void *_zigzagList) {
+void quantization(void *_zigzagList, double threshold) {
     struct List *zigzagList = cast(List(), _zigzagList);
+
+    struct Native *ptr;
+    for (int k = 0; k < count(zigzagList); k++) {
+        ptr = cast(Native(), lookAt(zigzagList, k));
+        if (*((double *) ptr->value) <= threshold)
+            *((double *) ptr->value) = 0;
+    }
 }
 
 struct List *runLevel(const void *_quantizedList) {
