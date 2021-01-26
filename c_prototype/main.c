@@ -23,10 +23,11 @@ int main() {
     const struct Image *yuv = toYUVImage(img);
 
     // Splitting in macroblocs
-    const struct List *macroBlocks = splitInMacroblocs(yuv, 25);
+    const struct List *macroBlocks = splitInMacroblocs(yuv, 10);
     // saveMacroBlocksToDisk(macroBlocks);
 
-    //const struct Image *test = cast(Image(), lookAt(macroBlocks, 5));
+    const struct Image *test = cast(Image(), lookAt(macroBlocks, 5));
+    double *coeffs = DCT(test, 0);
 
     delete((void *) macroBlocks);
     delete((void *) yuv);

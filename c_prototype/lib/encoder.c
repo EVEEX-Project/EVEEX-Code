@@ -112,7 +112,7 @@ double *DCT(const void *_macrobloc, int channel)
             s_col = idx - (s_line * macrobloc->width);
 
             double coef = cos((M_PI * (s_col + 0.5) * col) / macrobloc->width) * cos((M_PI * (s_line + 0.5) * line) / macrobloc->height);
-            *(coeffs + idx + channel) += *(p + channel) * coef;
+            *(coeffs + idx) += *(p + channel) * coef;
         }
 
         // orthogonal factors
@@ -122,7 +122,7 @@ double *DCT(const void *_macrobloc, int channel)
         if (line == 0) m_line = 1 / sqrt(2);
         else m_line = 1;
 
-        *(coeffs + idx + channel) *= 0.25 * m_col * m_line;
+        *(coeffs + idx) *= 0.25 * m_col * m_line;
     }
 
     return coeffs;
