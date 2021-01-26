@@ -11,16 +11,6 @@
 #include "../types/Image.h"
 #include "../types/Image.r"
 
-
-
-
-#define N 16
-#define PI 3.141592653589793
-
-
-
-
-
 const struct Image *toYUVImage(const void *_self) {
     const struct Image *self = cast(Image(), _self);
 
@@ -102,67 +92,54 @@ const struct List *splitInMacroblocs(const void *_self, int size) {
     return macroblocs;
 }
 
-
-
-
-
-
-
-void DCT_N(int pixel[N][N], float Coeff_DCT[N][N]);
-void IDCT_N(float C[N][N], int reconstructed_matrix[N][N]);
-
-/*int main(int argc, char const *argv[])
+double *DCT(const void *_macrobloc, int channel)
 {
-    int i=0,j=0,k=0;
+    const struct Image *macrobloc = cast(Image(), _macrobloc);
+    double *coeffs = calloc(sizeof(double), macrobloc->width * macrobloc->height);
 
-    float coeff_DCT[N][N]={0};//matrix to put the coefficients of DCT
-    int reconstructed_matrix[N][N]={0}; //Matrix to put the reconstructed matix
-    //Matrix representing the signal
-    int matrix[N][N]={{244,243,118,154,126,246,137,184,244,243,118,154,126,246,137,184},
-                      {178,127,196,155,184,184,147,245,244,243,118,154,126,246,137,184},
-                      {114,116,134,231,145,166,214,112,244,243,118,154,126,246,137,184},
-                      {178,127,196,155,184,184,247,245,244,243,118,154,126,246,137,184},
-                      {200,224,133,145,105,167,237,118,244,243,118,154,126,246,137,184},
-                      {137,263,118,154,126,246,137,89,244,243,118,154,126,246,137,184},
-                      {178,127,196,255,184,184,147,245,244,243,118,154,126,246,137,184},
-                      {114,116,134,231,145,166,247,198,244,243,118,154,126,246,137,184},
-                      {244,243,118,154,126,246,137,184,244,243,118,154,126,246,137,184},
-                      {178,127,196,155,184,184,147,245,244,243,118,154,126,246,137,184},
-                      {114,116,134,231,145,166,214,112,244,243,118,154,126,246,137,184},
-                      {178,127,196,155,184,184,247,245,244,243,118,154,126,246,137,184},
-                      {200,224,133,145,105,167,237,118,244,243,118,154,126,246,137,184},
-                      {137,263,118,154,126,246,137,89,244,243,118,154,126,246,137,184},
-                      {178,127,196,255,184,184,147,245,244,243,118,154,126,246,137,184},
-                      {114,116,134,231,145,166,247,198,244,243,118,154,126,246,137,184}};
+    unsigned idx, line, col;
+    double m_line, m_col;
+    for (uint8_t *p = macrobloc->data; p != macrobloc->data + macrobloc->size; p += macrobloc->channels) {
+        idx = (p - macrobloc->data) / macrobloc->channels;
+        line = idx / macrobloc->width;
+        col = idx - (line * macrobloc->width);
 
-    //Calculate the origin matrix of DCT
-    //Put the coefficients in coeff_DCT
-    DCT_N(matrix, coeff_DCT);
+        // double sum
+        unsigned s_idx, s_line, s_col;
+        for (uint8_t *sp = macrobloc->data; sp != macrobloc->data + macrobloc->size; sp += macrobloc->channels) {
+            s_idx = (p - macrobloc->data) / macrobloc->channels;
+            s_line = s_idx / macrobloc->width;
+            s_col = idx - (s_line * macrobloc->width);
 
-    //Calculate the IDCT using the Coefficients matrix
-    //Put the regenerated signal in the reconstructed matrix
-    IDCT_N(coeff_DCT, reconstructed_matrix);
-
-
-    //printing the different steps
-    for(k=0;k<4;k++)
-    {
-        if(k==0)puts("\nOrigin Matrix :");
-        if(k==1)puts("\nCoefficients Matrix :");
-        if(k==2)puts("\nReconstructed Matrix :");
-        if(k==3)puts("\nDifference Origin/Reconstructed:");
-
-        for(i=0;i<N;i++)
-        {
-            for(j=0;j<N;j++)
-            {
-                if(k==0)printf("%d ",matrix[i][j]);
-                if(k==1)printf("%5.1f ",coeff_DCT[i][j]);
-                if(k==2)printf("%d ",reconstructed_matrix[i][j]);
-                if(k==3)printf("%d ",matrix[i][j]-reconstructed_matrix[i][j]);
-            }
-            printf("\n");
+            double coef = cos((M_PI * (s_col + 0.5) * col) / macrobloc->width) * cos((M_PI * (s_line + 0.5) * line) / macrobloc->height);
+            *(coeffs + idx + channel) += *(p + channel) * coef;
         }
+
+        // orthogonal factors
+        if (col == 0) m_col = 1 / sqrt(2);
+        else m_col = 1;
+
+        if (line == 0) m_line = 1 / sqrt(2);
+        else m_line = 1;
+
+        *(coeffs + idx + channel) *= 0.25 * m_col * m_line;
     }
-    return 0;
-}*/
+
+    return coeffs;
+}
+
+struct List *zigzagLinearisation(const void *_macroBloc) {
+    const struct Image *macroBloc = cast(Image(), _macroBloc);
+
+    // init the final list
+    struct List *res = new(List());
+
+    int i = 0, j = 0;
+
+    // while we are not at the end of the bloc
+    while (i < macroBloc->height && j < macroBloc->width) {
+
+    }
+
+    return res;
+}
