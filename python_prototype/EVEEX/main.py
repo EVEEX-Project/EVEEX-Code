@@ -16,13 +16,13 @@ import numpy as np
 from time import time, sleep
 from random import randint
 
-from logger import LogLevel, Logger
-from image_generator import MosaicImageGenerator
-from image_visualizer import ImageVisualizer
-from encoder import Encoder
-from network_transmission import Server, Client
-from bitstream import BitstreamSender
-from decoder import Decoder
+from EVEEX.logger import LogLevel, Logger
+from EVEEX.image_generator import MosaicImageGenerator
+from EVEEX.image_visualizer import ImageVisualizer
+from EVEEX.encoder import Encoder
+from EVEEX.network_transmission import Server, Client
+from EVEEX.bitstream import BitstreamSender, BitstreamGenerator
+from EVEEX.decoder import Decoder
 
 
 # # # ----------------------SETTING UP THE LOGGER------------------------ # # #
@@ -74,22 +74,25 @@ if numero_methode_choisie == 1:
     numero_image = 4 # ∈ [1, 5]
     nom_image = dico_noms_images[numero_image]
     
-    path_image = getcwd() + "\\assets\\" + nom_image
+    path_image = getcwd() + "/assets/" + nom_image
     
     # Valeurs standards de macroblock_size : 8, 16 et 32
     # Ici, 24, 48 et 60 fonctionnent aussi très bien
     # Doit être <= 63
     macroblock_size = 16
     
-    # il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
-    # divise bien ses 2 dimensions
-    img_width = 720
-    img_height = 480
-    
-    # format standard
-    img_size = (img_width, img_height)
+
     
     image = Image.open(path_image)
+
+    # il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
+    # divise bien ses 2 dimensions
+    img_width = image.size[0]
+    img_height = image.size[1]
+
+    # format standard
+    img_size = (img_width, img_height)
+
     image_intermediaire = image.getdata()
     
     image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
@@ -252,7 +255,11 @@ log.debug("Serveur supprimé.\n\n")
 dec = Decoder()
 
 # bitstream (données reçues) --> frame RLE
-dec_rle_data = dec.decode_bitstream_RLE(received_data)
+decBitstreamRLE = BitstreamGenerator.decode_bitstream_RLE(received_data)
+dec_rle_data = decBitstreamRLE[0]
+img_size = decBitstreamRLE[1]
+print(decBitstreamRLE)
+macroblock_size = decBitstreamRLE[2]
 t_fin_conversion_bitstream_recu_RLE = time()
 duree_conversion_bitstream_recu_RLE = t_fin_conversion_bitstream_recu_RLE - t_fin_conversion_RLE_bitstream_et_passage_reseau
 

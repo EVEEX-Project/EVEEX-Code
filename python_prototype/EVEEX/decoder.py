@@ -204,7 +204,6 @@ class Decoder:
             j_fin_macrobloc = j_debut_macrobloc + macroblock_size
             
             macrobloc = np.copy(frame_RLE[num_macrobloc])
-            
             # c'est ici que l'on décode les données du macrobloc
             dec_quantized_data = self.decode_run_length(macrobloc)
             dec_DCT_data = self.decode_zigzag(dec_quantized_data)

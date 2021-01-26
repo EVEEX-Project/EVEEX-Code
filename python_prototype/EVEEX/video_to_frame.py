@@ -23,5 +23,5 @@ def frames2vid(frames):
 
 
 if __name__ == "__main__":
-  frames = vid2frames('video_test.mp4')
+  frames = vid2frames('assets/video_test.mp4')
   frames2vid(frames)

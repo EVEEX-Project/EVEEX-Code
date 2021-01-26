@@ -4,7 +4,7 @@ import threading
 from random import randint
 from time import time, sleep
 
-
+from EVEEX.logger import Logger, LogLevel
 from EVEEX.network_transmission import Server, Client
 from EVEEX.huffman import Huffman
 
@@ -57,7 +57,7 @@ class BitstreamGenerator:
         
         self.len_dict_bitstream = 0
         self.len_body_bitstream = 0
-        
+        self.len_total_bitstream = self.len_body_bitstream + self.len_dict_bitstream
         self.bitstream = ""
     
     
@@ -299,8 +299,10 @@ class BitstreamGenerator:
             bitstream (string): bitstream complet associé à une frame, généré grâce 
                                 à la classe BitstreamGenerator
         Returns:
-            frame_RLE_decodee: frame RLE (liste de listes de tuples d'entiers) 
+            0 : frame_RLE_decodee: frame RLE (liste de listes de tuples d'entiers)
                                associée au bitstream mis en entrée
+            1 : size : taille de l'image à décoder:  (img_width, img_height)
+            2 : taille de macroblock
         """
         
         #--------------------------------------------------------------------#
@@ -395,8 +397,7 @@ class BitstreamGenerator:
             
             # on ajoute le macrobloc décodé à la frame
             frame_RLE_decodee.append(macrobloc_decode)
-        
-        return(frame_RLE_decodee)
+        return (frame_RLE_decodee, (img_width,img_height) , macroblock_size)
 
 
 ###############################################################################
@@ -764,7 +765,6 @@ class BitstreamSender:
 # Exemple concret
 
 if __name__ == "__main__":
-    from logger import Logger, LogLevel
     log = Logger.get_instance()
     log.set_log_level(LogLevel.DEBUG)
     #log.start_file_logging("log_bitstream.log")
@@ -893,7 +893,6 @@ if __name__ == "__main__":
     
     # décodage du bitstream total reçu par le serveur via l'algo de Huffman
     frame_decodee = BitstreamGenerator.decode_bitstream_RLE(received_data)
-    
     #------------------------------------------------------------------------#
     
     # prints de synthèse / débuggage

@@ -25,8 +25,8 @@ A = Encoder.DCT_operator(macroblock_size)
 
 # il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
 # divise bien ses 2 dimensions
-img_width = 720
-img_height = 480
+img_width = 240
+img_height = 240
 
 # format standard
 img_size = (img_width, img_height)
@@ -74,7 +74,7 @@ if action.lower() == "-e":
 
     if path.name[-4:]=='.mp4':
 
-        nom_video = path.name
+        nom_video = str(path)
         frame_id = 0
         frames= vid2frames(nom_video)
         img_size = (frames[0].shape[0],frames[0].shape[1])
@@ -158,7 +158,6 @@ elif action.lower() == "-d":
     
     # bitstream --> frame RLE
     dec_rle_data = dec.decode_bitstream_RLE(received_data.read())
-    
     # frame RLE --> frame YUV
     dec_yuv_data = dec.recompose_frame_via_DCT(dec_rle_data, img_size, macroblock_size, A)
 
