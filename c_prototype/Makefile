@@ -21,9 +21,11 @@ VAR = "Hello"
 #															#
 #-----------------------------------------------------------#
 
-build-x86: CC = gcc Exename = eveex-x86
+build-x86: CC = gcc
+build-x86: Exename = eveex-x86
 
-build-riscV: CC = riscv32-unknown-elf-gcc Exename = eveex-riscV
+build-riscV: CC = riscv32-unknown-elf-gcc
+build-riscV: Exename = eveex-riscV
 
 .PHONY: build
 build-x86 build-riscV: $(obj)
@@ -43,7 +45,7 @@ build-x86 build-riscV: $(obj)
 # Nettoyer les produits de make
 .PHONY: clean
 clean: cleanbuild cleandep
-	rm -f eveex-x86
+	rm -f eveex-x86 eveex-riscV
 
 # Nettoyer les libs compilées
 .PHONY: cleanbuild
