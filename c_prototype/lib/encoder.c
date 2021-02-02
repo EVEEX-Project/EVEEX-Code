@@ -136,12 +136,46 @@ struct List *zigzagLinearisation(const void *_macroBloc) {
     // init the final list
     struct List *res = new(List());
 
+    char up = 0;
     int i = 0, j = 0;
 
+    uint8_t *pix;
     // while we are not at the end of the bloc
     while (i < macroBloc->height && j < macroBloc->width) {
-        // code
-        addLast(res, new(Native(), 15, sizeof(unsigned)));
+        // getting the pixel and adding it to the list
+        pix = macroBloc->data + (i * macroBloc->width * macroBloc->channels) + j * macroBloc->channels;
+        addLast(res, new(Native(), *pix, sizeof(uint8_t)));
+        addLast(res, new(Native(), *(pix + 1), sizeof(uint8_t)));
+        addLast(res, new(Native(), *(pix + 2), sizeof(uint8_t)));
+        // if there is transparency
+        if (macroBloc->channels == 4)
+            addLast(res, new(Native(), *(pix + 3), sizeof(uint8_t)));
+
+        // navigation
+        // if we are going up in the matrix
+        if (up) {
+            if (j == macroBloc->width - 1) {
+                i++;
+                up = 0;
+            } else if (i == 0) {
+                j++;
+                up = 0;
+            } else {
+                i--;
+                j++;
+            }
+        } else {
+            if (i == macroBloc->height - 1) {
+                j++;
+                up = 1;
+            } else if (j == 0) {
+                i++;
+                up = 1;
+            } else {
+                j--;
+                i++;
+            }
+        }
     }
 
     return res;
