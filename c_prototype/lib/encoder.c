@@ -197,8 +197,23 @@ struct List *runLevel(const void *_quantizedList) {
 
     struct List *pairs = new(List());
 
-    // exemple
-    int pair[2] = {4, 15};
+    int c = 0;
+    int *value;
+    int pair[2];
+    for (int k = 0; k < count(quantizedList); k++) {
+        value = (int *) ((struct Native *) cast(Native(), lookAt(quantizedList, k)))->value;
+        if (value != 0) {
+            pair[0] = c;
+            pair[1] = *value;
+            addLast(pairs, new(Native(), pair, sizeof(int) * 2));
+            c = 0;
+        } else {
+            c++;
+        }
+    }
+
+    pair[0] = c;
+    pair[1] = *value;
     addLast(pairs, new(Native(), pair, sizeof(int) * 2));
 
     return pairs;
