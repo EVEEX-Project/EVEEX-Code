@@ -13,14 +13,19 @@ dep = $(obj:.o=.d) # un fichier de dépendance par lib
 CFLAGS = -MMD # option pour générer les fichiers .d
 LDFLAGS = -lm
 
+VAR = "Hello"
 
 #-----------------------------------------------------------#
 #															#
 #					Règles de compilation					#
 #															#
 #-----------------------------------------------------------#
+
+build-x86: CC = gcc
+build-riscV: CC = riscv32-unknown-elf-gcc
+
 .PHONY: build
-build: $(obj)
+build-x86 build-riscV: $(obj)
 	$(CC) -o eveex-x86 $^ $(LDFLAGS)
 
 -include $(dep)
