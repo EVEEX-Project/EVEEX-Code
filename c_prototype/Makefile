@@ -3,7 +3,7 @@
 #						Variables							#
 #															#
 #-----------------------------------------------------------#
-CC = gcc
+
 src = 	main.c \
 		$(wildcard types/*.c) \
 		$(wildcard lib/*.c)
