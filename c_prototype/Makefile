@@ -21,12 +21,13 @@ VAR = "Hello"
 #															#
 #-----------------------------------------------------------#
 
-build-x86: CC = gcc
-build-riscV: CC = riscv32-unknown-elf-gcc
+build-x86: CC = gcc Exename = eveex-x86
+
+build-riscV: CC = riscv32-unknown-elf-gcc Exename = eveex-riscV
 
 .PHONY: build
 build-x86 build-riscV: $(obj)
-	$(CC) -o eveex-x86 $^ $(LDFLAGS)
+	$(CC) -o $(Exename) $^ $(LDFLAGS)
 
 -include $(dep)
 
