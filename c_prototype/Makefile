@@ -1,3 +1,8 @@
+#-----------------------------------------------------------#
+#															#
+#						Variables							#
+#															#
+#-----------------------------------------------------------#
 CC = gcc
 src = 	main.c \
 		$(wildcard types/*.c) \
@@ -8,8 +13,13 @@ dep = $(obj:.o=.d) # un fichier de dépendance par lib
 CFLAGS = -MMD # option pour générer les fichiers .d
 LDFLAGS = -lm
 
-.PHONY: clean build
 
+#-----------------------------------------------------------#
+#															#
+#					Règles de compilation					#
+#															#
+#-----------------------------------------------------------#
+.PHONY: build
 build: $(obj)
 	$(CC) -o eveex-x86 $^ $(LDFLAGS)
 
@@ -19,6 +29,11 @@ build: $(obj)
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
+#-----------------------------------------------------------#
+#															#
+#					Règles de nettoyage						#
+#															#
+#-----------------------------------------------------------#
 # Nettoyer les produits de make
 .PHONY: clean
 clean: cleanbuild cleandep
