@@ -50,7 +50,7 @@ int main() {
     struct List *encodingKeys = getKeys(encodingDict);
     for (unsigned i = 0; i < count(encodingKeys); i++) {
         const char *key = ((struct Native *) cast(Native(), lookAt(encodingKeys, i)))->value;
-        struct Native *val = cast(Native(), lookAt(cast(List(), get(encodingDict, key)), 0));
+        struct Native *val = cast(Native(), get(encodingDict, key));
         printf("%s --> %s\n", key, (char *) val->value);
     }
 

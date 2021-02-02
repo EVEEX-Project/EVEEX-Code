@@ -62,7 +62,7 @@ struct List *splitPhraseInNodes(const char *phrase) {
         }
         // key already registered
         else {
-            printf("Already known : %s\n", key);
+            // printf("Already known : %s\n", key);
             unsigned long* val = (unsigned long *) frequency->value;
             (*val)++;
         }
@@ -222,8 +222,9 @@ void printHuffmanTree(struct Node *root) {
 void generateEncodingDict(struct Dictionary *encoding, struct Node *root, char *prefix) {
     // if there is no children we add the symbol to the dictionary
     if (root->left == NULL && root->right == NULL) {
+        struct Native *val = cast(Native(), lookAt((struct List *) cast(List(), root->value), 0));
         // updating its entry in the dictionary
-        set(encoding, prefix, root->value);
+        set(encoding, val->value, new(Native(), prefix, strlen(prefix) + 1));
         return;
     }
 
