@@ -24,6 +24,7 @@ add_executable(C_PROTOTYPE
         lib/encoder.c
         lib/decoder.c
         lib/huffman.c
+        lib/logger.c
 
         main.c)
 

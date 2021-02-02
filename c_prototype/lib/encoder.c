@@ -59,7 +59,7 @@ const struct List *splitInMacroblocs(const void *_self, int size) {
         addLast(macroblocs, (void *) block);
         //puto(block, stdout);
     }
-    printf("Created %u blocks\n", count(macroblocs));
+    //printf("Created %u blocks\n", count(macroblocs));
 
     // Iterating over the pixels
     struct Image *mBlock;
