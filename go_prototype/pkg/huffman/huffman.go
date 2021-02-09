@@ -4,6 +4,8 @@ import (
 	"math"
 )
 
+// Node contains data about a node
+// for the Huffman encoding algorithm
 type Node struct {
 	value []string
 	frequency int
@@ -11,6 +13,8 @@ type Node struct {
 	left *Node
 }
 
+// MergeTwoNodes takes to nodes and merges it into another one
+// while updating their frequency and their value
 func MergeTwoNodes(a *Node, b *Node) *Node {
 	var res Node
 
@@ -28,6 +32,8 @@ func MergeTwoNodes(a *Node, b *Node) *Node {
 	return &res
 }
 
+// SplitPhraseInNodes takes a sentence (made of words) and
+// splits it into nodes with a frequency
 func SplitPhraseInNodes(phrase string) []*Node {
 	var nodeList []*Node
 	var symbols = make(map[string]int)
@@ -54,6 +60,8 @@ func SplitPhraseInNodes(phrase string) []*Node {
 	return nodeList
 }
 
+// GetLowestFrequencySymbol returns the node from the list
+// with the lowest frequency
 func GetLowestFrequencySymbol(nodeList []*Node) (int, *Node) {
 	var lowestNode *Node
 	idx := -1
@@ -72,6 +80,8 @@ func GetLowestFrequencySymbol(nodeList []*Node) (int, *Node) {
 	return idx, lowestNode
 }
 
+// GenerateTreeFromList generates a tree from a list of nodes
+// then returns the root of the tree
 func GenerateTreeFromList(nodeList []*Node) *Node {
 	var n1, n2, n12 *Node
 	var idx int
@@ -89,6 +99,9 @@ func GenerateTreeFromList(nodeList []*Node) *Node {
 	return nodeList[0]
 }
 
+// GenerateEncodingDict takes a dictionary and a node and
+// fills the dictionary with the corresponding symbols and
+// encoding bytes
 func GenerateEncodingDict(dictionary *map[string]string, root *Node, prefix string) {
 
 	// if there is no children we add the symbol to the dictionary
