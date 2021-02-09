@@ -128,7 +128,46 @@ func DCT(macrob image.Image) (rCoeffs [][]float64, gCoeffs [][]float64, bCoeffs 
 // ZigzagLinearisation takes a 2D slice and returns a 1D slice
 // of coefficients following a zigzag pattern
 func ZigzagLinearisation(coeffs [][]float64) []float64 {
+	//Tableau de sortie
 	var zzcoeffs []float64
+	//Direction
+	up := false
+	// Position du curseur
+	i , j := 0 , 0
+	// Taille de l'image
+	size := len(coeffs)
+
+
+	//Pour chacun des points qui constituent l'image
+	for i < size && j < size {
+		// on ajoute le point courant
+		zzcoeffs = append(zzcoeffs, coeffs[i][j])
+		// Si on parcourt l'image vers le haut
+		if up {
+			if j == size -1{
+				i+=1
+				up = false // On change de direction
+			} else if i == 0 {
+				j+= 1
+				up = false // On change de direction
+			} else { // Sinon on parcourt la diagonale
+				i-=1
+				j+=1
+			}
+		} else { // Si on parcourt l'image vers le bas
+			if i == size -1{
+				j+=1
+				up = true // On change de direction
+			} else if j == 0 {
+				j+= 1
+				up = true // On change de direction
+			} else {
+				// Sinon on parcourt la diagonale
+				j-=1
+				i+=1
+			}
+		}
+	}
 
 	return zzcoeffs
 }
