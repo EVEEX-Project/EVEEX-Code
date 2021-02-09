@@ -57,6 +57,28 @@ add_executable(huffman_testing
         ../lib/huffman.c
         huffman_test.c)
 
+add_executable(server_testing
+        ../lib/server.c
+        server_test.c)
+if (WIN32)
+    target_link_libraries(server_testing wsock32 ws2_32)
+endif()
+
+add_executable(client_testing
+        ../types/Object.c
+        ../types/Node.c
+        ../types/Native.c
+        ../types/List.c
+        ../types/Dictionary.c
+        ../types/DictionaryItem.c
+        ../lib/huffman.c
+        ../types/Bitstream.c
+        ../lib/client.c
+        client_test.c)
+if (WIN32)
+    target_link_libraries(client_testing wsock32 ws2_32)
+endif()
+
 add_test(NAME PointTest COMMAND point_testing)
 add_test(NAME ListTest COMMAND list_testing)
 add_test(NAME DictionaryTest COMMAND dico_testing)
@@ -65,3 +87,5 @@ add_test(NAME ImageTest COMMAND image_testing)
 add_test(NAME BitstreamTest COMMAND bitstream_testing)
 add_test(NAME NodeTest COMMAND node_testing)
 add_test(NAME HuffmanTest COMMAND huffman_testing)
+add_test(NAME ServerTest COMMAND server_testing)
+add_test(NAME ClientTest COMMAND client_testing)
