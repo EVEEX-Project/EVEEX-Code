@@ -8,7 +8,7 @@ import (
 
 // ToYUVImage returns an image in the YUV representation
 // from an image in the RGB representation
-func ToYUVImage(img image.Image) image.Image {
+func ToYUVImage(img *image.Image) *image.Image {
 	var yuvPixels [][]image.Pixel
 	rgbPixels := img.GetPixels()
 
@@ -54,7 +54,7 @@ func SplitInMacroblocs(img image.Image, size int) []image.Image {
 	for k := 0; k < widthMB * heightMB; k++ {
 		newBlock := image.NewEmptyImage(size, size, img.GetChannels())
 		newBlock.InitEmptyPixels()
-		list = append(list, newBlock)
+		list[k]  = *newBlock
 	}
 
 	// distributing the pixels into the macroblocs
@@ -81,11 +81,11 @@ func SplitInMacroblocs(img image.Image, size int) []image.Image {
 
 // DCT computes the Discrete Cosine Transform of an image
 // the result is a 2D slice of coefficients
-func DCT(macrob image.Image) ([][]float64, [][]float64, [][]float64) {
+func DCT(macrob image.Image) (rCoeffs [][]float64, gCoeffs [][]float64, bCoeffs [][]float64) {
 	// creating the final slices
-	rCoeffs := make([][]float64, macrob.GetHeight())
-	gCoeffs := make([][]float64, macrob.GetHeight())
-	bCoeffs := make([][]float64, macrob.GetHeight())
+	rCoeffs = make([][]float64, macrob.GetHeight())
+	gCoeffs = make([][]float64, macrob.GetHeight())
+	bCoeffs = make([][]float64, macrob.GetHeight())
 	for k := 0; k < macrob.GetHeight(); k++ {
 		rCoeffs[k] = make([]float64, macrob.GetWidth())
 		gCoeffs[k] = make([]float64, macrob.GetWidth())
@@ -151,13 +151,6 @@ func Quantization(coeffs []float64, threshold float64) []float64 {
 	return res
 }
 
-// RLEPair contains the data associated
-// to a RLE pair
-type RLEPair struct {
-	nbZeros int
-	value float64
-}
-
 // RunLevel takes a slice of coefficients and returns
 // pairs of value in format (x, y) where x is the number
 // of 0 before the value and y is the value
@@ -169,7 +162,7 @@ func RunLevel(coeffs []float64) []RLEPair {
 	for _, val := range coeffs {
 		// if there is something else than a 0
 		if val != 0 {
-			pair := RLEPair{nbZeros: c, value: val}
+			pair := RLEPair{NbZeros: c, Value: val}
 			res = append(res, pair)
 			c = 0
 		} else {
@@ -178,7 +171,7 @@ func RunLevel(coeffs []float64) []RLEPair {
 	}
 
 	// don't forget the last value event if it is a 0
-	pair := RLEPair{nbZeros: c, value: coeffs[len(coeffs)-1]}
+	pair := RLEPair{NbZeros: c, Value: coeffs[len(coeffs)-1]}
 	res = append(res, pair)
 
 	return res

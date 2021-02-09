@@ -1,6 +1,7 @@
 package huffman
 
 import (
+	"eveex/pkg/encoder"
 	"math"
 )
 
@@ -40,6 +41,34 @@ func SplitPhraseInNodes(phrase string) []*Node {
 
 	for k := 0; k < len([]rune(phrase)); k ++ {
 		key := string([]rune(phrase)[k])
+
+		freq := 0
+		if val, ok := symbols[key]; ok {
+			// if the key is already registered
+			freq = val
+		}
+		// Updating the frequency
+		symbols[key] = freq + 1
+	}
+
+	for symbol, freq := range symbols {
+		nodeList = append(nodeList, &Node{
+			value: []string{symbol},
+			frequency: freq,
+		})
+	}
+
+	return nodeList
+}
+
+// RLEPairsToNodes takes a list of pairs and
+// splits it into nodes with a frequency
+func RLEPairsToNodes(pairs []encoder.RLEPair) []*Node {
+	var nodeList []*Node
+	symbols := make(map[string]int)
+
+	for _, pair := range pairs {
+		key := pair.ToString()
 
 		freq := 0
 		if val, ok := symbols[key]; ok {

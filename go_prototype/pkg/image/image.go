@@ -69,20 +69,15 @@ func (img *Image) SetPixel(i int, j int, pix Pixel) {
 // InitEmptyPixels init the pixel 2D-array with default
 // pixel data
 func (img *Image) InitEmptyPixels() {
-	var pixels [][]Pixel
+	img.pixels = make([][]Pixel, img.height)
 	for y := 0; y < img.height; y++ {
-		var row []Pixel
-		for x := 0; x < img.width; x++ {
-			row = append(row, Pixel{})
-		}
-		pixels = append(pixels, row)
+		img.pixels[y] = make([]Pixel, img.width)
 	}
-	img.SetPixels(pixels)
 }
 
 // NewEmptyImage creates an empty image
-func NewEmptyImage(width int, height int, channels int) Image {
-	return Image{
+func NewEmptyImage(width int, height int, channels int) *Image {
+	return &Image{
 		width: width,
 		height: height,
 		channels: channels,
@@ -91,7 +86,7 @@ func NewEmptyImage(width int, height int, channels int) Image {
 
 // LoadImageFromFile tries to load an image from the disk
 // and put it in an Image structure
-func LoadImageFromFile(filename string) (Image, error) {
+func LoadImageFromFile(filename string) (*Image, error) {
 	// Registering detected formats
 	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
 	image.RegisterFormat("jpg", "jpg", jpeg.Decode, jpeg.DecodeConfig)
@@ -100,14 +95,14 @@ func LoadImageFromFile(filename string) (Image, error) {
 	// opening the file
 	file, err := os.Open(filename)
 	if err != nil {
-		return Image{}, fmt.Errorf("error: file could not be opened")
+		return nil, fmt.Errorf("error: file could not be opened")
 	}
 	defer file.Close() // don't forget to close the file at the end
 
 	// decoding the image
 	img, format, err := image.Decode(file)
 	if err != nil {
-		return Image{}, fmt.Errorf("error: image could not be decoded with format '%s'", format)
+		return nil, fmt.Errorf("error: image could not be decoded with format '%s'", format)
 	}
 
 	// getting the number of channels
