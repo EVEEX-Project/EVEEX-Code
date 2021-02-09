@@ -39,7 +39,7 @@ Example:
 		printLogSeparator()
 
 		img, _ := image.LoadImageFromFile(args[0])
-		macroblocs := encoder.SplitInMacroblocs(*img, 20)
+		macroblocs := encoder.SplitInMacroblocs(*img, encodeMacroblocSize)
 
 		// taking the first one for tests
 		mb 				:= macroblocs[0]
@@ -60,6 +60,9 @@ Example:
 		for key, val := range encodingDict {
 			log.Info().Msgf("%s --> %s", key, val)
 		}
+
+		bs := encoder.EncodePairs(rlePairs, encodingDict)
+		log.Info().Msgf("Bistream: %s", bs.GetData())
 	},
 }
 

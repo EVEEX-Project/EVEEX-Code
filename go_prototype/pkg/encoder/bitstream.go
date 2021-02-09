@@ -5,6 +5,10 @@ type Bitstream struct {
 	data []byte
 }
 
+func (bs *Bitstream) GetData() []byte {
+	return bs.data
+}
+
 func NewBitstreamWithSize(size int) *Bitstream {
 	return &Bitstream{
 		size: size,
