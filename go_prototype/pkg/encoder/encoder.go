@@ -6,6 +6,8 @@ import (
 	"math"
 )
 
+// ToYUVImage returns an image in the YUV representation
+// from an image in the RGB representation
 func ToYUVImage(img image.Image) image.Image {
 	var yuvPixels [][]image.Pixel
 	rgbPixels := img.GetPixels()
@@ -29,6 +31,9 @@ func ToYUVImage(img image.Image) image.Image {
 	return yuvImg
 }
 
+// SplitInMacroblocs splits an image into square macroblocs
+// of side 'size'. The provided image needs to be a multiple
+// of the size requested
 func SplitInMacroblocs(img image.Image, size int) []image.Image {
 	if img.GetWidth() % size != 0 || img.GetHeight() % size != 0 {
 		log.Fatal().
@@ -74,6 +79,8 @@ func SplitInMacroblocs(img image.Image, size int) []image.Image {
 	return list
 }
 
+// DCT computes the Discrete Cosine Transform of an image
+// the result is a 2D slice of coefficients
 func DCT(macrob image.Image) ([][]float64, [][]float64, [][]float64) {
 	// creating the final slices
 	rCoeffs := make([][]float64, macrob.GetHeight())
@@ -118,16 +125,61 @@ func DCT(macrob image.Image) ([][]float64, [][]float64, [][]float64) {
 	return rCoeffs, gCoeffs, bCoeffs
 }
 
+// ZigzagLinearisation takes a 2D slice and returns a 1D slice
+// of coefficients following a zigzag pattern
 func ZigzagLinearisation(coeffs [][]float64) []float64 {
 	var zzcoeffs []float64
 
 	return zzcoeffs
 }
 
-func Quantization() {
+// Quantization filters the coefficients based on their value
+// if a value is below a threshold, the value is replaced by a 0
+func Quantization(coeffs []float64, threshold float64) []float64 {
+	res := make([]float64, len(coeffs))
 
+	// iteration over the list of coefficients
+	for idx, val := range coeffs {
+		// if the value is below the threshold, make it 0
+		if val <= threshold {
+			res[idx] = 0.0
+		} else {
+			res[idx] = val
+		}
+	}
+
+	return res
 }
 
-func RunLevel() {
+// RLEPair contains the data associated
+// to a RLE pair
+type RLEPair struct {
+	nbZeros int
+	value float64
+}
 
+// RunLevel takes a slice of coefficients and returns
+// pairs of value in format (x, y) where x is the number
+// of 0 before the value and y is the value
+func RunLevel(coeffs []float64) []RLEPair {
+	var res []RLEPair
+
+	// iterating over the elements
+	var c int
+	for _, val := range coeffs {
+		// if there is something else than a 0
+		if val != 0 {
+			pair := RLEPair{nbZeros: c, value: val}
+			res = append(res, pair)
+			c = 0
+		} else {
+			c++
+		}
+	}
+
+	// don't forget the last value event if it is a 0
+	pair := RLEPair{nbZeros: c, value: coeffs[len(coeffs)-1]}
+	res = append(res, pair)
+
+	return res
 }
