@@ -3,6 +3,7 @@ package encoder
 import (
 	"eveex/pkg/image"
 	"github.com/rs/zerolog/log"
+	"math"
 )
 
 func ToYUVImage(img image.Image) image.Image {
@@ -73,12 +74,30 @@ func SplitInMacroblocs(img image.Image, size int) []image.Image {
 	return list
 }
 
-func DCT() {
+func DCT(macrob image.Image) []float64 {
+	coeffs := make([]float64, macrob.GetHeight() * macrob.GetWidth())
 
+	for i := 0; i < macrob.GetHeight(); i++ {
+		for j := 0; j < macrob.GetWidth(); j++ {
+
+			for sLine := 0; sLine < macrob.GetHeight(); sLine++ {
+				for sCol := 0; sCol < macrob.GetWidth(); sCol++ {
+					// coeff := math.Cos((math.Pi * float64(sCol) + 0.5) * float64(j)) / float64(macrob.GetWidth()) *
+						math.Cos((math.Pi * (float64(sLine) + 0.5) * float64(i)) / float64(macrob.GetHeight()))
+
+				}
+			}
+
+		}
+	}
+
+	return coeffs
 }
 
-func ZigzagLinearisation() {
+func ZigzagLinearisation(coeffs [][]float64) []float64 {
+	var zzcoeffs []float64
 
+	return zzcoeffs
 }
 
 func Quantization() {
