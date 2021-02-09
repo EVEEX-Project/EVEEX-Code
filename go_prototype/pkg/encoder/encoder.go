@@ -74,24 +74,48 @@ func SplitInMacroblocs(img image.Image, size int) []image.Image {
 	return list
 }
 
-func DCT(macrob image.Image) []float64 {
-	coeffs := make([]float64, macrob.GetHeight() * macrob.GetWidth())
+func DCT(macrob image.Image) ([][]float64, [][]float64, [][]float64) {
+	// creating the final slices
+	rCoeffs := make([][]float64, macrob.GetHeight())
+	gCoeffs := make([][]float64, macrob.GetHeight())
+	bCoeffs := make([][]float64, macrob.GetHeight())
+	for k := 0; k < macrob.GetHeight(); k++ {
+		rCoeffs[k] = make([]float64, macrob.GetWidth())
+		gCoeffs[k] = make([]float64, macrob.GetWidth())
+		bCoeffs[k] = make([]float64, macrob.GetWidth())
+	}
 
+	// iteration over the macrobloc pixels
 	for i := 0; i < macrob.GetHeight(); i++ {
 		for j := 0; j < macrob.GetWidth(); j++ {
 
 			for sLine := 0; sLine < macrob.GetHeight(); sLine++ {
 				for sCol := 0; sCol < macrob.GetWidth(); sCol++ {
-					// coeff := math.Cos((math.Pi * float64(sCol) + 0.5) * float64(j)) / float64(macrob.GetWidth()) *
+					coeff := math.Cos((math.Pi * float64(sCol) + 0.5) * float64(j)) / float64(macrob.GetWidth()) *
 						math.Cos((math.Pi * (float64(sLine) + 0.5) * float64(i)) / float64(macrob.GetHeight()))
-
+					rCoeffs[i][j] += float64(macrob.GetPixel(i, j).R) * coeff
+					gCoeffs[i][j] += float64(macrob.GetPixel(i, j).G) * coeff
+					bCoeffs[i][j] += float64(macrob.GetPixel(i, j).B) * coeff
 				}
 			}
 
+			mCol := 1.0
+			if j == 0 {
+				mCol = 1 / math.Sqrt2
+			}
+
+			mLine := 1.0
+			if j == 0 {
+				mLine = 1 / math.Sqrt2
+			}
+
+			rCoeffs[i][j] *= mCol * mLine * 0.25
+			gCoeffs[i][j] *= mCol * mLine * 0.25
+			bCoeffs[i][j] *= mCol * mLine * 0.25
 		}
 	}
 
-	return coeffs
+	return rCoeffs, gCoeffs, bCoeffs
 }
 
 func ZigzagLinearisation(coeffs [][]float64) []float64 {
