@@ -11,7 +11,7 @@
     typedef int SOCKET;
     typedef struct sockaddr_in SOCKADDR_IN;
 #else
-    #error not defined for this platform
+    // unsupported platform
 #endif
 
 #include <stdbool.h>

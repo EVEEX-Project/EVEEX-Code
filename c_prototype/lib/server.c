@@ -168,7 +168,7 @@ void receive_msg_from_client(SERVER* server, char* buffer_total_msg_received, ch
 
     if (nb_received_characters > 0) {
         if (est_un_bitstream) {
-            printf("\n[SERVER] Message numero %d/%d recu : \"%s\"", msg_number, server->nb_total_paquets, buffer_received_msg);
+            printf("\n[SERVER] Message numero %d/%d recu (de taille <= %d) : \"%s\"", msg_number, server->nb_total_paquets, server->bufsize - 1, buffer_received_msg);
             strcat(buffer_total_msg_received, buffer_received_msg);
         }
         else
