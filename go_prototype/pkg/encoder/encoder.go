@@ -136,6 +136,10 @@ func ZigzagLinearisation(coeffs [][]float64) []float64 {
 // Quantization filters the coefficients based on their value
 // if a value is below a threshold, the value is replaced by a 0
 func Quantization(coeffs []float64, threshold float64) []float64 {
+	if len(coeffs) == 0 {
+		log.Fatal().Msg("no coeff given to the Quantization function")
+	}
+
 	res := make([]float64, len(coeffs))
 
 	// iteration over the list of coefficients
@@ -155,6 +159,10 @@ func Quantization(coeffs []float64, threshold float64) []float64 {
 // pairs of value in format (x, y) where x is the number
 // of 0 before the value and y is the value
 func RunLevel(coeffs []float64) []RLEPair {
+	if len(coeffs) == 0 {
+		log.Fatal().Msg("no coeff given to the RunLevel function")
+	}
+
 	var res []RLEPair
 
 	// iterating over the elements
