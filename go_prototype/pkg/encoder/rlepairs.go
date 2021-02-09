@@ -13,6 +13,6 @@ type RLEPair struct {
 // useful for huffman for example
 func (p *RLEPair) ToString() string {
 	sNbZeros := strconv.FormatInt(int64(p.NbZeros), 10)
-	sValue := strconv.FormatFloat(p.Value, 'd', 2, 64)
+	sValue := strconv.FormatFloat(p.Value, 'f', 2, 64)
 	return sNbZeros + ";" + sValue
 }
