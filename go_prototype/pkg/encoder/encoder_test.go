@@ -44,6 +44,11 @@ func TestBitstream(t *testing.T) {
 
 	bs = *NewBitstreamWithSize(5)
 	assertEqual(t, bs.size, 5)
+
+	dec := 42
+	res :=dec2bin(dec,16)
+
+	assertEqual(t, res, "0000000000101010")
 }
 
 func TestToYUVImage(t *testing.T) {
