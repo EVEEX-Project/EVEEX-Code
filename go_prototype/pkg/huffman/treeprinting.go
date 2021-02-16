@@ -52,13 +52,13 @@ func PrintTree(root *Node) {
 		}
 	}
 
-	printT(root, false, 0, 0, &s)
+	limit := printT(root, false, 0, 0, &s)
 
 	var empty bool
 	for i := 0; i < len(s); i++ {
 		empty = true
 
-		for c := 0; c < width; c++ {
+		for c := 0; c < limit; c++ {
 			if s[i][c] != ' ' {
 				empty = false
 				break
@@ -66,7 +66,7 @@ func PrintTree(root *Node) {
 		}
 
 		if !empty {
-			for j := 0; j < width; j++ {
+			for j := 0; j < limit; j++ {
 				fmt.Printf("%c", s[i][j])
 			}
 			fmt.Println()

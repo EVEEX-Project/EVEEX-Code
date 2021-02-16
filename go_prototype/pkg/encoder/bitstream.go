@@ -17,5 +17,8 @@ func NewBitstreamWithSize(size int) *Bitstream {
 }
 
 func NewEmptyBitstream() *Bitstream {
-	return &Bitstream{size: 0, data: make([]byte, 0)}
+	return &Bitstream{
+		size: 0,
+		data: make([]byte, 0),
+	}
 }
