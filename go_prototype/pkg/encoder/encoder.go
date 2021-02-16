@@ -217,9 +217,11 @@ func RunLevel(coeffs []float64) []RLEPair {
 		}
 	}
 
-	// don't forget the last value event if it is a 0
-	pair := RLEPair{NbZeros: c, Value: coeffs[len(coeffs)-1]}
-	res = append(res, pair)
+	// don't forget the last value even if it is a 0
+	if c != 0 {
+		pair := RLEPair{NbZeros: c, Value: coeffs[len(coeffs)-1]}
+		res = append(res, pair)
+	}
 
 	return res
 }

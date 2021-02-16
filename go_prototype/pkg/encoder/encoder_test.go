@@ -80,17 +80,43 @@ func TestDCT(t *testing.T) {
 }
 
 func TestZigzagLinearisation(t *testing.T) {
+	img, err := image.LoadImageFromFile("../../assets/20px.png")
+	assertEqual(t, err, nil)
+	dctImgR, _, _ := DCT(*img)
+	zigzag := ZigzagLinearisation(dctImgR)
 
+	assertEqual(t, len(zigzag), len(dctImgR) * len(dctImgR[0]))
 }
 
 func TestQuantization(t *testing.T) {
+	list := []float64{1, 2, 5, 1, 2}
+	quant := Quantization(list, 2)
 
+	assertEqual(t, quant[0], 0.0)
+	assertEqual(t, quant[1], 0.0)
+	assertEqual(t, quant[2], 5.0)
 }
 
 func TestRunLevel(t *testing.T) {
+	data := []float64{0, 0, 0, 0, 1, 0, 0, 1}
+	rle := RunLevel(data)
 
+	t.Log(rle)
+
+	assertEqual(t, len(rle), 2)
+	assertEqual(t, rle[0].NbZeros, 4)
+	assertEqual(t, rle[0].Value, float64(1))
+	assertEqual(t, rle[1].NbZeros, 2)
+	assertEqual(t, rle[1].Value, float64(1))
 }
 
 func TestEncodePairs(t *testing.T) {
+	symbols := map[string]string{"0;1.00": "01", "5;142.50": "11"}
+	pairs := []RLEPair{{0, 1.0}, {5, 142.5}}
 
+	bs := EncodePairs(pairs, symbols)
+	assertEqual(t, bs.GetData()[0], byte('0'))
+	assertEqual(t, bs.GetData()[1], byte('1'))
+	assertEqual(t, bs.GetData()[2], byte('1'))
+	assertEqual(t, bs.GetData()[3], byte('1'))
 }
