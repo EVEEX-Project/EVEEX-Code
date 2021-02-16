@@ -7,6 +7,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"os"
+	"runtime/pprof"
 )
 
 var encodeOutputPath string
@@ -30,6 +32,14 @@ Example:
   ./eveex encode --debug assets/20px.png
   ./eveex encode --output=out.dat assets/20px.png`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// starting pprof
+		f, err := os.Create("cpuprofile.prof")
+		if err != nil {
+			log.Fatal().Msg(err.Error())
+		}
+		_ = pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+
 		// setting up the logger
 		closeFile := setupLogger()
 		defer closeFile()
