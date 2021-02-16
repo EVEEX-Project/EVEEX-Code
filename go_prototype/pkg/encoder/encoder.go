@@ -155,11 +155,11 @@ func ZigzagLinearisation(coeffs [][]float64) []float64 {
 				j+=1
 			}
 		} else { // if going down
-			if i == size -1{
+			if i == size -1 {
 				j+=1
 				up = true // changing direction
 			} else if j == 0 {
-				j+= 1
+				i+= 1
 				up = true // changing direction
 			} else {
 				// else following the diag
