@@ -38,15 +38,35 @@ Example:
 		}
 		printLogSeparator()
 
-		img, _ := image.LoadImageFromFile(args[0])
+		img, err := image.LoadImageFromFile(args[0])
+		if err != nil {
+			log.Fatal().Str("filename", args[0]).Msgf("Cannot load image : %s\n", err.Error())
+		}
 		macroblocs := encoder.SplitInMacroblocs(*img, encodeMacroblocSize)
 
-		// taking the first one for tests
-		mb 				:= macroblocs[0]
-		dctMbR, _, _ 	:= encoder.DCT(mb)
-		zzVals 			:= encoder.ZigzagLinearisation(dctMbR)
-		quantVals 		:= encoder.Quantization(zzVals, 5)
-		rlePairs 		:= encoder.RunLevel(quantVals)
+		// final array
+		var rlePairs []encoder.RLEPair
+
+		// setting up jobs and their result
+		var jobs = make(chan *image.Image, len(macroblocs))
+		var results = make(chan []encoder.RLEPair, len(macroblocs))
+
+		// creating workers
+		for w := 0; w < 8; w++ {
+			go worker(jobs, results)
+		}
+		// sending jobs
+		for _, mb := range macroblocs {
+			jobs <- &mb
+		}
+		close(jobs)
+
+		// getting back the results
+		for r := 0; r < len(macroblocs); r++ {
+			var res = <- results
+			rlePairs = append(rlePairs, res...)
+		}
+		close(results)
 
 		// huffman
 		nodeList		:= huffman.RLEPairsToNodes(rlePairs)
@@ -55,15 +75,31 @@ Example:
 		encodingDict := make(map[string]string)
 		huffman.GenerateEncodingDict(&encodingDict, root, "")
 
-		huffman.PrintTree(root)
+		/*huffman.PrintTree(root)
 
 		for key, val := range encodingDict {
 			log.Info().Msgf("%s --> %s", key, val)
 		}
 
 		bs := encoder.EncodePairs(rlePairs, encodingDict)
-		log.Info().Msgf("Bistream: %s", bs.GetData())
+		log.Info().Msgf("Bistream: %s", bs.GetData())*/
 	},
+}
+
+func worker(jobs <-chan *image.Image, results chan <- []encoder.RLEPair) {
+	for mb := range jobs {
+		threshold := 5.0
+		dctMbR, dctMbG, dctMbB := encoder.DCT(*mb)
+		zzValsR, zzValsG, zzValsB := encoder.ZigzagLinearisation(dctMbR), encoder.ZigzagLinearisation(dctMbG), encoder.ZigzagLinearisation(dctMbB)
+
+		zzVals := make([]float64, 3 * len(zzValsR))
+		zzVals = append(zzVals, zzValsR...)
+		zzVals = append(zzVals, zzValsG...)
+		zzVals = append(zzVals, zzValsB...)
+		quantVals := encoder.Quantization(zzVals, threshold)
+
+		results <- encoder.RunLevel(quantVals)
+	}
 }
 
 func init() {
