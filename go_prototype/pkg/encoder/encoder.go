@@ -79,6 +79,13 @@ func SplitInMacroblocs(img image.Image, size int) []image.Image {
 	return list
 }
 
+func FastCos(x float64) float64 {
+	x2 := x*x
+	x4 := x2*x2
+	x6 := x4*x2
+	return 1 - x2/2 + x4/24 + x6/720
+}
+
 // DCT computes the Discrete Cosine Transform of an image
 // the result is a 2D slice of coefficients
 func DCT(macrob image.Image) (rCoeffs [][]float64, gCoeffs [][]float64, bCoeffs [][]float64) {
@@ -98,8 +105,8 @@ func DCT(macrob image.Image) (rCoeffs [][]float64, gCoeffs [][]float64, bCoeffs 
 
 			for sLine := 0; sLine < macrob.GetHeight(); sLine++ {
 				for sCol := 0; sCol < macrob.GetWidth(); sCol++ {
-					coeff := math.Cos((math.Pi * float64(sCol) + 0.5) * float64(j)) / float64(macrob.GetWidth()) *
-						math.Cos((math.Pi * (float64(sLine) + 0.5) * float64(i)) / float64(macrob.GetHeight()))
+					coeff := FastCos((math.Pi * float64(sCol) + 0.5) * float64(j)) / float64(macrob.GetWidth()) *
+						FastCos((math.Pi * (float64(sLine) + 0.5) * float64(i)) / float64(macrob.GetHeight()))
 					rCoeffs[i][j] += float64(macrob.GetPixel(i, j).R) * coeff
 					gCoeffs[i][j] += float64(macrob.GetPixel(i, j).G) * coeff
 					bCoeffs[i][j] += float64(macrob.GetPixel(i, j).B) * coeff
