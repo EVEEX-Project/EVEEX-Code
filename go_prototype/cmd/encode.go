@@ -50,7 +50,7 @@ Example:
 
 		// huffman
 		nodeList		:= huffman.RLEPairsToNodes(rlePairs)
-		root := huffman.GenerateTreeFromList(nodeList)
+		root 			:= huffman.GenerateTreeFromList(nodeList)
 
 		encodingDict := make(map[string]string)
 		huffman.GenerateEncodingDict(&encodingDict, root, "")

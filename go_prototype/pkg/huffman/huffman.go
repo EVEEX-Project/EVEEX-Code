@@ -97,8 +97,8 @@ func GetLowestFrequencySymbol(nodeList []*Node) (int, *Node) {
 	minFreq := math.Inf(1)
 
 	for k, node := range nodeList {
-		if float64(node.frequency) < minFreq {
-			if lowestNode == nil || len(lowestNode.value) < len(node.value) {
+		if float64(node.frequency) <= minFreq {
+			if lowestNode == nil || len(lowestNode.value) <= len(node.value) {
 				idx = k
 				minFreq = float64(node.frequency)
 				lowestNode = node
@@ -145,4 +145,3 @@ func GenerateEncodingDict(dictionary *map[string]string, root *Node, prefix stri
 		GenerateEncodingDict(dictionary, root.right, prefix + "1")
 	}
 }
-
