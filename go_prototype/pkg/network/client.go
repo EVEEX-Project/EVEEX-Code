@@ -42,7 +42,7 @@ func (c *TCPClient) GetServerAnswer() {
 		text := scanner.Text()
 
 		if !ok {
-			log.Warn().Msg("Reached EOF on server connection.")
+			log.Warn().Msg("Connexion closed with server.")
 			break
 		}
 

@@ -41,6 +41,7 @@ func (s *TCPServer) requestHandler(conn net.Conn) {
 		ok := scanner.Scan()
 
 		if !ok {
+			log.Warn().Msg("Connexion closed with client")
 			break
 		}
 
