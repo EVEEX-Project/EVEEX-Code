@@ -22,10 +22,7 @@ func NewBitstreamWithSize(size int) *Bitstream {
 }
 
 func NewEmptyBitstream() *Bitstream {
-	return &Bitstream{
-		size: 0,
-		data: make([]byte, 0),
-	}
+	return NewBitstreamWithSize(0)
 }
 
 func dec2bin(dec int, size int) string {
