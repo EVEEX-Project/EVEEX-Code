@@ -35,6 +35,13 @@ func (c *TCPClient) SendString(data string) {
 	if err != nil { log.Error().Err(err).Msg("Error while printing to stream") }
 }
 
+func (c *TCPClient) SendBytes(data []byte) {
+	log.Debug().Int("data_length", len(data)).Msg("Sending string to server")
+	_ = c.conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
+	_, err := c.conn.Write(data)
+	if err != nil { log.Error().Err(err).Msg("Error while printing to stream") }
+}
+
 func (c *TCPClient) GetServerAnswer() {
 	scanner := bufio.NewScanner(c.conn)
 	for {
