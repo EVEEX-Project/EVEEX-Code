@@ -55,6 +55,8 @@ func CreateBitstream(dict []byte, macroblocks []string, macroblocksize int, widt
 	header = append(header, dec2bin(macroblocksize,6)...)
 
 	// DICT
-	
 
+
+
+	return header // juste pour éviter que le complilateur râle (en sortie il veut un objet de type []byte)
 }

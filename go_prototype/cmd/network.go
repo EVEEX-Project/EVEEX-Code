@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bytes"
+	"eveex/pkg/huffman"
 	"eveex/pkg/network"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -49,7 +51,56 @@ Example:
 
 			client := network.NewTCPClient(networkHost, networkPort)
 			client.Connect()
-			client.SendString("Hello world!\n")
+
+			/*
+			// example of RLE pairs
+			var rlePairs []encoder.RLEPair
+			pair1 := encoder.RLEPair{NbZeros: 5, Value: 7}
+			pair2 := encoder.RLEPair{NbZeros: 15, Value: 2}
+			rlePairs = append(rlePairs, pair1, pair2)
+
+			// generating the encoding dictionary
+			nodeList := huffman.RLEPairsToNodes(rlePairs)
+			root := huffman.GenerateTreeFromList(nodeList)
+			encodingDict := make(map[string]string)
+			huffman.GenerateEncodingDict(&encodingDict, root, "")
+			nbKeys := len(encodingDict)
+			log.Debug().Int("Number of keys", nbKeys).Msg("The encoding dictionary was successfully generated")
+
+			// encoding the RLE pairs
+			encodedRlePairs := encoder.EncodePairs(rlePairs, encodingDict)
+			encodedData := string(encodedRlePairs.GetData())
+			log.Debug().Str("Encoded data", encodedData).Msg("The RLE pairs were successfully encoded.")
+
+			client.SendString(encodedData)
+			client.GetServerAnswer()
+			*/
+
+			sentence := "ensta bretagne ftw"
+
+			// generating the encoding dictionary for the given sentence
+			nodes := huffman.SplitPhraseInNodes(sentence)
+			tree := huffman.GenerateTreeFromList(nodes)
+			var encodingDict = map[string]string{}
+			huffman.GenerateEncodingDict(&encodingDict, tree, "")
+			nbKeys := len(encodingDict)
+			log.Debug().Int("Number of keys in dict", nbKeys).Msg("The encoding dictionary was successfully generated")
+
+			// encoding sentence
+			var encodedSentence bytes.Buffer
+			encodedSentence.WriteString("")
+			for i := 0; i < len(sentence); i++ {
+				currentLetter := string(sentence[i])
+				encodedLetter := encodingDict[currentLetter]
+				encodedSentence.WriteString(encodedLetter) // concatenation
+			}
+			encodedSentence.WriteString("\n")
+			log.Debug().Msgf("The sentence was successfully encoded. Encoded data : %s", encodedSentence.String())
+
+			// sending encoded data to server
+			client.SendString(encodedSentence.String())
+
+			// receiving the server's response
 			client.GetServerAnswer()
 		}
 	},
