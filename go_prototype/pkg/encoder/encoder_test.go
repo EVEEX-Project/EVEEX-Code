@@ -1,6 +1,7 @@
 package encoder
 
 import (
+	"bytes"
 	"eveex/pkg/image"
 	"testing"
 )
@@ -45,10 +46,11 @@ func TestBitstream(t *testing.T) {
 	bs = *NewBitstreamWithSize(5)
 	assertEqual(t, bs.size, 5)
 
-	dec := 42
-	res :=dec2bin(dec,16)
 
-	assertEqual(t, res, "0000000000101010")
+	res :=dec2bin(42,16)
+	exp := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0}
+	result := bytes.Equal(res, exp)
+	assertEqual(t, result, true)
 }
 
 func TestToYUVImage(t *testing.T) {
