@@ -20,7 +20,7 @@ func helloWorld(version string) {
 	fmt.Printf("          ___  ___  / __/ _ \\/ ___/ _ |\n")
 	fmt.Printf("         / _ \\/ _ \\/ _// ___/ (_ / __ |\n")
 	fmt.Printf("         \\___/_//_/_/ /_/   \\___/_/ |_|\n\n")
-	fmt.Printf("\033[0;36m32-bit RISC-V Open Source video compression program\n")
+	fmt.Printf("\033[0;36m64-bit RISC-V Open Source video compression program\n")
 	fmt.Printf("                version \033[0;31m%s\033[0m\n\n", version)
 }
 

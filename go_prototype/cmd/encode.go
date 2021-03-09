@@ -14,6 +14,7 @@ import (
 var encodeOutputPath string
 var encodeDebug bool
 var encodeMacroblocSize int
+var startEncodeCPUProfiling bool
 
 // encodeCmd represents the encode command
 var encodeCmd = &cobra.Command{
@@ -33,12 +34,14 @@ Example:
   ./eveex encode --output=out.dat assets/20px.png`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// starting pprof
-		f, err := os.Create("cpuprofile.prof")
-		if err != nil {
-			log.Fatal().Msg(err.Error())
+		if startEncodeCPUProfiling {
+			f, err := os.Create("cpuprofile.prof")
+			if err != nil {
+				log.Fatal().Msg(err.Error())
+			}
+			_ = pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
 		}
-		_ = pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
 
 		// setting up the logger
 		closeFile := setupLogger()
@@ -63,7 +66,7 @@ Example:
 
 		// creating workers
 		for w := 0; w < 8; w++ {
-			go worker(jobs, results)
+			go encodeWorker(jobs, results)
 		}
 		// sending jobs
 		for _, mb := range macroblocs {
@@ -96,7 +99,7 @@ Example:
 	},
 }
 
-func worker(jobs <-chan *image.Image, results chan <- []encoder.RLEPair) {
+func encodeWorker(jobs <-chan *image.Image, results chan <- []encoder.RLEPair) {
 	for mb := range jobs {
 		threshold := 5.0
 		dctMbR, dctMbG, dctMbB := encoder.DCT(*mb)
@@ -119,4 +122,5 @@ func init() {
 	encodeCmd.Flags().StringVarP(&encodeOutputPath, "output", "o", "", "Exports the bitstream to a file")
 	encodeCmd.Flags().BoolVarP(&encodeDebug, "debug", "d", false, "Print debugging logs of the encoding process")
 	encodeCmd.Flags().IntVarP(&encodeMacroblocSize, "mbsize", "m", 20, "Change the size of the macrobloc")
+	encodeCmd.Flags().BoolVarP(&startEncodeCPUProfiling, "cpuprofile", "p", false, "Start the profiling of EVEEX encoder")
 }
