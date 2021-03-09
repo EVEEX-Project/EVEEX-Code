@@ -88,6 +88,9 @@ Example:
 		encodingDict := make(map[string]string)
 		huffman.GenerateEncodingDict(&encodingDict, root, "")
 
+		bs := encoder.EncodePairs(rlePairs, encodingDict)
+		log.Info().Bytes("header", bs.GetHeader()).Bytes("body", bs.GetBody()).Msg("Bitstream")
+
 		/*huffman.PrintTree(root)
 
 		for key, val := range encodingDict {

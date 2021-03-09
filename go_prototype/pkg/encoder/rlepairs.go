@@ -21,6 +21,14 @@ func (p *RLEPair) ToString() string {
 	return sNbZeros + ";" + sValue
 }
 
+// ToByte returns the representation of the pair
+// in byte format, useful for bandwith limited transmissions
+func (p *RLEPair) ToByte() []byte {
+	bNbZeros := byte(p.NbZeros)
+	bValue := byte(p.Value)
+	return []byte{bNbZeros, bValue}
+}
+
 // RLEPairFromString returns a RLEPair from its representation
 // in a string. Useful to get back data from huffman
 func RLEPairFromString(data string) *RLEPair {
@@ -36,5 +44,13 @@ func RLEPairFromString(data string) *RLEPair {
 	return &RLEPair{
 		NbZeros: nbZeros,
 		Value: value,
+	}
+}
+
+// RLEPairFromByte returns a RLEPair from its binary representation
+func RLEPairFromByte(data []byte) *RLEPair {
+	return &RLEPair{
+		NbZeros: int(data[0]),
+		Value: float64(data[1]),
 	}
 }
