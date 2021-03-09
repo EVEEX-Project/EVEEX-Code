@@ -2,6 +2,7 @@ package decoder
 
 import (
 	"eveex/pkg/encoder"
+	"eveex/pkg/image"
 	"math"
 )
 
@@ -55,9 +56,7 @@ func singleZigZag(coeffs []float64) [][]float64 {
 	var i, j = 0, 0
 	for k := 0; k < len(coeffs); k++ {
 		// adding the current point
-		if coeffs[k] != 0 {
-			res[i][j] = coeffs[k]
-		}
+		res[i][j] = coeffs[k]
 
 		// if we are going up
 		if up {
@@ -98,6 +97,24 @@ func YUVtoRGB() {
 
 }
 
-func AssembleMacroblocs() {
+func AssembleMacroblocs(macroblocs []*image.Image, macroblocSize int, width int, height int) *image.Image {
+	fullWidth, fullHeight := macroblocSize * width, macroblocSize * height
+	res := image.NewEmptyImage(fullWidth, fullHeight, 3)
+	res.InitEmptyPixels()
 
+	// for each macrobloc
+	for idx, mb := range macroblocs {
+		// getting the start position
+		i0 := (idx % width) * macroblocSize
+		j0 := (idx / width) * macroblocSize
+
+		// updating the pixels
+		for i := 0; i < macroblocSize; i++ {
+			for j := 0; j < macroblocSize; j++ {
+				res.SetPixel(i + i0, j + j0, mb.GetPixel(i, j))
+			}
+		}
+	}
+
+	return res
 }
