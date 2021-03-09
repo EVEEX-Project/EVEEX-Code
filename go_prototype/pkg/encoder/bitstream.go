@@ -50,7 +50,7 @@ func dec2bin(dec int, size int) []byte {
 	return binByte
 }
 
-func CreateBitstream(dict []byte, macroblocks []string, macroblocksize int, width int, height int ,frameid int) []byte {
+func CreateBitstream(dict []byte, macroblocks [][]byte, macroblocksize int, width int, height int ,frameid int, index_paquet_dit int) *Bitstream {
 
 
 	// HEADER
@@ -61,10 +61,41 @@ func CreateBitstream(dict []byte, macroblocks []string, macroblocksize int, widt
 	header = append(header, dec2bin(macroblocksize,6)...)
 
 	// DICT
+	dicti := dec2bin(frameid, 16)
+	dicti = append(dicti, dec2bin(1, 2)...) // 1 = DICTI_MSG
+	dicti = append(dicti, dec2bin(index_paquet_dit, 16)...)
+	dicti = append(dicti, dec2bin(len(dict),16)...)
+	dicti = append(dicti, dict...)
+
+	//BODY
+	body := dec2bin(frameid, 16)
+	body = append(body, dec2bin(2, 2)...) // 2 = BODY_MSG
+	body = append(body, dec2bin(0, 16)...)
+	body = append(body, dec2bin(0,16)...)//index_paquet
+	body = append(body, dec2bin(len(macroblocks[0]),16)...)
+	body = append(body, macroblocks[0]...)
+
+	for num_macroblock := 1; num_macroblock < len(macroblocks); num_macroblock++ {
+		body = append(body, dec2bin(frameid,16)...)
+		body = append(body, dec2bin(2, 2)...) // 2 = BODY_MSG
+		body = append(body, dec2bin(num_macroblock, 16)...)
+		body = append(body, dec2bin(0,16)...) //index_paquet
+		body = append(body, dec2bin(len(macroblocks[num_macroblock]),16)...)
+		body = append(body, macroblocks[num_macroblock]...)
+	}
+
+	tail := dec2bin(frameid, 16)
+	tail = append(tail,dec2bin(3,2)...) // 3 = END_MSG
 
 
+	sortie := append(dicti,body...)
+	sortie = append(sortie,tail...)
 
-	return header // juste pour éviter que le complilateur râle (en sortie il veut un objet de type []byte)
+	return &Bitstream {
+		size: len(sortie)+len(header),
+		header: header,
+		body: sortie,
+	} // juste pour éviter que le complilateur râle (en sortie il veut un objet de type []byte)
 }
 
 // Decode will return the frameid, the dictionary, the macroblocs size, the width
