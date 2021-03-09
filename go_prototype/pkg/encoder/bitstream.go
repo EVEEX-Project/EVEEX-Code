@@ -1,8 +1,10 @@
 package encoder
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
+
 )
 
 type Bitstream struct {
@@ -50,6 +52,20 @@ func dec2bin(dec int, size int) []byte {
 	return binByte
 }
 
+func bin2dec(bin []byte) int {
+	var t string
+	x := bin
+	for i:=0; i < len(x); i++{
+		y := []byte{x[i]}
+		if bytes.Compare(y, []byte{1})==0{t+="1"}else{t+="0"}
+	}
+	if i, err := strconv.ParseInt(t, 2, 64); err != nil {
+		return(0)
+	} else {
+		return(int(i))
+	}
+}
+
 func NewBitstreamFromData(dictionary []byte, macroblocks [][]byte, macroblocksize int, width int, height int ,frameid int, dictPacketIndex int, bodyPacketIndex int) *Bitstream {
 
 	// HEADER - 48 bits
@@ -88,7 +104,7 @@ func NewBitstreamFromData(dictionary []byte, macroblocks [][]byte, macroblocksiz
 	output = append(output, tail...)
 
 	return &Bitstream {
-		size:   len(output)+len(header),
+		size: len(sortie)+len(header),
 		header: header,
 		body:   output,
 	}
@@ -103,6 +119,9 @@ func (bs *Bitstream) Decode() (int, []byte, string, int, int, int) {
 	var macroblocSize int
 	var height int
 	var width int
-
+	for i:=0;i<48;i++{
+		frameID = bin2dec(bs.header[0:16])
+		width = bin2dec(bs.header[18:30])
+	}
 	return frameID, dict, data, macroblocSize, height, width
 }
