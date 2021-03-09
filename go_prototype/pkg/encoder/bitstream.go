@@ -50,7 +50,7 @@ func dec2bin(dec int, size int) []byte {
 	return binByte
 }
 
-func CreateBitstream(dict []byte, macroblocks [][]byte, macroblocksize int, width int, height int ,frameid int, index_paquet_dit int) *Bitstream {
+func CreateBitstream(dict []byte, macroblocks [][]byte, macroblocksize int, width int, height int ,frameid int, index_paquet_dict int, index_paquet_body int) *Bitstream {
 
 
 	// HEADER
@@ -63,7 +63,7 @@ func CreateBitstream(dict []byte, macroblocks [][]byte, macroblocksize int, widt
 	// DICT
 	dicti := dec2bin(frameid, 16)
 	dicti = append(dicti, dec2bin(1, 2)...) // 1 = DICTI_MSG
-	dicti = append(dicti, dec2bin(index_paquet_dit, 16)...)
+	dicti = append(dicti, dec2bin(index_paquet_dict, 16)...)
 	dicti = append(dicti, dec2bin(len(dict),16)...)
 	dicti = append(dicti, dict...)
 
@@ -71,7 +71,7 @@ func CreateBitstream(dict []byte, macroblocks [][]byte, macroblocksize int, widt
 	body := dec2bin(frameid, 16)
 	body = append(body, dec2bin(2, 2)...) // 2 = BODY_MSG
 	body = append(body, dec2bin(0, 16)...)
-	body = append(body, dec2bin(0,16)...)//index_paquet
+	body = append(body, dec2bin(index_paquet_body,16)...)//index_paquet
 	body = append(body, dec2bin(len(macroblocks[0]),16)...)
 	body = append(body, macroblocks[0]...)
 
@@ -79,7 +79,7 @@ func CreateBitstream(dict []byte, macroblocks [][]byte, macroblocksize int, widt
 		body = append(body, dec2bin(frameid,16)...)
 		body = append(body, dec2bin(2, 2)...) // 2 = BODY_MSG
 		body = append(body, dec2bin(num_macroblock, 16)...)
-		body = append(body, dec2bin(0,16)...) //index_paquet
+		body = append(body, dec2bin(index_paquet_body,16)...) //index_paquet
 		body = append(body, dec2bin(len(macroblocks[num_macroblock]),16)...)
 		body = append(body, macroblocks[num_macroblock]...)
 	}
