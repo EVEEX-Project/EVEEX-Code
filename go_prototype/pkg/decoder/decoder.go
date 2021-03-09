@@ -34,29 +34,31 @@ func RunLength(pairs []*encoder.RLEPair) []float64 {
 	return res
 }
 
-func ZigZag(coeffsRGB []float64) ([][]float64, [][]float64, [][]float64){
+func ZigZag(coeffsRGB []float64) ([][]float64, [][]float64, [][]float64) {
 	var length int
 	length = len(coeffsRGB) / 3
 	coeffsR := coeffsRGB[:length]
 	coeffsG := coeffsRGB[length:2*length]
 	coeffsB := coeffsRGB[2*length:]
 
-	return singleZigZag(coeffsR), singleZigZag(coeffsG), singleZigZag(coeffsB)
-}
+	n := int(math.Sqrt(float64(len(coeffsR))))
 
-func singleZigZag(coeffs []float64) [][]float64 {
-	n := int(math.Sqrt(float64(len(coeffs))))
-
-	var res = make([][]float64, n)
+	var resR = make([][]float64, n)
+	var resG = make([][]float64, n)
+	var resB = make([][]float64, n)
 	for k := 0; k < n; k++ {
-		res[k] = make([]float64, n)
+		resR[k] = make([]float64, n)
+		resG[k] = make([]float64, n)
+		resB[k] = make([]float64, n)
 	}
 
 	var up = false
 	var i, j = 0, 0
-	for k := 0; k < len(coeffs); k++ {
+	for k := 0; k < len(coeffsR); k++ {
 		// adding the current point
-		res[i][j] = coeffs[k]
+		resR[i][j] = coeffsR[k]
+		resG[i][j] = coeffsG[k]
+		resB[i][j] = coeffsB[k]
 
 		// if we are going up
 		if up {
@@ -86,11 +88,56 @@ func singleZigZag(coeffs []float64) [][]float64 {
 		}
 	}
 
-	return res
+	return resR, resG, resB
 }
 
-func DCT() {
+func InverseDCT(coeffsR [][]float64, coeffsG [][]float64, coeffsB [][]float64) *image.Image{
+	var res = image.NewEmptyImage(len(coeffsR), len(coeffsR[0]), 3)
+	res.InitEmptyPixels()
 
+	for i := 0; i < res.GetHeight(); i++ {
+		for j := 0; j < res.GetWidth(); j++ {
+			var tmpR, tmpG, tmpB float64
+			pix := res.GetPixel(i, j)
+
+			// double sum
+			for sLine := 0; sLine < res.GetHeight(); sLine++ {
+				for sCol := 0; sCol < res.GetWidth(); sCol++ {
+					coef := encoder.FastCos((float64(sCol) * math.Pi * (float64(j) + 0.5)) / float64(res.GetWidth())) *
+						encoder.FastCos((float64(sLine) * math.Pi * (float64(i) + 0.5)) / float64(res.GetHeight()))
+					tmpR += coeffsR[i][j] * coef
+					tmpG += coeffsG[i][j] * coef
+					tmpB += coeffsB[i][j] * coef
+
+					// orthogonal factors
+					mCol := 1.0
+					if i == 0 {
+						mCol = 1 / math.Sqrt2
+					}
+
+					mLine := 1.0
+					if j == 0 {
+						mLine = 1 / math.Sqrt2
+					}
+
+					pix.R += int(coeffsR[i][j] * mCol * mLine * coef)
+					pix.G += int(coeffsG[i][j] * mCol * mLine * coef)
+					pix.B += int(coeffsB[i][j] * mCol * mLine * coef)
+				}
+			}
+			tmpR *= 0.25
+			tmpG *= 0.25
+			tmpB *= 0.25
+
+			// TODO: Check formula, maybe errors
+			pix.R += int(tmpR + 0.5)
+			pix.G += int(tmpG + 0.5)
+			pix.B += int(tmpB + 0.5)
+			res.SetPixel(i, j, pix)
+		}
+	}
+
+	return res
 }
 
 func YUVtoRGB(origin *image.Image) *image.Image {
