@@ -7,17 +7,23 @@ import (
 
 type Bitstream struct {
 	size int
-	data []byte
+	header []byte
+	body []byte
 }
 
-func (bs *Bitstream) GetData() []byte {
-	return bs.data
+func (bs *Bitstream) GetHeader() []byte {
+	return bs.header
+}
+
+func (bs *Bitstream) GetBody() []byte {
+	return bs.body
 }
 
 func NewBitstreamWithSize(size int) *Bitstream {
 	return &Bitstream{
 		size: size,
-		data: make([]byte, size),
+		header: make([]byte, 100),
+		body: make([]byte, size),
 	}
 }
 
@@ -59,4 +65,17 @@ func CreateBitstream(dict []byte, macroblocks []string, macroblocksize int, widt
 
 
 	return header // juste pour éviter que le complilateur râle (en sortie il veut un objet de type []byte)
+}
+
+// Decode will return the frameid, the dictionary, the macroblocs size, the width
+// and height of the image
+func (bs *Bitstream) Decode() (int, []byte, string, int, int, int) {
+	var frameID int
+	var dict []byte
+	var data string
+	var macroblocSize int
+	var height int
+	var width int
+
+	return frameID, dict, data, macroblocSize, height, width
 }

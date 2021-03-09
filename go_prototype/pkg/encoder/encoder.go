@@ -239,7 +239,7 @@ func EncodePairs(pairs []RLEPair, symbols map[string]string) *Bitstream {
 	for _, pair := range pairs {
 		key := pair.ToString()
 		if val, ok := symbols[key]; ok {
-			bs.data = append(bs.data, []byte(val)...)
+			bs.body = append(bs.body, []byte(val)...)
 		} else {
 			log.Error().Str("key", key).Msg("cannot find a encoding for symbol")
 		}

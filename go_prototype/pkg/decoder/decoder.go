@@ -1,6 +1,10 @@
 package decoder
 
-func BitstreamRLE() {
+import "eveex/pkg/encoder"
+
+func BitstreamToRLE(stream encoder.Bitstream) {
+	//frameID, dict, data, macroblocSize, height, width := stream.Decode()
+
 
 }
 
