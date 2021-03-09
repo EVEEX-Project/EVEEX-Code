@@ -37,3 +37,27 @@ func GetPixels(img image.Image) ([][]Pixel, error) {
 func rgbaToPixel(r uint32, g uint32, b uint32, a uint32) Pixel {
 	return Pixel{int(r >> 8), int(g >> 8), int(b >> 8), int(a >> 8)}
 }
+
+func (p *Pixel) RGBToYUV() {
+	r, g, b := float64(p.R), float64(p.G), float64(p.B)
+
+	y := 0.299 * r + 0.587 * g + 0.114 * b
+	u := -0.14713 * r - 0.28886 * g + 0.436 * b
+	v := 0.615 * r - 0.51498 * g - 0.10001 * b
+
+	p.R = int(y)
+	p.G = int(u)
+	p.B = int(v)
+}
+
+func (p *Pixel) YUVToRGB() {
+	y, u, v := float64(p.R), float64(p.G), float64(p.B)
+
+	r := y + 1.13983 * v
+	g := y - 0.39465 * u - 0.5806 * v
+	b := y + 2.03211 * u
+
+	p.R = int(r)
+	p.G = int(g)
+	p.B = int(b)
+}

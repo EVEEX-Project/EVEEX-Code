@@ -93,8 +93,19 @@ func DCT() {
 
 }
 
-func YUVtoRGB() {
+func YUVtoRGB(origin *image.Image) *image.Image {
+	pixels := *origin.GetPixels()
 
+	// converting each pixel
+	for i := 0; i < len(pixels); i++ {
+		for j := 0; j < len(pixels[i]); j++ {
+			pixels[i][j].YUVToRGB()
+		}
+	}
+
+	res := image.NewEmptyImage(origin.GetWidth(), origin.GetHeight(), origin.GetChannels())
+	res.SetPixels(pixels)
+	return res
 }
 
 func AssembleMacroblocs(macroblocs []*image.Image, macroblocSize int, width int, height int) *image.Image {
