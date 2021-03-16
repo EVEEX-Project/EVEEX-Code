@@ -131,7 +131,7 @@ func GenerateTreeFromList(nodeList []*Node) *Node {
 // GenerateEncodingDict takes a dictionary and a node and
 // fills the dictionary with the corresponding symbols and
 // encoding bytes
-func GenerateEncodingDict(dictionary *map[string]string, root *Node, prefix string) {
+func GenerateEncodingDict(dictionary *map[string][]byte, root *Node, prefix []byte) {
 
 	// if there is no children we add the symbol to the dictionary
 	if root.left == nil && root.right == nil {
@@ -139,9 +139,9 @@ func GenerateEncodingDict(dictionary *map[string]string, root *Node, prefix stri
 	}
 
 	if root.left != nil {
-		GenerateEncodingDict(dictionary, root.left, prefix + "0")
+		GenerateEncodingDict(dictionary, root.left, append(prefix, byte(0)))
 	}
 	if root.right != nil {
-		GenerateEncodingDict(dictionary, root.right, prefix + "1")
+		GenerateEncodingDict(dictionary, root.right, append(prefix, byte(1)))
 	}
 }

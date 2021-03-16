@@ -2,6 +2,7 @@ package encoder
 
 import (
 	"bytes"
+	"encoding/binary"
 	"eveex/pkg/image"
 	"testing"
 )
@@ -24,7 +25,7 @@ func TestRLEPair(t *testing.T) {
 		Value:   124.5,
 	}
 
-	assertEqual(t, pair.NbZeros, 5)
+	assertEqual(t, pair.NbZeros, uint32(5))
 	assertEqual(t, pair.Value, 124.5)
 	assertEqual(t, pair.ToString(), "5;124.50")
 }
@@ -33,23 +34,25 @@ func TestBitstream(t *testing.T) {
 	data := []byte{1, 0, 1, 0}
 	bs := Bitstream{
 		size: 5,
-		data: data,
+		body: data,
 	}
 
 	assertEqual(t, bs.size, 5)
-	assertEqual(t, len(bs.GetData()), len(data))
+	assertEqual(t, len(bs.GetBody()), len(data))
 
 	bs = *NewEmptyBitstream()
 	assertEqual(t, bs.size, 0)
-	assertEqual(t, len(bs.GetData()), 0)
+	assertEqual(t, len(bs.GetBody()), 0)
 
 	bs = *NewBitstreamWithSize(5)
 	assertEqual(t, bs.size, 5)
 
 
-	res :=dec2bin(42,16)
-	exp := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0}
-	result := bytes.Equal(res, exp)
+	bRes := make([]byte, 2)
+	binary.LittleEndian.PutUint16(bRes, uint16(42))
+	t.Log(bRes)
+	exp := []byte{42, 0}
+	result := bytes.Equal(bRes, exp)
 	assertEqual(t, result, true)
 }
 
@@ -111,19 +114,19 @@ func TestRunLevel(t *testing.T) {
 	t.Log(rle)
 
 	assertEqual(t, len(rle), 2)
-	assertEqual(t, rle[0].NbZeros, 4)
+	assertEqual(t, rle[0].NbZeros, uint32(4))
 	assertEqual(t, rle[0].Value, float64(1))
-	assertEqual(t, rle[1].NbZeros, 2)
+	assertEqual(t, rle[1].NbZeros, uint32(2))
 	assertEqual(t, rle[1].Value, float64(1))
 }
 
 func TestEncodePairs(t *testing.T) {
-	symbols := map[string]string{"0;1.00": "01", "5;142.50": "11"}
+	symbols := map[string][]byte{"0;1.00": {0, 1}, "5;142.50": {1, 1}}
 	pairs := []RLEPair{{0, 1.0}, {5, 142.5}}
 
 	bs := EncodePairs(pairs, symbols)
-	assertEqual(t, bs.GetData()[0], byte('0'))
-	assertEqual(t, bs.GetData()[1], byte('1'))
-	assertEqual(t, bs.GetData()[2], byte('1'))
-	assertEqual(t, bs.GetData()[3], byte('1'))
+	assertEqual(t, bs.GetBody()[0], byte(0))
+	assertEqual(t, bs.GetBody()[1], byte(1))
+	assertEqual(t, bs.GetBody()[2], byte(1))
+	assertEqual(t, bs.GetBody()[3], byte(1))
 }

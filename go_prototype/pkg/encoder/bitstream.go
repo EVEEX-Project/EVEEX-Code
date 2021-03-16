@@ -2,15 +2,17 @@ package encoder
 
 import (
 	"bytes"
-	"fmt"
-	"strconv"
-
+	"encoding/binary"
+	"encoding/gob"
+	"github.com/rs/zerolog/log"
 )
 
 type Bitstream struct {
 	size int
 	header []byte
+	dictionary []byte
 	body []byte
+	tail []byte
 }
 
 func (bs *Bitstream) GetHeader() []byte {
@@ -19,6 +21,16 @@ func (bs *Bitstream) GetHeader() []byte {
 
 func (bs *Bitstream) GetBody() []byte {
 	return bs.body
+}
+
+func (bs *Bitstream) GetStream() []byte {
+	var output []byte
+	output = append(output, bs.header...)
+	output = append(output, bs.dictionary...)
+	output = append(output, bs.body...)
+	output = append(output, bs.tail...)
+
+	return output
 }
 
 func NewBitstreamWithSize(size int) *Bitstream {
@@ -34,7 +46,7 @@ func NewEmptyBitstream() *Bitstream {
 }
 
 
-func dec2bin(dec int, size int) []byte {
+/* func dec2bin(dec int, size int) []byte {
 	dec64 := int64(dec)
 	bin := strconv.FormatInt(dec64, 2)
 	bin2 := fmt.Sprintf("%0*v", size, bin) // choisi la taille du binaire : '101010' devient '0000000000101010' pour du 16bits
@@ -64,64 +76,77 @@ func bin2dec(bin []byte) int {
 	} else {
 		return(int(i))
 	}
-}
+} */
 
-func NewBitstreamFromData(dictionary []byte, macroblocks [][]byte, macroblocksize int, width int, height int ,frameid int, dictPacketIndex int, bodyPacketIndex int) *Bitstream {
+func NewBitstreamFromData(dictionary map[string][]byte, rlePairs [][]RLEPair, macroblocksize uint16, width uint16, height uint16 ,frameid uint16, dictPacketIndex uint16, bodyPacketIndex uint16) *Bitstream {
+
+	var bFrameID = make([]byte, 2)
+	var u16buf = make([]byte, 2)
 
 	// HEADER - 48 bits
-	header := dec2bin(frameid, 16 )
-	header = append(header, dec2bin(0,2)...) // 0 = HEADER_MSG
-	header = append(header, dec2bin(width,12)...)
-	header = append(header, dec2bin(height,12)...)
-	header = append(header, dec2bin(macroblocksize,6)...)
+	binary.LittleEndian.PutUint16(bFrameID, frameid)
+	header := bFrameID[:]
+	header = append(header, byte(0)) // 0 = HEADER_MSG
+
+	binary.LittleEndian.PutUint16(u16buf, width)
+	header = append(header, u16buf...)
+
+	binary.LittleEndian.PutUint16(u16buf, height)
+	header = append(header, u16buf...)
+
+	binary.LittleEndian.PutUint16(u16buf, macroblocksize)
+	header = append(header, u16buf...)
 
 	// DICT - 50 + dictionary size
-	dicti := dec2bin(frameid, 16)
-	dicti = append(dicti, dec2bin(1, 2)...) // 1 = DICTI_MSG
-	dicti = append(dicti, dec2bin(dictPacketIndex, 16)...)
-	dicti = append(dicti, dec2bin(len(dictionary),16)...)
-	dicti = append(dicti, dictionary...)
+	dicti := bFrameID[:]
+	header = append(header, byte(1)) // 1 = DICTI_MSG
+
+	binary.LittleEndian.PutUint16(u16buf, dictPacketIndex)
+	dicti = append(dicti, u16buf...)
+
+	// getting dict bytes
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(dictionary)
+	if err != nil { log.Error().Msg("Failed to encode dictionary") }
+
+	binary.LittleEndian.PutUint16(u16buf, uint16(len(buf.Bytes())))
+	dicti = append(dicti, u16buf...)
+	dicti = append(dicti, buf.Bytes()...)
 
 	//BODY - head = 68 + 1st macroblock data
 	var body []byte
 
 	// each macrobloc - 68 bits + macroblock data
-	for macroblocIdx := 0; macroblocIdx < len(macroblocks); macroblocIdx++ {
-		body = append(body, dec2bin(frameid,16)...)
-		body = append(body, dec2bin(2, 2)...) // 2 = BODY_MSG
-		body = append(body, dec2bin(macroblocIdx, 16)...)
-		body = append(body, dec2bin(bodyPacketIndex,16)...) //index_paquet
-		body = append(body, dec2bin(len(macroblocks[macroblocIdx]),16)...)
-		body = append(body, macroblocks[macroblocIdx]...)
+	for macroblocIdx := 0; macroblocIdx < len(rlePairs); macroblocIdx++ {
+		body = append(body, bFrameID...)
+		body = append(body, byte(2)) // 2 = BODY_MSG
+
+		binary.LittleEndian.PutUint16(u16buf, uint16(macroblocIdx))
+		body = append(body, u16buf...)
+
+		binary.LittleEndian.PutUint16(u16buf, bodyPacketIndex)
+		body = append(body, u16buf...)
+
+		binary.LittleEndian.PutUint16(u16buf, uint16(len(rlePairs[macroblocIdx])))
+		body = append(body, u16buf...)
+
+		var bData []byte
+		for _, pair := range rlePairs[macroblocIdx] {
+			bData = append(bData, pair.ToByte()...)
+		}
+		body = append(body, bData...)
 	}
 
 	// TAIL -
-	tail := dec2bin(frameid, 16)
-	tail = append(tail, dec2bin(3,2)...) // 3 = END_MSG
-
-	// TOTAL
-	output := append(dicti, body...)
-	output = append(output, tail...)
+	tail := bFrameID[:]
+	tail = append(tail, byte(3)) // 3 = END_MSG
 
 	return &Bitstream {
-		size: len(sortie)+len(header),
+		size: len(body) + len(header) + len(tail) + len(dicti),
 		header: header,
-		body:   output,
+		dictionary: dicti,
+		body:   body,
+		tail: 	tail,
 	}
-}
-
-// Decode will return the frameid, the dictionary, the macroblocs size, the width
-// and height of the image
-func (bs *Bitstream) Decode() (int, []byte, string, int, int, int) {
-	var frameID int
-	var dict []byte
-	var data string
-	var macroblocSize int
-	var height int
-	var width int
-	for i:=0;i<48;i++{
-		frameID = bin2dec(bs.header[0:16])
-		width = bin2dec(bs.header[18:30])
-	}
-	return frameID, dict, data, macroblocSize, height, width
 }

@@ -212,7 +212,7 @@ func RunLevel(coeffs []float64) []RLEPair {
 	var res []RLEPair
 
 	// iterating over the elements
-	var c int
+	var c uint32
 	for _, val := range coeffs {
 		// if there is something else than a 0
 		if val != 0 {
@@ -233,13 +233,13 @@ func RunLevel(coeffs []float64) []RLEPair {
 	return res
 }
 
-func EncodePairs(pairs []RLEPair, symbols map[string]string) *Bitstream {
+func EncodePairs(pairs []RLEPair, symbols map[string][]byte) *Bitstream {
 	bs := NewEmptyBitstream()
 
 	for _, pair := range pairs {
 		key := pair.ToString()
 		if val, ok := symbols[key]; ok {
-			bs.body = append(bs.body, []byte(val)...)
+			bs.body = append(bs.body, val...)
 		} else {
 			log.Error().Str("key", key).Msg("cannot find a encoding for symbol")
 		}
