@@ -81,8 +81,8 @@ Example:
 			// generating the encoding dictionary for the given sentence
 			nodes := huffman.SplitPhraseInNodes(sentence)
 			tree := huffman.GenerateTreeFromList(nodes)
-			var encodingDict = map[string]string{}
-			huffman.GenerateEncodingDict(&encodingDict, tree, "")
+			var encodingDict = map[string][]byte{}
+			huffman.GenerateEncodingDict(&encodingDict, tree, []byte{})
 			nbKeys := len(encodingDict)
 			log.Debug().Int("Number of keys in dict", nbKeys).Msg("The encoding dictionary was successfully generated")
 
@@ -92,7 +92,7 @@ Example:
 			for i := 0; i < len(sentence); i++ {
 				currentLetter := string(sentence[i])
 				encodedLetter := encodingDict[currentLetter]
-				encodedSentence.WriteString(encodedLetter) // concatenation
+				encodedSentence.WriteString(string(encodedLetter)) // concatenation
 			}
 			encodedSentence.WriteString("\n")
 			log.Debug().Msgf("The sentence was successfully encoded. Encoded data : %s", encodedSentence.String())

@@ -16,6 +16,16 @@ var encodeDebug bool
 var encodeMacroblocSize int
 var startEncodeCPUProfiling bool
 
+type JobResult struct {
+	rlePairs []*encoder.RLEPair
+	index int
+}
+
+type JobRequest struct {
+	img *image.Image
+	index int
+}
+
 // encodeCmd represents the encode command
 var encodeCmd = &cobra.Command{
 	Use:   "encode <path to file>",
@@ -58,39 +68,54 @@ Example:
 		macroblocs := encoder.SplitInMacroblocs(*img, encodeMacroblocSize)
 
 		// final array
-		var rlePairs []encoder.RLEPair
+		var rlePairs [][]*encoder.RLEPair
+		for r := 0; r < len(macroblocs); r++ {
+			rlePairs = append(rlePairs, []*encoder.RLEPair{})
+		}
 
 		// setting up jobs and their result
-		var jobs = make(chan *image.Image, len(macroblocs))
-		var results = make(chan []encoder.RLEPair, len(macroblocs))
+
+		var jobs = make(chan JobRequest, len(macroblocs))
+		var results = make(chan JobResult, img.GetHeight()/len(macroblocs))
 
 		// creating workers
 		for w := 0; w < 8; w++ {
 			go encodeWorker(jobs, results)
 		}
 		// sending jobs
-		for _, mb := range macroblocs {
-			jobs <- &mb
+		for k, mb := range macroblocs {
+			jobs <- JobRequest{
+				img:   &mb,
+				index: k,
+			}
 		}
 		close(jobs)
 
 		// getting back the results
 		for r := 0; r < len(macroblocs); r++ {
 			var res = <- results
-			rlePairs = append(rlePairs, res...)
+			rlePairs[res.index] = res.rlePairs
 		}
 		close(results)
 
 		// huffman
-		nodeList		:= huffman.RLEPairsToNodes(rlePairs)
+		var pairList []*encoder.RLEPair
+		for k := 0; k < len(rlePairs); k++ {
+			pairList = append(pairList, rlePairs[k]...)
+		}
+		nodeList		:= huffman.RLEPairsToNodes(pairList)
 		root 			:= huffman.GenerateTreeFromList(nodeList)
 
-		encodingDict := make(map[string]string)
-		huffman.GenerateEncodingDict(&encodingDict, root, "")
+		encodingDict := make(map[string][]byte)
+		huffman.GenerateEncodingDict(&encodingDict, root, []byte{})
 
-		bs := encoder.EncodePairs(rlePairs, encodingDict)
-		log.Info().Bytes("header", bs.GetHeader()).Bytes("body", bs.GetBody()).Msg("Bitstream")
-
+		bs := encoder.NewBitstreamFromData(encodingDict, rlePairs, uint16(encodeMacroblocSize), uint16(img.GetWidth()), uint16(img.GetHeight()), 0, 0, 0)
+		//log.Info().Bytes("header", bs.GetHeader()).Bytes("body", bs.GetBody()).Msg("Bitstream")
+		log.Info().
+			Int("header_length", len(bs.GetHeader())).
+			Int("body_length", len(bs.GetBody())).
+			Int("dict_length", len(bs.GetDict())).
+			Int("stream_length", len(bs.GetStream())).Msg("Getting bitstream")
 		/*huffman.PrintTree(root)
 
 		for key, val := range encodingDict {
@@ -102,10 +127,10 @@ Example:
 	},
 }
 
-func encodeWorker(jobs <-chan *image.Image, results chan <- []encoder.RLEPair) {
+func encodeWorker(jobs <-chan JobRequest, results chan <- JobResult) {
 	for mb := range jobs {
 		threshold := 5.0
-		dctMbR, dctMbG, dctMbB := encoder.DCT(*mb)
+		dctMbR, dctMbG, dctMbB := encoder.DCT(*mb.img)
 		zzValsR, zzValsG, zzValsB := encoder.ZigzagLinearisation(dctMbR), encoder.ZigzagLinearisation(dctMbG), encoder.ZigzagLinearisation(dctMbB)
 
 		zzVals := make([]float64, 3 * len(zzValsR))
@@ -114,7 +139,7 @@ func encodeWorker(jobs <-chan *image.Image, results chan <- []encoder.RLEPair) {
 		zzVals = append(zzVals, zzValsB...)
 		quantVals := encoder.Quantization(zzVals, threshold)
 
-		results <- encoder.RunLevel(quantVals)
+		results <- JobResult{encoder.RunLevel(quantVals), mb.index}
 	}
 }
 

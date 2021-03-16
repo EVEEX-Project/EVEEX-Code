@@ -26,5 +26,5 @@ func Execute() {
 }
 
 func init() {
-	helloWorld("0.2.5")
+	helloWorld("0.3.0")
 }

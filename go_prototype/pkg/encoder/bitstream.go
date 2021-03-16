@@ -23,6 +23,14 @@ func (bs *Bitstream) GetBody() []byte {
 	return bs.body
 }
 
+func (bs *Bitstream) GetDict() []byte {
+	return bs.dictionary
+}
+
+func (bs *Bitstream) GetTail() []byte {
+	return bs.tail
+}
+
 func (bs *Bitstream) GetStream() []byte {
 	var output []byte
 	output = append(output, bs.header...)
@@ -45,40 +53,7 @@ func NewEmptyBitstream() *Bitstream {
 	return NewBitstreamWithSize(0)
 }
 
-
-/* func dec2bin(dec int, size int) []byte {
-	dec64 := int64(dec)
-	bin := strconv.FormatInt(dec64, 2)
-	bin2 := fmt.Sprintf("%0*v", size, bin) // choisi la taille du binaire : '101010' devient '0000000000101010' pour du 16bits
-	binByte := []byte{0}
-	if bin2[0] == '1'{
-		binByte = []byte{1}
-	}
-	for i := 1; i < len(bin2); i++{
-		if bin2[i] == '1'{
-			binByte = append(binByte, byte(1))
-		} else {
-			binByte = append(binByte, byte(0))
-		}
-	}
-	return binByte
-}
-
-func bin2dec(bin []byte) int {
-	var t string
-	x := bin
-	for i:=0; i < len(x); i++{
-		y := []byte{x[i]}
-		if bytes.Compare(y, []byte{1})==0{t+="1"}else{t+="0"}
-	}
-	if i, err := strconv.ParseInt(t, 2, 64); err != nil {
-		return(0)
-	} else {
-		return(int(i))
-	}
-} */
-
-func NewBitstreamFromData(dictionary map[string][]byte, rlePairs [][]RLEPair, macroblocksize uint16, width uint16, height uint16 ,frameid uint16, dictPacketIndex uint16, bodyPacketIndex uint16) *Bitstream {
+func NewBitstreamFromData(dictionary map[string][]byte, rlePairs [][]*RLEPair, macroblocksize uint16, width uint16, height uint16 ,frameid uint16, dictPacketIndex uint16, bodyPacketIndex uint16) *Bitstream {
 
 	var bFrameID = make([]byte, 2)
 	var u16buf = make([]byte, 2)

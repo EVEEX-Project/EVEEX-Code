@@ -63,7 +63,7 @@ func SplitPhraseInNodes(phrase string) []*Node {
 
 // RLEPairsToNodes takes a list of pairs and
 // splits it into nodes with a frequency
-func RLEPairsToNodes(pairs []encoder.RLEPair) []*Node {
+func RLEPairsToNodes(pairs []*encoder.RLEPair) []*Node {
 	var nodeList []*Node
 	symbols := make(map[string]int)
 
