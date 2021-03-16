@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from EVEEX.iDTT import apply_iDTT
+from iDTT import apply_iDTT
 
 ###############################################################################
 

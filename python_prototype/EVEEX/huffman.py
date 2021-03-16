@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from EVEEX.logger import Logger
+from logger import Logger
 
 ##############################################################################
 

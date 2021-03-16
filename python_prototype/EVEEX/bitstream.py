@@ -5,8 +5,8 @@ from random import randint
 from time import time, sleep
 
 
-from EVEEX.network_transmission import Server, Client
-from EVEEX.huffman import Huffman
+from network_transmission import Server, Client
+from huffman import Huffman
 
 ###############################################################################
 

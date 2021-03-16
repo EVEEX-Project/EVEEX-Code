@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from EVEEX.bitstream import BitstreamGenerator
-from EVEEX.iDTT import decode_iDTT
+from bitstream import BitstreamGenerator
+from iDTT import decode_iDTT
 
 ###############################################################################
 

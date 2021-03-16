@@ -2,7 +2,7 @@
 
 import socket, sys, threading
 from time import sleep
-from EVEEX.logger import Logger
+from logger import Logger
 
 #############################################################################
 

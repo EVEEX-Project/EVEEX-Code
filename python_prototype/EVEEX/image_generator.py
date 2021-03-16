@@ -3,7 +3,7 @@ import json
 import numpy as np
 from random import randrange, random
 
-from EVEEX.logger import Logger
+from logger import Logger
 
 
 class ColorDecoder:
