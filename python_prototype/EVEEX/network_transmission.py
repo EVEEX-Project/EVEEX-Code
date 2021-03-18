@@ -100,6 +100,9 @@ class ThreadListen(threading.Thread):
                         # du code
                         if self.affiche_messages:
                             sleep(temps_pause_apres_envoi)
+                    
+                    elif msgClient[0] == "S":
+                        self.callback(msgClient)
                 
                 except:
                     # si msgClient[0] n'existe pas (ou si c'est mal défini), 

@@ -7,7 +7,6 @@ de l'entité réceptrice (ici un PC).
 Code fait en conjonction avec "main_PC_recepteur.py".
 """
 
-
 DEFAULT_QUANTIZATION_THRESHOLD = 10
 
 import numpy as np
@@ -24,6 +23,7 @@ from test_PiCamera import PiCameraObject
 
 
 generer_fichier_log = False
+affiche_debug = True
 
 log = Logger.get_instance()
 log.set_log_level(LogLevel.DEBUG)
@@ -35,7 +35,7 @@ if generer_fichier_log:
 # Doit être <= 63
 macroblock_size = 16
 
-# il faut s'assurer que macroblock_size divise bien les 2 dimensions suivantes
+# il faut s'assurer que macroblock_size divise bien img_width et img_height
 
 # "width" doit être un multiple de 32 (sinon ce sera automatiquement "arrondi"
 # au multiple de 32 le plus proche par la PiCamera)
@@ -64,10 +64,8 @@ bufsize = 4096
 HOST = "192.168.8.218" # adresse IP du PC récepteur
 PORT = 22 # port SSH
 
-cli = Client(HOST, PORT, bufsize, False)
+cli = Client(HOST, PORT, bufsize, affiche_messages=False)
 cli.connect_to_server()
-
-affiche_debug = True
 
 
 def encode_et_envoie_frame(image_BGR, frame_id):
@@ -76,9 +74,9 @@ def encode_et_envoie_frame(image_BGR, frame_id):
     
     if affiche_debug:
         log.debug(f"{frame_id}")
-        log.debug(f"Encodage - Image RGB n°{frame_id}")
+        log.debug(f"Encodage - Image BGR n°{frame_id}")
     
-    # frame RGB --> frame YUV
+    # frame BGR --> frame YUV
     image_yuv = enc.RGB_to_YUV(np.array(image_BGR, dtype=float), mode_RPi=True)
     
     # frame YUV --> frame RLE
@@ -115,9 +113,8 @@ cli.send_data_to_server("FIN_ENVOI")
 cli.connexion.shutdown(2) # 2 = socket.SHUT_RDWR
 cli.connexion.close()
 
+log.debug("Fin émetteur")
+
 if generer_fichier_log:
     log.stop_file_logging()
-
-
-log.debug("Fin émetteur")
 

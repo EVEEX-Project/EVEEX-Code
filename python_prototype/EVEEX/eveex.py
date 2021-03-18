@@ -2,14 +2,12 @@
 import sys
 import numpy as np
 from encoder import Encoder
-from iDTT import DTT_operator, generer_decomp, round_matrix
 from decoder import Decoder
 from pathlib import Path
-from bitstream import BitstreamGenerator, BitstreamSender
-from image_generator import ImageGenerator, BlankImageGenerator, MosaicImageGenerator, FromJSONImageGenerator
+from bitstream import BitstreamGenerator
+from image_generator import BlankImageGenerator, FromJSONImageGenerator
 from image_visualizer import ImageVisualizer
-from video_to_frame import vid2frames, frames2vid
-import logger
+from video_handler import VideoHandler
 import time
 
 from PIL import Image
@@ -76,7 +74,7 @@ if action.lower() == "-e":
 
         nom_video = path.name
         frame_id = 0
-        frames= vid2frames(nom_video)
+        frames= VideoHandler.vid2frames(nom_video)
         img_size = (frames[0].shape[0],frames[0].shape[1])
         for frame in frames:
             image_rgb = np.array(frame)

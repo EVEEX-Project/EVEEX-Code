@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 
 """
-Main adapté au récepteur de données (ici un PC), entièrement séparé de l'entité
-émettrice (ici une Raspberry Pi).
+Main adapté à la réception de données vidéo (dans le réseau local).
 
-Code fait en conjonction avec "main_RPi_emettrice.py".
+Code fait en conjonction avec "main_emetteur_video.py".
 """
 
+from time import time
 import numpy as np
-import cv2
 
+from video_handler import VideoHandler
 from logger import Logger, LogLevel
-from image_visualizer import ImageVisualizer
 from network_transmission import Server
 from encoder import Encoder
 from decoder import Decoder
@@ -21,31 +20,32 @@ from decoder import Decoder
 
 
 generer_fichier_log = False
+enregistrer_frames_recues = False
 affiche_debug = True
 
 log = Logger.get_instance()
 log.set_log_level(LogLevel.DEBUG)
 
 if generer_fichier_log:
-    log.start_file_logging("log_PC_récepteur.log")
+    log.start_file_logging("log_récepteur_vidéo.log")
 
 # Valeurs standards de macroblock_size : 8, 16 et 32
 # Doit être <= 63
 macroblock_size = 16
 
-# il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
-# divise bien ces 2 dimensions
-img_width = 96
-img_height = 96
+# il faut s'assurer que macroblock_size divise bien ces 2 dimensions
+global img_width
+global img_height
 
-# format standard
-img_size = (img_width, img_height)
+global img_size
 
 # création de l'opérateur orthogonal de la DCT
 A = Encoder.DCT_operator(macroblock_size)
 
-img_visu = ImageVisualizer()
 dec = Decoder()
+
+global frames_recues
+frames_recues = []
 
 
 # # # -------------------RECEIVING DATA OVER NETWORK-------------------- # # #
@@ -55,8 +55,8 @@ print("\n")
 
 bufsize = 4096
 
-HOST = "192.168.8.218" # adresse IP du PC récepteur
-PORT = 22 # port SSH
+HOST = "localhost"
+PORT = 3456
 
 serv = Server(HOST, PORT, bufsize, affiche_messages=False)
 
@@ -66,8 +66,13 @@ received_data = ""
 global compteur_images_recues
 compteur_images_recues = 0
 
+global t_debut_algo
+
 
 def corrige_erreurs(decoded_image):
+    global img_width
+    global img_height
+    
     # Vérification des valeurs de la frame RGB décodée (on devrait les avoir entre
     # 0 et 255)
     # Les "valeurs illégales", en forte minorité (heureusement), sont ici 
@@ -87,8 +92,7 @@ def corrige_erreurs(decoded_image):
     
     decoded_image = np.round(decoded_image).astype(dtype=np.uint8)
     
-    # au passage on convertit l'image de BGR à RGB
-    return decoded_image[:, :, ::-1]
+    return decoded_image
 
 
 def decode_frame_entierement():
@@ -105,32 +109,52 @@ def decode_frame_entierement():
     dec_rle_data = dec.decode_bitstream_RLE(received_data)
     
     # frame RLE --> frame YUV
+    global img_size
     dec_yuv_data = dec.recompose_frame_via_DCT(dec_rle_data, img_size, macroblock_size, A)
     
     # frame YUV --> frame BGR (/!\ ET NON RGB /!\)
     dec_bgr_data = dec.YUV_to_RGB(dec_yuv_data, mode_RPi=True)
     
-    # correction des erreurs potentielles (+ conversion BGR --> RGB)
-    dec_rgb_data = corrige_erreurs(dec_bgr_data)
+    # correction des erreurs potentielles
+    dec_bgr_data = corrige_erreurs(dec_bgr_data)
     
     if affiche_debug:
         log.debug(f"La frame n°{compteur_images_recues} a bien été décodée")
     
-    # affichage de la frame décodée via matplotlib.pyplot (au format RGB)
-    img_visu.show_image_with_matplotlib(dec_rgb_data)
+    global frames_recues
+    frames_recues.append(dec_bgr_data)
 
 
 def on_received_data(data):
-    global received_data
+    if data[0] == "S":
+        global img_width
+        global img_height
+        global img_size
+        global t_debut_algo
+        
+        t_debut_algo = time()
+        
+        splitted_data = data.split(".")
+        # splitted_data[0] = "SIZE_INFO"
+        img_width = int(splitted_data[1])
+        img_height = int(splitted_data[2])
+        
+        # format standard
+        img_size = (img_width, img_height)
+        
+        log.debug(f"Taille reçue : {img_size}")
+        print("")
     
-    received_data += data
-    
-    binary_MSG_TYPE = data[16 : 18]
-    
-    # "11" est en fait la valeur de TAIL_MSG (= 3) en binaire
-    if binary_MSG_TYPE == "11":
-        decode_frame_entierement()
-        received_data = ""
+    else:
+        global received_data
+        received_data += data
+        
+        binary_MSG_TYPE = data[16 : 18]
+        
+        # "11" est en fait la valeur de TAIL_MSG (= 3) en binaire
+        if binary_MSG_TYPE == "11":
+            decode_frame_entierement()
+            received_data = ""
 
 
 # en fait tout se fait via la fonction de callback
@@ -139,9 +163,22 @@ serv.listen_for_packets(callback=on_received_data)
 serv.th_Listen.join()
 serv.mySocket.close()
 
-cv2.destroyAllWindows()
+t_fin_algo = time()
 
-log.debug("Fin récepteur")
+duree_algo = t_fin_algo - t_debut_algo
+nb_fps_moyen = compteur_images_recues / duree_algo
+
+print("\n")
+log.debug(f"Durée de l'algorithme : {duree_algo:.3f} s")
+log.debug(f"Nombre moyen de FPS (réception / décodage) : {nb_fps_moyen:.2f}")
+
+if enregistrer_frames_recues:
+    log.info("Enregistrement de la vidéo en cours ...")
+    saved_video_filename = "test2.mp4"
+    VideoHandler.frames2vid(frames_recues, saved_video_filename)
+    log.info("Enregistrement terminé !")
+
+log.debug("Fin récepteur vidéo")
 
 if generer_fichier_log:
     log.stop_file_logging()

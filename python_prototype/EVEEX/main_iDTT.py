@@ -76,7 +76,14 @@ if numero_methode_choisie == 1:
     numero_image = 4 # ∈ [1, 5]
     nom_image = dico_noms_images[numero_image]
     
-    path_image = getcwd() + "\\assets\\" + nom_image
+    OS = sys.platform
+    if OS == "win32":
+        path_image = getcwd() + "\\assets\\" + nom_image
+    elif OS == "linux" or OS == "linux2":
+        path_image = getcwd() + "/assets/" + nom_image
+    else:
+        log.error(f"Unrecognized platform : {OS}")
+        sys.exit()
     
     # Valeurs standards de macroblock_size : 8, 16 et 32
     # Ici, 24, 48 et 60 fonctionnent aussi très bien
