@@ -189,8 +189,8 @@ duree_conversion_YUV_RLE = t_fin_conversion_YUV_RLE - t_fin_conversion_RGB_YUV
 # le bufsize doit impérativement être >= 67 (en pratique : OK)
 bufsize = 4096
 
-HOST = 'localhost'
-PORT = randint(5000, 15000)
+HOST = "localhost"
+PORT = 6666
 
 # booléen indiquant si l'on veut afficher les messages entre le client et
 # le serveur
@@ -198,20 +198,21 @@ affiche_messages = False
 
 # On désactive les messages par défaut si on sait qu'il va y avoir beaucoup de
 # données à afficher
-if img_width * img_height > 10000:
+if ((affiche_messages == True) and (img_width * img_height > 10000)):
     affiche_messages = False
 
 serv = Server(HOST, PORT, bufsize, affiche_messages)
-cli = Client(serv)
+cli = Client(HOST, PORT, bufsize, affiche_messages)
 
 global received_data
 received_data = ""
 
 def on_received_data(data):
-    global received_data 
+    global received_data
     received_data += data
 
-serv.listen_for_packets(cli, callback=on_received_data)
+serv.listen_for_packets(callback=on_received_data)
+cli.connect_to_server()
 
 frame_id = randint(0, 65535) # 65535 = 2**16 - 1
 
@@ -243,8 +244,11 @@ else:
 bit_sender.th_WriteInBitstreamBuffer.join()
 log.debug("Thread d'écriture dans le buffer du bitstream supprimé.\n")
 
+cli.send_data_to_server("FIN_ENVOI")
+
 # fermeture du socket créé, du côté serveur ET du côté client
 # on termine également le thread d'écoute du serveur
+cli.connexion.shutdown(2) # 2 = socket.SHUT_RDWR
 cli.connexion.close()
 serv.th_Listen.join()
 serv.mySocket.close()

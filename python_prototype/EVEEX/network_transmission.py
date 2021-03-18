@@ -4,6 +4,7 @@ import socket, sys, threading
 from time import sleep
 from logger import Logger
 
+
 #############################################################################
 
 
@@ -67,19 +68,17 @@ class ThreadListen(threading.Thread):
             connexion, adresse = self.socket_server.accept()
             Server.safe_print(f"Serveur> Client connecté, adresse IP {adresse[0]}, port {adresse[1]}.\n\n")
             
-            # dialogue avec le client            
-            msgClient = connexion.recv(self.bufsize)
-            msgClient = msgClient.decode("utf8")
-            while True:     
-                # si le client se déconnecte
-                if msgClient.upper() == "FIN" or msgClient == "":
-                    break
-                
+            while True:
+                # dialogue avec le client            
                 msgClient = connexion.recv(self.bufsize)
                 msgClient = msgClient.decode("utf8")
                 
+                # si le client se déconnecte
+                if msgClient == "FIN_ENVOI":
+                    break
+                
                 try:
-                    if msgClient[0] in ['0', '1']:
+                    if msgClient[0] in ["0", "1"]:
                         self.callback(msgClient)
                         
                         desc_paquet = self.generer_description_paquet(msgClient)
@@ -107,6 +106,7 @@ class ThreadListen(threading.Thread):
                     # on passe simplement à la suite
                     pass
             
+            connexion.shutdown(2) # 2 = socket.SHUT_RDWR
             connexion.close() # on ferme la connexion côté serveur
             Server.safe_print("Serveur> Client déconnecté.")
             
@@ -129,8 +129,13 @@ class Server:
         self.bufsize = bufsize
         self.affiche_messages = affiche_messages
         
-        global verrou
-        verrou = threading.Lock()
+        if "verrou" not in globals():
+            global verrou
+            verrou = threading.Lock()
+            
+            # pour éviter certains bugs
+            verrou.acquire()
+            verrou.release()
         
         self.mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -142,8 +147,9 @@ class Server:
         
         # cette variable globale ne sera utile QUE si l'on affiche les messages
         # entre le client et le serveur
-        global temps_pause_apres_envoi
-        temps_pause_apres_envoi = 0.01 # en secondes
+        if "temps_pause_apres_envoi" not in globals():
+            global temps_pause_apres_envoi
+            temps_pause_apres_envoi = 0.01 # en secondes
         
         # désigne le thread d'écoute du serveur
         self.th_Listen = None
@@ -158,6 +164,8 @@ class Server:
         affichage dans la console.
         Il s'agit en fait d'une sorte de 'print bloquant'.
         """
+        global verrou
+        
         # 'verrou' est une variable globale qui sera créée au moment de
         # l'instanciation de la classe Server
         verrou.acquire()
@@ -165,7 +173,7 @@ class Server:
         verrou.release()
     
     
-    def listen_for_packets(self, client, callback):
+    def listen_for_packets(self, callback):
         """
         Se met en mode écoute dans un thread séparé et attend de recevoir
         des informations par le réseau. 
@@ -177,8 +185,6 @@ class Server:
         """
         self.th_Listen = ThreadListen(self.mySocket, callback, self.bufsize, self.affiche_messages)
         self.th_Listen.start()
-        
-        client.connect_to_server()
 
 
 #############################################################################
@@ -187,29 +193,41 @@ class Server:
 class Client:
     """
     Permet d'envoyer par le réseau des données à une entité connue.
-    Args:
-        server: serveur auquel le client veut se connecter
     """
-    def __init__(self, server):    
-        self.HOST = server.HOST        
-        self.PORT = server.PORT
-        self.bufsize = server.bufsize
-        self.affiche_messages = server.affiche_messages
+    def __init__(self, HOST, PORT, bufsize, affiche_messages):
+        self.HOST = HOST
+        self.PORT = PORT
+        self.bufsize = bufsize
+        self.affiche_messages = affiche_messages
         
         self.connexion = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
-        self.premier_message_envoye = True
+        if "verrou" not in globals():
+            global verrou
+            verrou = threading.Lock()
+            
+            # pour éviter certains bugs
+            verrou.acquire()
+            verrou.release()
+        
+        # cette variable globale ne sera utile QUE si l'on affiche les messages
+        # entre le client et le serveur
+        if "temps_pause_apres_envoi" not in globals():
+            global temps_pause_apres_envoi
+            temps_pause_apres_envoi = 0.01 # en secondes
     
     
     def connect_to_server(self):
         """
         Connecte le client au serveur.
         """
+        
         try:
             self.connexion.connect((self.HOST, self.PORT))
         except socket.error:
             Server.safe_print("Client> La connexion a échoué.")
             sys.exit()
+        
         Server.safe_print("Client> Connexion établie avec le serveur.")
     
     
@@ -219,15 +237,6 @@ class Client:
         Args:
             data: les données à transmettre (type: str)
         """
-        if self.premier_message_envoye:
-            # pour 'activer' le dialogue avec le client, on a besoin d'un premier
-            # message
-            msg_filler = "filler"
-            msg_filler = msg_filler.encode("utf8")
-            self.connexion.send(msg_filler)
-            if self.affiche_messages:
-                sleep(temps_pause_apres_envoi)
-            self.premier_message_envoye = False
         
         if self.affiche_messages:
             Server.safe_print(f"Client> {data}")
@@ -245,20 +254,14 @@ class Client:
         msgServeur = self.connexion.recv(self.bufsize)
         msgServeur = msgServeur.decode("utf8")
         while True:
-            # au cas où
-            if msgServeur.upper() == "FIN" or msgServeur == "":
-                self.connexion.close()
-                break
-            
-            else:
-                try:
-                    if msgServeur[ : 19] == "Données bien reçues":
-                        desc_paquet = msgServeur[22 : ]
-                        if self.affiche_messages:
-                            Server.safe_print(f"Client> Réponse du serveur reçue : {desc_paquet}\n\n")
-                        break
-                except:
-                    pass
+            try:
+                if msgServeur[ : 19] == "Données bien reçues":
+                    desc_paquet = msgServeur[22 : ]
+                    if self.affiche_messages:
+                        Server.safe_print(f"Client> Réponse du serveur reçue : {desc_paquet}\n\n")
+                    break
+            except:
+                pass
             
             msgServeur = self.connexion.recv(self.bufsize)
             msgServeur = msgServeur.decode("utf8")

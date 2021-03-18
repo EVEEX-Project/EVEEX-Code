@@ -12,7 +12,7 @@ class Encoder:
         pass
     
     
-    def RGB_to_YUV(self, image):
+    def RGB_to_YUV(self, image, mode_RPi=False):
         """
         Convertit une image depuis une représentation RGB (Rouge, Vert, Bleu)
         vers une représentation YUV (Luminance, Chrominance)
@@ -28,7 +28,12 @@ class Encoder:
         # Pour chaque pixel de l'image
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                r, g, b = image[i, j]
+                if mode_RPi:
+                    # image au format BGR (et non RGB)
+                    b, g, r = image[i, j]
+                else:
+                    r, g, b = image[i, j]
+                
                 # On recalcule les coefficients YUV
                 # Source : https://fr.wikipedia.org/wiki/YUV
                 y = 0.299 * r + 0.587 * g + 0.114 * b
