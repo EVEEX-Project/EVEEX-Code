@@ -70,8 +70,6 @@ class PiCameraObject:
         self.compteur_images_generees = 0
         
         while True:
-            self.compteur_images_generees += 1
-            
             # "remise à zéro" du buffer
             self.stream.seek(0)
             self.stream.truncate(0)
@@ -85,6 +83,8 @@ class PiCameraObject:
             # envoi de la frame au PC récepteur (cela dépend de la fonction de
             # callback utilisée)
             self.callback(self.frame, self.compteur_images_generees)
+            
+            self.compteur_images_generees += 1
             
             if display_frames_on_RPi:
                 # /!\ la fonction "cv2.imshow" affiche les images au format BGR, et non RGB /!\

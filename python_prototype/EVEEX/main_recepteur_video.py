@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Main adapté à la réception de données vidéo (dans le réseau local).
-
-Code fait en conjonction avec "main_emetteur_video.py".
+Main adapté à la réception de données vidéo. Code fait en conjonction avec
+"main_emetteur_video.py".
 """
 
 from time import time

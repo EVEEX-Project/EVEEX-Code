@@ -9,6 +9,7 @@ Code fait en conjonction avec "main_PC_recepteur.py".
 
 DEFAULT_QUANTIZATION_THRESHOLD = 10
 
+from time import time
 import numpy as np
 
 from logger import Logger, LogLevel
@@ -104,6 +105,8 @@ piCameraObject = PiCameraObject(img_width, img_height, framerate, callback=encod
 nb_secondes_preview = 1
 piCameraObject.launch_simple_preview(nb_secondes_preview, close_camera=False)
 
+t_debut_demo = time()
+
 # ==> LANCEMENT DE LA PICAMERA (GÉNÉRATION DE FRAMES)
 piCameraObject.start_generating_frames()
 
@@ -112,6 +115,15 @@ cli.send_data_to_server("FIN_ENVOI")
 
 cli.connexion.shutdown(2) # 2 = socket.SHUT_RDWR
 cli.connexion.close()
+
+t_fin_demo = time()
+
+duree_demo = t_fin_demo - t_debut_demo
+nb_fps_moyen = piCameraObject.compteur_images_generees / duree_demo
+
+print("")
+log.debug(f"Durée de la démonstration : {duree_demo:.3f} s")
+log.debug(f"Nombre moyen de FPS : {nb_fps_moyen:.2f}")
 
 log.debug("Fin émetteur")
 

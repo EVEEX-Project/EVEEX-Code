@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Main adapté à l'émetteur de données vidéo (dans le réseau local).
-
-Code fait en conjonction avec "main_recepteur_video.py".
+Main adapté à l'émetteur de données vidéo. Code fait en conjonction avec
+"main_recepteur_video.py".
 """
 
 DEFAULT_QUANTIZATION_THRESHOLD = 10
