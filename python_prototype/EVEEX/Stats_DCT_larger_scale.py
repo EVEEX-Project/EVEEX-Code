@@ -162,13 +162,6 @@ def execute_main(total_nb_of_images):
     print("")
     log.debug(f"Début de l'analyse des {total_nb_of_images} images\n")
     
-    global img_width
-    global img_height
-    global img_size
-    img_width, img_height = 96, 64
-    img_size = (img_width, img_height)
-    
-    
     global possible_macroblock_sizes
     possible_macroblock_sizes = [8, 16, 32]
     
@@ -244,6 +237,13 @@ def execute_main(total_nb_of_images):
                 sys.exit()
             
             image = Image.open(path_image)
+            
+            global img_width
+            global img_height
+            global img_size
+            img_size = image.size # pour l'instant : que du 96x64 pixels
+            img_width, img_height = img_size
+            
             image_intermediaire = image.getdata()
             
             image_rgb = np.array(image_intermediaire).reshape((img_height, img_width, 3))
@@ -352,7 +352,7 @@ def plot_stats(save_graph=False):
         ax[j].set_title(titre)
     
     fig.text(0.5, 0.05, "Axe Ox : Taille des côtés des macroblocs", fontsize=15, ha="center")
-    fig.suptitle(f"Stats DCT - {total_nb_of_images} images considérées - Taille des images : {img_width}x{img_height} pixels", fontsize=15)
+    fig.suptitle(f"Stats DCT - {total_nb_of_images} images considérées", fontsize=15)
     
     if save_graph:
         saved_image_name = f"GrapheStatsDCT_avec_{total_nb_of_images}_images.png"
