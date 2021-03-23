@@ -50,6 +50,7 @@ enc = Encoder()
 Transformation de la vidéo considérée en liste de frames
 """
 
+print("")
 log.debug(f"Conversion \"vidéo {video_name} --> liste de frames\" en cours ...")
 
 OS = sys.platform
@@ -81,17 +82,20 @@ log.debug("Conversion finie")
 
 
 print("\n")
+t_debut_algo = time()
 
 bufsize = 4096
 
 HOST = "localhost"
 PORT = 3456
+#HOST = "192.168.8.218" # adresse IP du PC récepteur
+#PORT = 22 # port SSH
 
 cli = Client(HOST, PORT, bufsize, affiche_messages=False)
 cli.connect_to_server()
 
-# on envoie d'abord les dimensions de la vidéo au récepteur
-cli.send_data_to_server(f"SIZE_INFO.{img_width}.{img_height}")
+# on envoie d'abord les dimensions de la vidéo au récepteur (+ la taille des macroblocs)
+cli.send_data_to_server(f"SIZE_INFO.{img_width}.{img_height}.{macroblock_size}")
 
 
 def encode_et_envoie_frame(image_BGR, frame_id):
@@ -121,8 +125,6 @@ def encode_et_envoie_frame(image_BGR, frame_id):
         print("")
 
 
-t_debut_algo = time()
-
 # envoi effectif des frames
 for frame_id in range(1, nb_frames + 1):
     frame = frames[frame_id - 1]
@@ -141,8 +143,10 @@ nb_fps_moyen = nb_frames / duree_algo
 
 print("")
 log.debug(f"Durée de l'algorithme : {duree_algo:.3f} s")
+log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
 log.debug(f"Nombre moyen de FPS (émission / encodage) : {nb_fps_moyen:.2f}")
 
+print("")
 log.debug("Fin émetteur vidéo")
 
 if generer_fichier_log:

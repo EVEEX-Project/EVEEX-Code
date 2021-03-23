@@ -7,8 +7,8 @@ Main adapté au récepteur de données (ici un PC), entièrement séparé de l'e
 Code fait en conjonction avec "main_RPi_emettrice.py".
 """
 
+from time import time
 import numpy as np
-import cv2
 
 from logger import Logger, LogLevel
 from image_visualizer import ImageVisualizer
@@ -31,18 +31,16 @@ if generer_fichier_log:
 
 # Valeurs standards de macroblock_size : 8, 16 et 32
 # Doit être <= 63
-macroblock_size = 16
+global macroblock_size
 
-# il faut s'assurer d'avoir les bonnes dimensions de l'image, ET que macroblock_size
-# divise bien ces 2 dimensions
-img_width = 96
-img_height = 96
+# il faut s'assurer que macroblock_size divise bien les 2 dimensions suivantes
+global img_width
+global img_height
 
-# format standard
-img_size = (img_width, img_height)
+global img_size
 
-# création de l'opérateur orthogonal de la DCT
-A = Encoder.DCT_operator(macroblock_size)
+# opérateur orthogonal de la DCT
+global A
 
 img_visu = ImageVisualizer()
 dec = Decoder()
@@ -52,6 +50,7 @@ dec = Decoder()
 
 
 print("\n")
+global t_debut_algo
 
 bufsize = 4096
 
@@ -105,6 +104,9 @@ def decode_frame_entierement():
     dec_rle_data = dec.decode_bitstream_RLE(received_data)
     
     # frame RLE --> frame YUV
+    global img_size
+    global macroblock_size
+    global A
     dec_yuv_data = dec.recompose_frame_via_DCT(dec_rle_data, img_size, macroblock_size, A)
     
     # frame YUV --> frame BGR (/!\ ET NON RGB /!\)
@@ -121,16 +123,42 @@ def decode_frame_entierement():
 
 
 def on_received_data(data):
-    global received_data
+    if data[0] == "S":
+        global img_width
+        global img_height
+        global img_size
+        global t_debut_algo
+        global macroblock_size
+        global A
+        
+        t_debut_algo = time()
+        
+        split_data = data.split(".")
+        # split_data[0] = "SIZE_INFO"
+        img_width = int(split_data[1])
+        img_height = int(split_data[2])
+        
+        # format standard
+        img_size = (img_width, img_height)
+        
+        log.debug(f"Taille reçue : {img_size}")
+        
+        macroblock_size = int(split_data[3])
+        A = Encoder.DCT_operator(macroblock_size)
+        
+        log.debug(f"Macroblock_size reçu : {macroblock_size}")
+        print("")
     
-    received_data += data
-    
-    binary_MSG_TYPE = data[16 : 18]
-    
-    # "11" est en fait la valeur de TAIL_MSG (= 3) en binaire
-    if binary_MSG_TYPE == "11":
-        decode_frame_entierement()
-        received_data = ""
+    else:
+        global received_data
+        received_data += data
+        
+        binary_MSG_TYPE = data[16 : 18]
+        
+        # "11" est en fait la valeur de TAIL_MSG (= 3) en binaire
+        if binary_MSG_TYPE == "11":
+            decode_frame_entierement()
+            received_data = ""
 
 
 # en fait tout se fait via la fonction de callback
@@ -139,8 +167,17 @@ serv.listen_for_packets(callback=on_received_data)
 serv.th_Listen.join()
 serv.mySocket.close()
 
-cv2.destroyAllWindows()
+t_fin_algo = time()
 
+duree_algo = t_fin_algo - t_debut_algo
+nb_fps_moyen = compteur_images_recues / duree_algo
+
+print("\n")
+log.debug(f"Durée de l'algorithme : {duree_algo:.3f} s")
+log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
+log.debug(f"Nombre moyen de FPS (réception / décodage) : {nb_fps_moyen:.2f}")
+
+print("")
 log.debug("Fin récepteur")
 
 if generer_fichier_log:

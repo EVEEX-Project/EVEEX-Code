@@ -82,7 +82,7 @@ class PiCameraObject:
             
             # envoi de la frame au PC récepteur (cela dépend de la fonction de
             # callback utilisée)
-            self.callback(self.frame, self.compteur_images_generees)
+            self.callback(self.frame, self.compteur_images_generees + 1)
             
             self.compteur_images_generees += 1
             

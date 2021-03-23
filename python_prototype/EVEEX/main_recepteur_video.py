@@ -30,7 +30,7 @@ if generer_fichier_log:
 
 # Valeurs standards de macroblock_size : 8, 16 et 32
 # Doit être <= 63
-macroblock_size = 16
+global macroblock_size
 
 # il faut s'assurer que macroblock_size divise bien ces 2 dimensions
 global img_width
@@ -38,8 +38,8 @@ global img_height
 
 global img_size
 
-# création de l'opérateur orthogonal de la DCT
-A = Encoder.DCT_operator(macroblock_size)
+# opérateur orthogonal de la DCT
+global A
 
 dec = Decoder()
 
@@ -56,6 +56,8 @@ bufsize = 4096
 
 HOST = "localhost"
 PORT = 3456
+#HOST = "192.168.8.218" # adresse IP du PC récepteur
+#PORT = 22 # port SSH
 
 serv = Server(HOST, PORT, bufsize, affiche_messages=False)
 
@@ -109,6 +111,8 @@ def decode_frame_entierement():
     
     # frame RLE --> frame YUV
     global img_size
+    global macroblock_size
+    global A
     dec_yuv_data = dec.recompose_frame_via_DCT(dec_rle_data, img_size, macroblock_size, A)
     
     # frame YUV --> frame BGR (/!\ ET NON RGB /!\)
@@ -130,18 +134,25 @@ def on_received_data(data):
         global img_height
         global img_size
         global t_debut_algo
+        global macroblock_size
+        global A
         
         t_debut_algo = time()
         
-        splitted_data = data.split(".")
-        # splitted_data[0] = "SIZE_INFO"
-        img_width = int(splitted_data[1])
-        img_height = int(splitted_data[2])
+        split_data = data.split(".")
+        # split_data[0] = "SIZE_INFO"
+        img_width = int(split_data[1])
+        img_height = int(split_data[2])
         
         # format standard
         img_size = (img_width, img_height)
         
         log.debug(f"Taille reçue : {img_size}")
+        
+        macroblock_size = int(split_data[3])
+        A = Encoder.DCT_operator(macroblock_size)
+        
+        log.debug(f"Macroblock_size reçu : {macroblock_size}")
         print("")
     
     else:
@@ -169,6 +180,7 @@ nb_fps_moyen = compteur_images_recues / duree_algo
 
 print("\n")
 log.debug(f"Durée de l'algorithme : {duree_algo:.3f} s")
+log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
 log.debug(f"Nombre moyen de FPS (réception / décodage) : {nb_fps_moyen:.2f}")
 
 if enregistrer_frames_recues:
@@ -177,6 +189,7 @@ if enregistrer_frames_recues:
     VideoHandler.frames2vid(frames_recues, saved_video_filename)
     log.info("Enregistrement terminé !")
 
+print("")
 log.debug("Fin récepteur vidéo")
 
 if generer_fichier_log:

@@ -9,6 +9,7 @@ Code fait en conjonction avec "main_PC_recepteur.py".
 
 DEFAULT_QUANTIZATION_THRESHOLD = 10
 
+import sys
 from time import time
 import numpy as np
 
@@ -46,6 +47,10 @@ img_width = 96
 # au multiple de 16 le plus proche par la PiCamera)
 img_height = 96
 
+if (img_width % macroblock_size != 0 or img_height % macroblock_size != 0) or (img_width % 32 !=0 or img_height % 16 != 0):
+    log.error("Dimensions des frames invalides !")
+    sys.exit()
+
 # format standard
 img_size = (img_width, img_height)
 
@@ -59,6 +64,7 @@ enc = Encoder()
 
 
 print("\n")
+t_debut_demo = time()
 
 bufsize = 4096
 
@@ -67,6 +73,9 @@ PORT = 22 # port SSH
 
 cli = Client(HOST, PORT, bufsize, affiche_messages=False)
 cli.connect_to_server()
+
+# on envoie d'abord les dimensions de la vidéo au récepteur (+ la taille des macroblocs)
+cli.send_data_to_server(f"SIZE_INFO.{img_width}.{img_height}.{macroblock_size}")
 
 
 def encode_et_envoie_frame(image_BGR, frame_id):
@@ -105,8 +114,6 @@ piCameraObject = PiCameraObject(img_width, img_height, framerate, callback=encod
 nb_secondes_preview = 1
 piCameraObject.launch_simple_preview(nb_secondes_preview, close_camera=False)
 
-t_debut_demo = time()
-
 # ==> LANCEMENT DE LA PICAMERA (GÉNÉRATION DE FRAMES)
 piCameraObject.start_generating_frames()
 
@@ -123,8 +130,10 @@ nb_fps_moyen = piCameraObject.compteur_images_generees / duree_demo
 
 print("")
 log.debug(f"Durée de la démonstration : {duree_demo:.3f} s")
-log.debug(f"Nombre moyen de FPS : {nb_fps_moyen:.2f}")
+log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
+log.debug(f"Nombre moyen de FPS (émission / encodage) : {nb_fps_moyen:.2f}")
 
+print("")
 log.debug("Fin émetteur")
 
 if generer_fichier_log:

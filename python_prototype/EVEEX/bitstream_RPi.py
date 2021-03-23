@@ -607,9 +607,7 @@ class BitstreamSender:
         tail_bitstream = self.bit_generator.construct_end_message()
         
         self.client.send_data_to_server(tail_bitstream)
-        
-        # NB : Ici, pas de "wait_for_response" car la frame va être traitée côté
-        #      récepteur
+        self.client.wait_for_response()
     
     
     def send_frame_RLE(self):
