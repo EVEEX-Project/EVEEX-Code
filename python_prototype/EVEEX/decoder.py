@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from EVEEX.bitstream import BitstreamGenerator
-from EVEEX.iDTT import decode_iDTT
+from bitstream import BitstreamGenerator
+from iDTT import decode_iDTT
 
 ###############################################################################
 
@@ -142,7 +142,7 @@ class Decoder:
         return(yuv_data)
     
     
-    def YUV_to_RGB(self, yuv_data):
+    def YUV_to_RGB(self, yuv_data, mode_RPi=False):
         """
         Convertit une image depuis une représentation YUV (Luminance, Chrominance)
         vers une représentation RGB (Rouge, Vert, Bleu)
@@ -164,7 +164,12 @@ class Decoder:
                 r = y + 1.13983 * v
                 g = y - 0.39465 * u - 0.5806 * v
                 b = y + 2.03211 * u
-                rgb_data[i, j] = [r, g, b]
+                
+                if mode_RPi:
+                    # format BGR (et non RGB)
+                    rgb_data[i, j] = [b, g, r]
+                else:
+                    rgb_data[i, j] = [r, g, b]
         
         # On retourne l'image ainsi constituée
         return rgb_data
