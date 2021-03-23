@@ -174,6 +174,7 @@ nb_fps_moyen = compteur_images_recues / duree_algo
 
 print("\n")
 log.debug(f"Durée de l'algorithme : {duree_algo:.3f} s")
+log.debug(f"Taille des frames : {img_size}")
 log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
 log.debug(f"Nombre moyen de FPS (réception / décodage) : {nb_fps_moyen:.2f}")
 

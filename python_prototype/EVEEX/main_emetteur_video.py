@@ -8,7 +8,7 @@ Main adapté à l'émetteur de données vidéo. Code fait en conjonction avec
 DEFAULT_QUANTIZATION_THRESHOLD = 10
 
 import sys
-from time import time
+from time import time, sleep
 from os import getcwd
 import numpy as np
 
@@ -59,7 +59,7 @@ if OS == "win32":
 elif OS == "linux" or OS == "linux2":
     video_path = getcwd() + "/assets/" + video_name
 else:
-    Logger.get_instance().error(f"Unrecognized platform : {OS}")
+    log.error(f"Unrecognized platform : {OS}")
     sys.exit()
 
 frames = VideoHandler.vid2frames(video_path)
@@ -130,6 +130,8 @@ for frame_id in range(1, nb_frames + 1):
     frame = frames[frame_id - 1]
     encode_et_envoie_frame(frame, frame_id)
 
+sleep(0.5)
+
 # on indique au serveur que l'on a fini d'envoyer les données
 cli.send_data_to_server("FIN_ENVOI")
 
@@ -143,6 +145,7 @@ nb_fps_moyen = nb_frames / duree_algo
 
 print("")
 log.debug(f"Durée de l'algorithme : {duree_algo:.3f} s")
+log.debug(f"Taille des frames : {img_size}")
 log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
 log.debug(f"Nombre moyen de FPS (émission / encodage) : {nb_fps_moyen:.2f}")
 

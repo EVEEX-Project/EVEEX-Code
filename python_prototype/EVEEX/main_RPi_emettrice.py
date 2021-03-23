@@ -106,7 +106,7 @@ def encode_et_envoie_frame(image_BGR, frame_id):
 
 
 # nombre de FPS de la PiCamera
-framerate = 2 # stonks
+framerate = 1 # stonks
 
 piCameraObject = PiCameraObject(img_width, img_height, framerate, callback=encode_et_envoie_frame)
 
@@ -130,6 +130,7 @@ nb_fps_moyen = piCameraObject.compteur_images_generees / duree_demo
 
 print("")
 log.debug(f"Durée de la démonstration : {duree_demo:.3f} s")
+log.debug(f"Taille des frames : {img_size}")
 log.debug(f"Macroblock size : {macroblock_size}x{macroblock_size}")
 log.debug(f"Nombre moyen de FPS (émission / encodage) : {nb_fps_moyen:.2f}")
 
