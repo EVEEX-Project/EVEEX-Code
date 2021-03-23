@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
+	"eveex/pkg/types"
 	"github.com/rs/zerolog/log"
 )
 
@@ -53,7 +54,7 @@ func NewEmptyBitstream() *Bitstream {
 	return NewBitstreamWithSize(0)
 }
 
-func NewBitstreamFromData(dictionary map[string][]byte, rlePairs [][]*RLEPair, macroblocksize uint16, width uint16, height uint16 ,frameid uint16, dictPacketIndex uint16, bodyPacketIndex uint16) *Bitstream {
+func NewBitstreamFromData(dictionary map[string][]byte, rlePairs [][]*types.RLEPair, macroblocksize uint16, width uint16, height uint16 ,frameid uint16, dictPacketIndex uint16, bodyPacketIndex uint16) *Bitstream {
 
 	var bFrameID = make([]byte, 2)
 	var u16buf = make([]byte, 2)

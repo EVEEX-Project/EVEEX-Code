@@ -1,4 +1,4 @@
-package encoder
+package types
 
 import (
 	"github.com/rs/zerolog/log"

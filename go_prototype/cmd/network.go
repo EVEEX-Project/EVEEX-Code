@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"bytes"
-	"eveex/pkg/huffman"
+	"eveex/pkg/encoder"
+	"eveex/pkg/image"
 	"eveex/pkg/network"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -52,55 +52,22 @@ Example:
 			client := network.NewTCPClient(networkHost, networkPort)
 			client.Connect()
 
-			/*
-			// example of RLE pairs
-			var rlePairs []encoder.RLEPair
-			pair1 := encoder.RLEPair{NbZeros: 5, Value: 7}
-			pair2 := encoder.RLEPair{NbZeros: 15, Value: 2}
-			rlePairs = append(rlePairs, pair1, pair2)
-
-			// generating the encoding dictionary
-			nodeList := huffman.RLEPairsToNodes(rlePairs)
-			root := huffman.GenerateTreeFromList(nodeList)
-			encodingDict := make(map[string]string)
-			huffman.GenerateEncodingDict(&encodingDict, root, "")
-			nbKeys := len(encodingDict)
-			log.Debug().Int("Number of keys", nbKeys).Msg("The encoding dictionary was successfully generated")
-
-			// encoding the RLE pairs
-			encodedRlePairs := encoder.EncodePairs(rlePairs, encodingDict)
-			encodedData := string(encodedRlePairs.GetData())
-			log.Debug().Str("Encoded data", encodedData).Msg("The RLE pairs were successfully encoded.")
-
-			client.SendString(encodedData)
-			client.GetServerAnswer()
-			*/
-
-			sentence := "ensta bretagne ftw"
-
-			// generating the encoding dictionary for the given sentence
-			nodes := huffman.SplitPhraseInNodes(sentence)
-			tree := huffman.GenerateTreeFromList(nodes)
-			var encodingDict = map[string][]byte{}
-			huffman.GenerateEncodingDict(&encodingDict, tree, []byte{})
-			nbKeys := len(encodingDict)
-			log.Debug().Int("Number of keys in dict", nbKeys).Msg("The encoding dictionary was successfully generated")
-
-			// encoding sentence
-			var encodedSentence bytes.Buffer
-			encodedSentence.WriteString("")
-			for i := 0; i < len(sentence); i++ {
-				currentLetter := string(sentence[i])
-				encodedLetter := encodingDict[currentLetter]
-				encodedSentence.WriteString(string(encodedLetter)) // concatenation
+			img, err := image.LoadImageFromFile("assets/20px.png")
+			if err != nil {
+				log.Fatal().Str("filename", args[0]).Msgf("Cannot load image : %s\n", err.Error())
 			}
-			encodedSentence.WriteString("\n")
-			log.Debug().Msgf("The sentence was successfully encoded. Encoded data : %s", encodedSentence.String())
+			bs := encoder.EncodeImage(img,20, 8)
 
 			// sending encoded data to server
-			client.SendString(encodedSentence.String())
-
+			client.SendBytes(bs.GetHeader())
 			// receiving the server's response
+			client.GetServerAnswer()
+
+			client.SendBytes(bs.GetDict())
+			client.GetServerAnswer()
+			client.SendBytes(bs.GetBody())
+			client.GetServerAnswer()
+			client.SendBytes(bs.GetTail())
 			client.GetServerAnswer()
 		}
 	},

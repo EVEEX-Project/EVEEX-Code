@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"eveex/pkg/image"
+	"eveex/pkg/types"
 	"testing"
 )
 
@@ -20,7 +21,7 @@ func assertNotEqual(t *testing.T, variable interface{}, notExpected interface{})
 }
 
 func TestRLEPair(t *testing.T) {
-	pair := RLEPair{
+	pair := types.RLEPair{
 		NbZeros: 5,
 		Value:   124.5,
 	}
@@ -122,7 +123,7 @@ func TestRunLevel(t *testing.T) {
 
 func TestEncodePairs(t *testing.T) {
 	symbols := map[string][]byte{"0;1.00": {0, 1}, "5;142.50": {1, 1}}
-	pairs := []RLEPair{{0, 1.0}, {5, 142.5}}
+	pairs := []types.RLEPair{{0, 1.0}, {5, 142.5}}
 
 	bs := EncodePairs(pairs, symbols)
 	assertEqual(t, bs.GetBody()[0], byte(0))

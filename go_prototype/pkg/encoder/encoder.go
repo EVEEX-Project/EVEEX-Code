@@ -2,6 +2,7 @@ package encoder
 
 import (
 	"eveex/pkg/image"
+	"eveex/pkg/types"
 	"github.com/rs/zerolog/log"
 	"math"
 )
@@ -202,21 +203,21 @@ func Quantization(coeffs []float64, threshold float64) []float64 {
 }
 
 // RunLevel takes a slice of coefficients and returns
-// pairs of value in format (x, y) where x is the number
+// pairs of value in format (x, y) where x is the numberencoder
 // of 0 before the value and y is the value
-func RunLevel(coeffs []float64) []*RLEPair {
+func RunLevel(coeffs []float64) []*types.RLEPair {
 	if len(coeffs) == 0 {
 		log.Fatal().Msg("no coeff given to the RunLevel function")
 	}
 
-	var res []*RLEPair
+	var res []*types.RLEPair
 
 	// iterating over the elements
 	var c uint32
 	for _, val := range coeffs {
 		// if there is something else than a 0
 		if val != 0 {
-			pair := RLEPair{NbZeros: c, Value: val}
+			pair := types.RLEPair{NbZeros: c, Value: val}
 			res = append(res, &pair)
 			c = 0
 		} else {
@@ -226,14 +227,14 @@ func RunLevel(coeffs []float64) []*RLEPair {
 
 	// don't forget the last value even if it is a 0
 	if c != 0 {
-		pair := RLEPair{NbZeros: c, Value: coeffs[len(coeffs)-1]}
+		pair := types.RLEPair{NbZeros: c, Value: coeffs[len(coeffs)-1]}
 		res = append(res, &pair)
 	}
 
 	return res
 }
 
-func EncodePairs(pairs []RLEPair, symbols map[string][]byte) *Bitstream {
+func EncodePairs(pairs []types.RLEPair, symbols map[string][]byte) *Bitstream {
 	bs := NewEmptyBitstream()
 
 	for _, pair := range pairs {

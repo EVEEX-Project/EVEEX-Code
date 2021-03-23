@@ -45,11 +45,11 @@ func (s *TCPServer) requestHandler(conn net.Conn) {
 			break
 		}
 
-		text := scanner.Text()
-		log.Info().Msgf("Got from client: %s", text)
+		text := scanner.Bytes()
+		log.Info().Int("data_length", len(text)).Msg("Got data from client")
 
-		// sending back the data
-		conn.Write([]byte(text + "\n"))
+		// tell the client everything went fine
+		conn.Write([]byte("ok\n"))
 	}
 }
 
