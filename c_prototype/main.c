@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <time.h>
 #include "types/Image.h"
 #include "types/Image.r"
 #include "types/List.h"
@@ -15,31 +16,43 @@ void saveMacroBlocksToDisk(const struct List *macroBlocks) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    clock_t t;
+    t = clock();
+
     shouldLogToFile = 0;
     currentLogLevel = DEBUG;
 
     // Printing pretty hello world
     helloWorld("1.2.0");
-    testLog();
+    //testLog();
 
     // Loading the image
     struct Image *img;
-    img = (struct Image *) loadImg("assets/image_res.png");
+    img = (struct Image *) loadImg(argv[1]);
 
     // Conversion to YUV
     const struct Image *yuv = toYUVImage(img);
 
     // Splitting in macroblocs
-    const struct List *macroBlocks = splitInMacroblocs(yuv, 10);
+    const struct List *macroBlocks = splitInMacroblocs(yuv, 16);
     // saveMacroBlocksToDisk(macroBlocks);
 
-    const struct Image *test = cast(Image(), lookAt(macroBlocks, 5));
-    double *coeffs = DCT(test, 0);
+    for (int i=0; i < count(macroBlocks); i++) {
+        const struct Image *test = cast(Image(), lookAt(macroBlocks, i));
+        for (int j=0; j < 3; j++) {
+            DCT(test, j);
+        }
+    }
 
     delete((void *) macroBlocks);
     delete((void *) yuv);
     delete(img);
+
+    t = clock() - t;
+    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+
+    printf("L'algorithme a mis %f secondes à s'éxécuter\n", time_taken);
 
     exit(EXIT_SUCCESS);
 }
